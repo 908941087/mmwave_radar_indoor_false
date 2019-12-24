@@ -1,0 +1,32 @@
+<launch>
+  <!-- Turtlebot参数设置 -->
+  <arg name="base"              default="kobuki"         doc="mobile base type [create, roomba]"/>
+  <!--arg name=参数名           default=默认值            说明=mobile base类型 -->
+  <arg name="battery"           default="$(env TURTLEBOT_BATTERY)"      doc="kernel provided locatio for battery info, use /proc/acpi/battery/BAT0 in 2.6 or earlier kernels." />
+  <!--arg name=参数名           default=默认值            说明=内核提供了有关电池信息的位置，请在2.6或更早版本的内核中使用/ proc / acpi / battery / BAT0。 -->
+  <arg name="stacks"            default="$(env TURTLEBOT_STACKS)"       doc="stack type displayed in visualisation/simulation [circles, hexagons]"/>
+  <!--arg name=参数名           default=默认值            说明=可视化/模拟中显示的堆栈类型[圆形，六边形]-->
+  <arg name="3d_sensor"         default="radar"    doc="3d sensor types [kinect, asux_xtion_pro, radar]"/>
+  <!--arg name=参数名           default=默认值            说明=3D传感器类型-->
+  <arg name="simulation"        default="$(env TURTLEBOT_SIMULATION)"   doc="set flags to indicate this turtle is run in simulation mode."/>
+  <!--arg name=参数名           default=默认值            说明=设置标志以指示该turtlebot在模拟模式下运行。-->
+  <arg name="serialport"        default="$(env TURTLEBOT_SERIAL_PORT)"  doc="used by create to configure the port it is connected on [/dev/ttyUSB0, /dev/ttyS0]"/>
+  <!--arg name=参数名           default=默认值            说明=通过构建配置它在[/dev/ttyUSB0，/dev/ttyS0]上连接的端口。-->
+  <!--设置为采用模拟时间-->
+  <param name="/use_sim_time" value="$(arg simulation)"/>
+  <!--include模块，启动robot.launch文件-->
+  <include file="$(find turtlebot_bringup)/launch/includes/robot.launch.xml">
+    <arg name="base" value="$(arg base)" />
+    <arg name="stacks" value="$(arg stacks)" />
+    <arg name="3d_sensor" value="$(arg 3d_sensor)" />
+  </include>
+  <!--include模块，启动mobile_base.launch文件-->
+  <include file="$(find turtlebot_bringup)/launch/includes/mobile_base.launch.xml">
+    <arg name="base" value="$(arg base)" />
+    <arg name="serialport" value="$(arg serialport)" />
+  </include>
+  <!--include模块，启动netbook.launch文件-->
+  <include unless="$(eval arg('battery') == 'None')" file="$(find turtlebot_bringup)/launch/includes/netbook.launch.xml">
+    <arg name="battery" value="$(arg battery)" />
+  </include>
+</launch>

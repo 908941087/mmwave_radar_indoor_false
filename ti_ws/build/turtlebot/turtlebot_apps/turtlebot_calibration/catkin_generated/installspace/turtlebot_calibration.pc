@@ -1,0 +1,8 @@
+prefix=/home/tianjing/ti_ws/install
+
+Name: turtlebot_calibration
+Description: Description of turtlebot_calibration
+Version: 2.3.7
+Cflags: -I/home/tianjing/ti_ws/install/include
+Libs: -L/home/tianjing/ti_ws/install/lib 
+Requires: std_msgs message_runtime

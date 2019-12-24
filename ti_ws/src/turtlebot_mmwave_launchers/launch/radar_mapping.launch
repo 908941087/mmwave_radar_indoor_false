@@ -1,0 +1,35 @@
+<!--
+  Launch file to perform mapping using octomap with the radar
+ -->
+<launch>
+
+  <!-- Publish static transform from map to odom for mapping using only odometry info -->
+  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
+
+  <!-- Add nodes to filter/limit Radar data before using it for mapping -->
+  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
+  </include>
+
+  <!-- Create "raw" 3D map using first octomap node -->
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_raw" output="screen" >
+    <remap from="octomap_point_cloud_centers" to="raw_point_cloud_centers" />
+    <remap from="projected_map" to="raw_map" />
+    <remap from="cloud_in" to="xyzi_filt_out" />
+  </node>
+  
+  <!-- Perform SOR filtering on output from "raw" octomap node -->
+  <node pkg="nodelet" type="nodelet" name="mapping_SOR_filt_mapping" args="standalone pcl/StatisticalOutlierRemoval" output="screen" >
+    <remap from="~input" to="raw_point_cloud_centers" />
+    <remap from="~output" to="mapping_SOR_filter_out" />
+    <param name="mean_k" value="20" />
+    <param name="stddev" value="0.04" />
+  </node>
+  
+  <!-- Create "filtered" 3D map using second octomap node -->
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_filtered" output="screen" >
+    <remap from="octomap_point_cloud_centers" to="filtered_point_cloud_centers" />
+    <remap from="projected_map" to="filtered_map" />
+    <remap from="cloud_in" to="mapping_SOR_filter_out" />
+  </node>
+  
+</launch>

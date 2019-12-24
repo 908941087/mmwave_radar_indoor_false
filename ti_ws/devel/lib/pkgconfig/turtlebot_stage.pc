@@ -1,0 +1,8 @@
+prefix=/home/tianjing/ti_ws/devel
+
+Name: turtlebot_stage
+Description: Description of turtlebot_stage
+Version: 2.2.2
+Cflags: 
+Libs: -L/home/tianjing/ti_ws/devel/lib 
+Requires: 

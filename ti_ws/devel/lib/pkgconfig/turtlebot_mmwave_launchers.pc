@@ -1,0 +1,8 @@
+prefix=/home/tianjing/ti_ws/devel
+
+Name: turtlebot_mmwave_launchers
+Description: Description of turtlebot_mmwave_launchers
+Version: 1.0.0
+Cflags: 
+Libs: -L/home/tianjing/ti_ws/devel/lib 
+Requires: 

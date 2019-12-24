@@ -1,0 +1,8 @@
+prefix=/home/tianjing/ti_ws/devel
+
+Name: turtlebot_dashboard
+Description: Description of turtlebot_dashboard
+Version: 2.3.1
+Cflags: 
+Libs: -L/home/tianjing/ti_ws/devel/lib 
+Requires: 

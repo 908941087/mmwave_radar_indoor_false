@@ -1,0 +1,8 @@
+prefix=/home/tianjing/ti_ws/devel
+
+Name: turtlebot_gazebo
+Description: Description of turtlebot_gazebo
+Version: 2.2.2
+Cflags: 
+Libs: -L/home/tianjing/ti_ws/devel/lib 
+Requires: 

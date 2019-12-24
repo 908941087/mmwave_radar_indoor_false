@@ -1,0 +1,8 @@
+prefix=/home/tianjing/ti_ws/install
+
+Name: serial
+Description: Description of serial
+Version: 1.2.1
+Cflags: -I/home/tianjing/ti_ws/install/include
+Libs: -L/home/tianjing/ti_ws/install/lib -lserial -lrt -lpthread
+Requires: 
