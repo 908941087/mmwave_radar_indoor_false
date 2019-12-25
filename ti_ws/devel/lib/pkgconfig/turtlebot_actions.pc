@@ -1,8 +1,0 @@
-prefix=/home/tianjing/ti_ws/devel
-
-Name: turtlebot_actions
-Description: Description of turtlebot_actions
-Version: 2.3.7
-Cflags: -I/home/tianjing/ti_ws/devel/include -I/home/tianjing/ti_ws/src/turtlebot/turtlebot_apps/turtlebot_actions/include
-Libs: -L/home/tianjing/ti_ws/devel/lib 
-Requires: roscpp actionlib actionlib_msgs geometry_msgs message_runtime tf cv_bridge image_transport image_geometry turtlebot_bringup

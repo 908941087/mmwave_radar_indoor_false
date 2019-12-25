@@ -1,8 +1,0 @@
-prefix=/home/tianjing/ti_ws/devel
-
-Name: ti_mmwave_rospkg
-Description: Description of ti_mmwave_rospkg
-Version: 1.5.0
-Cflags: -I/home/tianjing/ti_ws/devel/include -I/home/tianjing/ti_ws/src/ti_mmwave_rospkg/include
-Libs: -L/home/tianjing/ti_ws/devel/lib -lmmwave
-Requires: 

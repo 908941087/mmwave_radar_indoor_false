@@ -1,8 +1,0 @@
-prefix=/home/tianjing/ti_ws/devel
-
-Name: turtlebot_msgs
-Description: Description of turtlebot_msgs
-Version: 2.2.1
-Cflags: -I/home/tianjing/ti_ws/devel/include
-Libs: -L/home/tianjing/ti_ws/devel/lib 
-Requires: std_msgs sensor_msgs std_srvs message_runtime

@@ -1,8 +1,0 @@
-prefix=/home/tianjing/ti_ws/devel
-
-Name: turtlebot_capabilities
-Description: Description of turtlebot_capabilities
-Version: 2.4.2
-Cflags: 
-Libs: -L/home/tianjing/ti_ws/devel/lib 
-Requires: 
