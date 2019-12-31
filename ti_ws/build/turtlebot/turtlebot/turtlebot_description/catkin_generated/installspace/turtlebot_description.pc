@@ -1,8 +1,0 @@
-prefix=/home/tianjing/ti_ws/install
-
-Name: turtlebot_description
-Description: Description of turtlebot_description
-Version: 2.4.2
-Cflags: 
-Libs: -L/home/tianjing/ti_ws/install/lib 
-Requires: urdf xacro

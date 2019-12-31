@@ -1,8 +1,0 @@
-prefix=/home/tianjing/ti_ws/install
-
-Name: turtlebot_rviz_launchers
-Description: Description of turtlebot_rviz_launchers
-Version: 2.3.1
-Cflags: 
-Libs: -L/home/tianjing/ti_ws/install/lib 
-Requires: 
