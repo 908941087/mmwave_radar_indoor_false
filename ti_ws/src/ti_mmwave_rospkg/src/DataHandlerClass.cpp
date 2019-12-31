@@ -455,7 +455,7 @@ void *DataUARTHandler::sortIncomingData( void )
                     temp[3] = 10 * log10(tempSnr + 1);  // intensity
 
                     */
-                    temp[3] = 40;
+                    temp[3] = tempSnr * 10;
 
                     // Map mmWave sensor coordinates to ROS coordinate system
                     RScan->points[i].x = temp[1];   // ROS standard coordinate system X-axis is forward which is the mmWave sensor Y-axis
