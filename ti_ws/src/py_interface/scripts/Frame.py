@@ -1,5 +1,7 @@
 from sensor_msgs.msg import PointCloud2, std_msgs
 from sensor_msgs import point_cloud2
+from math import sqrt, pow
+from collections import deque
 
 
 class Point:
@@ -11,7 +13,7 @@ class Point:
         self.intensity = intensity
 
     def __str__(self):
-        return "x: " + str(self.x) + " y: " + str(self.y)
+        return "x: " + str(self.x) + " y: " + str(self.y) + " z: " + str(self.z)
 
     def __repr__(self):
         return self.__str__()
@@ -41,27 +43,15 @@ class Point:
 
 class Frame:
 
-    def __init__(self, data):
+    def __init__(self):
         self.index = -1
         self.points = []
-        self.fields = data.fields
+        self.fields = None
+        self.header = None
         self.height = 1
         self.width = 0
         self.length = 0
-        try:
-            gen = point_cloud2.read_points(data)
-            self.header = data.header
-            for p in gen:
-                self.append(Point(p[0], p[1], p[2], p[3]))
-                self.width += 1
-        except TypeError:
-            pass
-
-    def generate(self):
-        header = self.header
-        points = [(i.x, i.y, i.z, i.intensity) for i in self.points]
-        return point_cloud2.create_cloud(header, self.fields, points)
-
+        
     def append(self, point):
         self.points.append(point)
         self.length += 1
@@ -91,3 +81,66 @@ class Frame:
 
     def __len__(self):
         return self.length
+
+
+class FrameService:
+    def __init__(self):
+        pass
+
+    def point_cloud_to_frame(self, data):
+        f = Frame()
+        try:
+            gen = point_cloud2.read_points(data)
+            f.header = data.header
+            for p in gen:
+                f.append(Point(p[0], p[1], p[2], p[3]))
+                f.width += 1
+            return f
+        except TypeError:
+            pass
+
+    def frame_to_point_cloud(self, frame):
+        header = frame.header
+        points = [(i.x, i.y, i.z, i.intensity) for i in frame.points]
+        return point_cloud2.create_cloud(header, frame.fields, points)
+
+    def find_neighbors(self, source_frame, reference_frame):
+        try:
+            match_data_frame = []
+            for point in source_frame:
+                match_data_frame.extend(self.find_match_in_frame(point, reference_frame))
+            f = Frame()
+            f.points = match_data_frame
+            return f
+        except TypeError as e:
+            return source_frame
+
+    def find_match_in_frame(self, source_point, frame):
+        neighbor_threshold = 0.1  # FIXME: need revise
+        match = []  # list to store matched points in a frame
+        for p in frame:
+            if dist(p, source_point) <= neighbor_threshold:
+                match.append(p)
+        return match
+
+    def get_multi_frame_stablizer(self, n):
+        class MultiFrameStablizer:
+            def __init__(self, n):
+                self.frames = deque(maxlen=n)
+                for i in range(n):
+                    self.frames.append(Frame())
+            
+            def update(self, frame):
+                self.frames.popleft()
+                self.frames.append(frame)
+                #***** --Analysis Here-- *****#
+                temp = self.frames[0]
+                for i in range(len(self.frames) - 1):
+                    temp = self.find_neighbors(self.frames[i + 1], temp)
+                return temp
+
+        return MultiFrameStablizer(n)
+
+
+def dist(p1, p2):
+    return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2))

@@ -1,4 +1,3 @@
-import PointCloudFilter
 import Frame
 import sensor_msgs.point_cloud2
 import open3d as o3d
@@ -11,8 +10,6 @@ from math import sqrt
 class PCL_process:
 
     def __init__(self):
-        self.pre_frame = None
-        self.cur_frame = None
         self.pc2 = None
 
     def process(self, pc2):
@@ -35,11 +32,11 @@ class PCL_process:
 
     def stablize_preframe(self):
         # rospy.loginfo("Stablize ====================")
-        self.pre_frame = self.cur_frame
-        self.cur_frame = Frame.Frame(self.pc2)
-        if self.pre_frame is not None:
-            PointCloudFilter.find_neighbors(self.pre_frame, self.cur_frame)
-            self.pc2 = self.pre_frame.generate()
+        stablizer = Frame.FrameService.get_multi_frame_stablizer(2)
+        current_frame = Frame.FrameService.point_cloud_to_frame(self.pc2)
+        stable_frame = stablizer.update(current_frame)
+        if stable_frame is not None:
+            return Frame.FrameService.frame_to_point_cloud(stable_frame)
 
     def statistical_outlier_removal(self):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
