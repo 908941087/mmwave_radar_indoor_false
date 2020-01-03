@@ -90,7 +90,7 @@ class FrameService:
     def get_frames_from_file(self, path):
         try:
             frames = []
-            with open(path) as f:
+            with open(path, 'r') as f:
                 lines = f.readlines()
                 temp_frame = Frame()
                 current_frame_number = 0
