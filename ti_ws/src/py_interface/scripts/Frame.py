@@ -87,6 +87,25 @@ class FrameService:
     def __init__(self):
         pass
 
+    def get_frames_from_file(self, path):
+        try:
+            frames = []
+            with open(path) as f:
+                lines = f.readlines()
+                temp_frame = Frame()
+                current_frame_number = 0
+                for line in lines:
+                    if not len(line) == 0:
+                        temp = eval(line)
+                        if not current_frame_number == temp.frame:
+                            frames.append(temp_frame)
+                            temp_frame = Frame()
+                        temp_frame.append(Point(temp.x, temp.y))
+                frames.append(temp_frame)  # the last frame
+            return frames
+        except Exception:
+            print("Could not parse file.")
+
     def point_cloud_to_frame(self, data):
         f = Frame()
         try:
@@ -97,7 +116,7 @@ class FrameService:
                 f.width += 1
             return f
         except TypeError:
-            pass
+            print("Could not parse point_cloud2.")
 
     def frame_to_point_cloud(self, frame):
         header = frame.header
