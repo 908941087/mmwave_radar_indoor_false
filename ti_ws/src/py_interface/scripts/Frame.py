@@ -41,6 +41,9 @@ class Point:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+    def dist(self, other):
+        return sqrt(pow((self.x - other.x), 2) + pow((self.y - other.y), 2))
+
 class Frame:
 
     def __init__(self):
@@ -138,7 +141,7 @@ class FrameService:
         neighbor_threshold = 0.1  # FIXME: need revise
         match = []  # list to store matched points in a frame
         for p in frame:
-            if dist(p, source_point) <= neighbor_threshold:
+            if p.dist(source_point) <= neighbor_threshold:
                 match.append(p)
         return match
 
@@ -159,7 +162,3 @@ class FrameService:
                 return temp
 
         return MultiFrameStablizer(n)
-
-
-def dist(p1, p2):
-    return sqrt(pow((p1.x - p2.x), 2) + pow((p1.y - p2.y), 2))
