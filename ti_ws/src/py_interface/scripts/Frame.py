@@ -145,8 +145,8 @@ class StabilityMap:
         f = Frame()
         f.header = frame.header
         for point in frame:
-            x, y = self.get_correspond_block(point)
-            if self.stability_map[x][y] >= threshold:
+            stability = self.get_correspond_stability(point)
+            if stability >= threshold:
                 f.append(point)
         return f
 
