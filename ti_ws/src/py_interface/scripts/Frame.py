@@ -85,6 +85,71 @@ class Frame:
     def __len__(self):
         return self.length
 
+class StabilityMap:
+    resolution = 5  # 5cm
+
+    def __init__(self, col, row):
+        self.col = col
+        self.row = row
+        self.stability_map = [[0 for i in range(col)] for j in range(row)]
+
+    def add_frame(self, frame):
+        for p in frame:
+            x, y = self.get_correspond_block(p)
+            self.stability_map[x][y] += p.intensity
+
+    def subtract_frame(self, frame):
+        for p in frame:
+            x, y = self.get_correspond_block(p)
+            self.stability_map[x][y] -= p.intensity
+    
+    def translate_axis(self, point):
+        x = point.x + self.col / 2
+        y = -point.y + self.row
+        return x, y
+
+    def get_correspond_block(self, point):
+        x, y = self.translate_axis(point)
+        x = int(x / self.resolution)
+        y = int(y / self.resolution)
+        return x, y
+
+    def get_correspond_neighbors(self, point):
+        # get its 4 nearest blocks
+        def sgn(x):
+            if x == 0:
+                return 0
+            return int(x / abs(x))
+
+        x, y = self.translate_axis(point)
+        block_x, block_y = self.get_correspond_block(point)
+        diff_x = point.x - (block_x * self.resolution + self.resolution / 2)
+        diff_y = point.y - (block_y * self.resolution + self.resolution / 2)
+        neighbors = []
+        neighbors.append([block_x, block_y])
+        neighbors.append([block_x + sgn(diff_x), block_y])
+        neighbors.append([block_x, block_y + sgn(diff_y)])
+        neighbors.append([block_x + sgn(diff_x), block_y + sgn(diff_y)])
+        return neighbors
+
+    def get_correspond_stability(self, point):
+        # get the stability value for point using 4 nearest blocks
+        neighbors = self.get_correspond_neighbors(point)
+        weights = [0.5, 0.2, 0.2, 0.1]
+        result = 0
+        for neighbor, weight in zip(neighbors, weights):
+            result += self.stability_map[neighbor.x][neighbor.y] * weight
+        return result
+
+    def filter_frame(self, frame, threshold=0):  # Set threshold to achieve different out rate
+        f = Frame()
+        f.header = frame.header
+        for point in frame:
+            x, y = self.get_correspond_block(point)
+            if self.stability_map[x][y] >= threshold:
+                f.append(point)
+        return f
+
 
 class FrameService:
     def __init__(self):
@@ -132,6 +197,7 @@ class FrameService:
             for point in source_frame:
                 match_data_frame.extend(self.find_match_in_frame(point, reference_frame))
             f = Frame()
+            f.header = source_frame.header
             f.points = match_data_frame
             return f
         except TypeError as e:
@@ -151,14 +217,16 @@ class FrameService:
                 self.frames = deque(maxlen=n)
                 for i in range(n):
                     self.frames.append(Frame())
+
+                col = int(10 * 100 / StabilityMap.resolution)
+                row = int(5 * 100 / StabilityMap.resolution)
+                self.stability_map = StabilityMap(col, row)
             
             def update(self, frame):
+                self.stability_map.subtract_frame(self.frames[0])
+                self.stability_map.add_frame(self.frames[len(self.frames) - 1])
                 self.frames.popleft()
                 self.frames.append(frame)
-                #***** --Analysis Here-- *****#
-                temp = self.frames[0]
-                for i in range(len(self.frames) - 1):
-                    temp = self.find_neighbors(self.frames[i + 1], temp)
-                return temp
+                return self.stability_map.filter_frame(frame)
 
         return MultiFrameStablizer(n)
