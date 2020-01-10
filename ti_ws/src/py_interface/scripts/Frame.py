@@ -121,15 +121,22 @@ class StabilityMap:
                 return 0
             return int(x / abs(x))
 
+        def clamp(x, low, high):
+            if x < low:
+                x = low
+            if x > high:
+                x = high
+            return x
+
         x, y = self.translate_axis(point)
         block_x, block_y = self.get_correspond_block(point)
         diff_x = point.x - (block_x * self.resolution + self.resolution / 2)
         diff_y = point.y - (block_y * self.resolution + self.resolution / 2)
         neighbors = []
         neighbors.append([block_x, block_y])
-        neighbors.append([block_x + sgn(diff_x), block_y])
-        neighbors.append([block_x, block_y + sgn(diff_y)])
-        neighbors.append([block_x + sgn(diff_x), block_y + sgn(diff_y)])
+        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col), block_y])
+        neighbors.append([block_x, clamp(block_y + sgn(diff_y), 0, self.row)])
+        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col), clamp(block_y + sgn(diff_y), 0, self.row)])
         return neighbors
 
     def get_correspond_stability(self, point):
@@ -149,6 +156,33 @@ class StabilityMap:
             if stability >= threshold:
                 f.append(point)
         return f
+
+
+class Blocks(Stability_map):
+    resolution = 5  # 5cm
+
+    def __init__(self, col, row):
+        self.col = col
+        self.row = row
+        self.blocks = [[[] for i in range(col)] for j in range(row)]
+
+    def add_frame(self, frame):
+        for p in frame:
+            x, y = self.get_correspond_block(p)
+            self.blocks[x][y].append(p)
+
+    def subtract_frame(self, frame):
+        for p in frame:
+            x, y = self.get_correspond_block(p)
+            self.blocks[x][y].remove(p)
+
+    def get_correspond_stability(self, point):
+        neighbors = self.get_correspond_neighbors(point)
+        stability = 0
+        for n in neighbors:
+            for p in n:
+                stability += p.intensity / point.dist(p)
+        return stability
 
 
 class FrameService:
@@ -218,15 +252,15 @@ class FrameService:
                 for i in range(n):
                     self.frames.append(Frame())
 
-                col = int(10 * 100 / StabilityMap.resolution)
-                row = int(5 * 100 / StabilityMap.resolution)
-                self.stability_map = StabilityMap(col, row)
+                col = int(10 * 100 / Blocks.resolution)
+                row = int(5 * 100 / Blocks.resolution)
+                self.blocks = Blocks(col, row)
             
             def update(self, frame):
-                self.stability_map.subtract_frame(self.frames[0])
-                self.stability_map.add_frame(self.frames[len(self.frames) - 1])
+                self.blocks.subtract_frame(self.frames[0])
+                self.blocks.add_frame(self.frames[len(self.frames) - 1])
                 self.frames.popleft()
                 self.frames.append(frame)
-                return self.stability_map.filter_frame(frame)
+                return self.blocks.filter_frame(frame)
 
         return MultiFrameStablizer(n)
