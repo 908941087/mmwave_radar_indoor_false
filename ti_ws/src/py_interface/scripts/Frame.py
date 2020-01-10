@@ -260,8 +260,8 @@ class FrameService:
                 for i in range(n):
                     self.frames.append(Frame())
 
-                col = int(10 * 100 / Blocks.resolution)
-                row = int(5 * 100 / Blocks.resolution)
+                col = int(10 * 100 / HitMap.resolution)
+                row = int(5 * 100 / HitMap.resolution)
                 self.hitmap = HitMap(col, row)
             
             def update(self, frame):
