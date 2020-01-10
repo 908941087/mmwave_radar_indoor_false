@@ -85,7 +85,7 @@ class Frame:
     def __len__(self):
         return self.length
 
-class StabilityMap:
+class StabilityMap(Blocks):
     resolution = 5  # 5cm
 
     def __init__(self, col, row):
@@ -102,7 +102,33 @@ class StabilityMap:
         for p in frame:
             x, y = self.get_correspond_block(p)
             self.stability_map[x][y] -= p.intensity
-    
+
+    def get_correspond_stability(self, point):
+        # get the stability value for point using 4 nearest blocks
+        neighbors = self.get_correspond_neighbors(point)
+        weights = [0.5, 0.2, 0.2, 0.1]
+        result = 0
+        for neighbor, weight in zip(neighbors, weights):
+            result += self.stability_map[neighbor.x][neighbor.y] * weight
+        return result
+
+    def filter_frame(self, frame, threshold=0):  # Set threshold to achieve different out rate
+        f = Frame()
+        f.header = frame.header
+        for point in frame:
+            stability = self.get_correspond_stability(point)
+            if stability >= threshold:
+                f.append(point)
+        return f
+
+
+class Blocks():
+    resolution = 1
+
+    def __init__(self, col, row):
+        self.col = col
+        self.row = row
+
     def translate_axis(self, point):
         x = point.x + self.col / 2
         y = -point.y + self.row
@@ -138,27 +164,9 @@ class StabilityMap:
         neighbors.append([block_x, clamp(block_y + sgn(diff_y), 0, self.row)])
         neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col), clamp(block_y + sgn(diff_y), 0, self.row)])
         return neighbors
+    
 
-    def get_correspond_stability(self, point):
-        # get the stability value for point using 4 nearest blocks
-        neighbors = self.get_correspond_neighbors(point)
-        weights = [0.5, 0.2, 0.2, 0.1]
-        result = 0
-        for neighbor, weight in zip(neighbors, weights):
-            result += self.stability_map[neighbor.x][neighbor.y] * weight
-        return result
-
-    def filter_frame(self, frame, threshold=0):  # Set threshold to achieve different out rate
-        f = Frame()
-        f.header = frame.header
-        for point in frame:
-            stability = self.get_correspond_stability(point)
-            if stability >= threshold:
-                f.append(point)
-        return f
-
-
-class Blocks(Stability_map):
+class HitMap(Blocks):
     resolution = 5  # 5cm
 
     def __init__(self, col, row):
@@ -254,13 +262,13 @@ class FrameService:
 
                 col = int(10 * 100 / Blocks.resolution)
                 row = int(5 * 100 / Blocks.resolution)
-                self.blocks = Blocks(col, row)
+                self.hitmap = HitMap(col, row)
             
             def update(self, frame):
-                self.blocks.subtract_frame(self.frames[0])
-                self.blocks.add_frame(self.frames[len(self.frames) - 1])
+                self.hitmap.subtract_frame(self.frames[0])
+                self.hitmap.add_frame(self.frames[len(self.frames) - 1])
                 self.frames.popleft()
                 self.frames.append(frame)
-                return self.blocks.filter_frame(frame)
+                return self.hitmap.filter_frame(frame)
 
         return MultiFrameStablizer(n)
