@@ -1,6 +1,6 @@
 from sensor_msgs.msg import PointCloud2, std_msgs
 from sensor_msgs import point_cloud2
-from math import sqrt, pow
+from math import sqrt, pow, floor
 from collections import deque
 
 
@@ -39,7 +39,10 @@ class Point:
         return Point(x, y)
 
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
+        return (self.x == other.x and 
+                self.y == other.y and 
+                self.z == other.z and 
+                self.intensity == other.intensity)
 
     def dist(self, other):
         return sqrt(pow((self.x - other.x), 2) + pow((self.y - other.y), 2))
@@ -85,43 +88,6 @@ class Frame:
     def __len__(self):
         return self.length
 
-class StabilityMap(Blocks):
-    resolution = 5  # 5cm
-
-    def __init__(self, col, row):
-        self.col = col
-        self.row = row
-        self.stability_map = [[0 for i in range(col)] for j in range(row)]
-
-    def add_frame(self, frame):
-        for p in frame:
-            x, y = self.get_correspond_block(p)
-            self.stability_map[x][y] += p.intensity
-
-    def subtract_frame(self, frame):
-        for p in frame:
-            x, y = self.get_correspond_block(p)
-            self.stability_map[x][y] -= p.intensity
-
-    def get_correspond_stability(self, point):
-        # get the stability value for point using 4 nearest blocks
-        neighbors = self.get_correspond_neighbors(point)
-        weights = [0.5, 0.2, 0.2, 0.1]
-        result = 0
-        for neighbor, weight in zip(neighbors, weights):
-            result += self.stability_map[neighbor.x][neighbor.y] * weight
-        return result
-
-    def filter_frame(self, frame, threshold=0):  # Set threshold to achieve different out rate
-        f = Frame()
-        f.header = frame.header
-        for point in frame:
-            stability = self.get_correspond_stability(point)
-            if stability >= threshold:
-                f.append(point)
-        return f
-
-
 class Blocks():
     resolution = 1
 
@@ -130,17 +96,19 @@ class Blocks():
         self.row = row
 
     def translate_axis(self, point):
-        x = point.x + self.col / 2
-        y = -point.y + self.row
+        x = point.x + self.resolution * (self.col / 2)
+        y = -point.y + self.row * self.resolution
         return x, y
 
-    def get_correspond_block(self, point):
+    def get_block(self, point):
         x, y = self.translate_axis(point)
-        x = int(x / self.resolution)
-        y = int(y / self.resolution)
+        x = floor(x / self.resolution)
+        y = floor(y / self.resolution)
+        if not (0 <= x < self.col and 0 <= y < self.row):
+            raise IndexError("Invalid index.")
         return x, y
 
-    def get_correspond_neighbors(self, point):
+    def get_neighbors(self, point):
         # get its 4 nearest blocks
         def sgn(x):
             if x == 0:
@@ -155,16 +123,56 @@ class Blocks():
             return x
 
         x, y = self.translate_axis(point)
-        block_x, block_y = self.get_correspond_block(point)
-        diff_x = point.x - (block_x * self.resolution + self.resolution / 2)
-        diff_y = point.y - (block_y * self.resolution + self.resolution / 2)
+        block_x, block_y = self.get_block(point)
+        diff_x = x - (block_x * self.resolution + self.resolution / 2)
+        diff_y = y - (block_y * self.resolution + self.resolution / 2)
         neighbors = []
         neighbors.append([block_x, block_y])
-        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col), block_y])
-        neighbors.append([block_x, clamp(block_y + sgn(diff_y), 0, self.row)])
-        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col), clamp(block_y + sgn(diff_y), 0, self.row)])
+        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col - 1), block_y])
+        neighbors.append([block_x, clamp(block_y + sgn(diff_y), 0, self.row - 1)])
+        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col - 1), clamp(block_y + sgn(diff_y), 0, self.row - 1)])
         return neighbors
+
+    def get_stability(self, point):
+        return 0
+
+    def filter_frame(self, frame, threshold=0):  # Set threshold to achieve different out rate
+        f = Frame()
+        f.header = frame.header
+        for point in frame:
+            stability = self.get_stability(point)
+            if stability >= threshold:
+                f.append(point)
+        return f
     
+
+class StabilityMap(Blocks):
+    resolution = 5  # 5cm
+
+    def __init__(self, col, row):
+        self.col = col
+        self.row = row
+        self.stability_map = [[0 for i in range(col)] for j in range(row)]
+
+    def add_frame(self, frame):
+        for p in frame:
+            x, y = self.get_block(p)
+            self.stability_map[x][y] += p.intensity
+
+    def subtract_frame(self, frame):
+        for p in frame:
+            x, y = self.get_block(p)
+            self.stability_map[x][y] -= p.intensity
+
+    def get_stability(self, point):
+        # get the stability value for point using 4 nearest blocks
+        neighbors = self.get_neighbors(point)
+        weights = [0.5, 0.2, 0.2, 0.1]
+        result = 0
+        for neighbor, weight in zip(neighbors, weights):
+            result += self.stability_map[neighbor.x][neighbor.y] * weight
+        return result
+
 
 class HitMap(Blocks):
     resolution = 5  # 5cm
@@ -176,16 +184,16 @@ class HitMap(Blocks):
 
     def add_frame(self, frame):
         for p in frame:
-            x, y = self.get_correspond_block(p)
+            x, y = self.get_block(p)
             self.blocks[x][y].append(p)
 
     def subtract_frame(self, frame):
         for p in frame:
-            x, y = self.get_correspond_block(p)
+            x, y = self.get_block(p)
             self.blocks[x][y].remove(p)
 
-    def get_correspond_stability(self, point):
-        neighbors = self.get_correspond_neighbors(point)
+    def get_stability(self, point):
+        neighbors = self.get_neighbors(point)
         stability = 0
         for n in neighbors:
             for p in n:
@@ -272,3 +280,10 @@ class FrameService:
                 return self.hitmap.filter_frame(frame)
 
         return MultiFrameStablizer(n)
+
+if __name__ == '__main__':
+    blocks = Blocks(20, 20)
+    blocks.resolution = 5
+
+    p = Point(-49.99999, 0.00001)
+    print(blocks.translate_axis(p))
