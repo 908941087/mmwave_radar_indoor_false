@@ -32,11 +32,12 @@ class PCL_process:
 
     def stablize_preframe(self):
         # rospy.loginfo("Stablize ====================")
-        stablizer = Frame.FrameService.get_multi_frame_stablizer(2)
-        current_frame = Frame.FrameService.point_cloud_to_frame(self.pc2)
+        frame_service = Frame.FrameService()
+        stablizer = frame_service.get_multi_frame_stablizer(2)
+        current_frame = frame_service.point_cloud_to_frame(self.pc2)
         stable_frame = stablizer.update(current_frame)
         if stable_frame is not None:
-            return Frame.FrameService.frame_to_point_cloud(stable_frame)
+            return frame_service.frame_to_point_cloud(stable_frame)
 
     def statistical_outlier_removal(self):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)

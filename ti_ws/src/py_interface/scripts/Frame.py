@@ -1,5 +1,5 @@
-from sensor_msgs.msg import PointCloud2, std_msgs
-from sensor_msgs import point_cloud2
+# from sensor_msgs.msg import PointCloud2, std_msgs
+# from sensor_msgs import point_cloud2
 from math import sqrt, pow, floor
 from collections import deque
 
@@ -62,7 +62,7 @@ class Frame:
         self.points.append(point)
         self.length += 1
 
-    def __next__(self):
+    def next(self):
         if self.index == self.length - 1:
             raise StopIteration
         else:
@@ -74,10 +74,10 @@ class Frame:
         return self
 
     def __repr__(self):
-        s = ""
+        s = "["
         for p in self.points:
-            s += str(p)
-        return s
+            s += "    " + str(p)
+        return s + "]"
 
     def __str__(self):
         return self.__repr__()
@@ -102,10 +102,10 @@ class Blocks():
 
     def get_block(self, point):
         x, y = self.translate_axis(point)
-        x = floor(x / self.resolution)
-        y = floor(y / self.resolution)
+        x = int(floor(x / self.resolution))
+        y = int(floor(y / self.resolution))
         if not (0 <= x < self.col and 0 <= y < self.row):
-            raise IndexError("Invalid index.")
+            raise IndexError("Point is not inside the map.")
         return x, y
 
     def get_neighbors(self, point):
@@ -128,21 +128,23 @@ class Blocks():
         diff_y = y - (block_y * self.resolution + self.resolution / 2)
         neighbors = []
         neighbors.append([block_x, block_y])
-        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col - 1), block_y])
-        neighbors.append([block_x, clamp(block_y + sgn(diff_y), 0, self.row - 1)])
-        neighbors.append([clamp(block_x + sgn(diff_x), 0, self.col - 1), clamp(block_y + sgn(diff_y), 0, self.row - 1)])
+        neighbors.append([int(clamp(block_x + sgn(diff_x), 0, self.col - 1)), block_y])
+        neighbors.append([block_x, int(clamp(block_y + sgn(diff_y), 0, self.row - 1))])
+        neighbors.append([int(clamp(block_x + sgn(diff_x), 0, self.col - 1)), int(clamp(block_y + sgn(diff_y), 0, self.row - 1))])
         return neighbors
 
     def get_stability(self, point):
-        return 0
+        pass
 
     def filter_frame(self, frame, threshold=0):  # Set threshold to achieve different out rate
         f = Frame()
         f.header = frame.header
+        f.fields = frame.fields
         for point in frame:
             stability = self.get_stability(point)
             if stability >= threshold:
                 f.append(point)
+                f.width += 1
         return f
     
 
@@ -196,8 +198,9 @@ class HitMap(Blocks):
         neighbors = self.get_neighbors(point)
         stability = 0
         for n in neighbors:
-            for p in n:
-                stability += p.intensity / point.dist(p)
+            for p in self.blocks[n[0]][n[1]]:
+                if not p == point:
+                    stability += p.intensity / pow(point.dist(p), 2)
         return stability
 
 
@@ -213,32 +216,37 @@ class FrameService:
                 temp_frame = Frame()
                 current_frame_number = 0
                 for line in lines:
-                    if not len(line) == 0:
+                    if not len(line) == 1:
                         temp = eval(line)
-                        if not current_frame_number == temp.frame:
+                        if not current_frame_number == temp['frame'] and not temp_frame.length == 0:
                             frames.append(temp_frame)
+                            # print(temp_frame)
                             temp_frame = Frame()
-                        temp_frame.append(Point(temp.x, temp.y))
+                        current_frame_number = temp['frame']
+                        temp_frame.append(Point(temp['x'], temp['y']))
                 frames.append(temp_frame)  # the last frame
             return frames
         except Exception:
             print("Could not parse file.")
+            raise Exception
 
     def point_cloud_to_frame(self, data):
         f = Frame()
         try:
             gen = point_cloud2.read_points(data)
             f.header = data.header
+            f.fields = data.fields
             for p in gen:
                 f.append(Point(p[0], p[1], p[2], p[3]))
                 f.width += 1
             return f
         except TypeError:
             print("Could not parse point_cloud2.")
+            raise TypeError
 
     def frame_to_point_cloud(self, frame):
         header = frame.header
-        points = [(i.x, i.y, i.z, i.intensity) for i in frame.points]
+        points = [(i.x, i.y, i.z, i.intensity) for i in frame]
         return point_cloud2.create_cloud(header, frame.fields, points)
 
     def find_neighbors(self, source_frame, reference_frame):
@@ -248,6 +256,7 @@ class FrameService:
                 match_data_frame.extend(self.find_match_in_frame(point, reference_frame))
             f = Frame()
             f.header = source_frame.header
+            f.fields = source_frame.fields
             f.points = match_data_frame
             return f
         except TypeError as e:
@@ -265,11 +274,13 @@ class FrameService:
         class MultiFrameStablizer:
             def __init__(self, n):
                 self.frames = deque(maxlen=n)
+                self.width = 6
+                self.height = 4
                 for i in range(n):
                     self.frames.append(Frame())
 
-                col = int(10 * 100 / HitMap.resolution)
-                row = int(5 * 100 / HitMap.resolution)
+                col = int(self.width * 100 / HitMap.resolution)
+                row = int(self.height * 100 / HitMap.resolution)
                 self.hitmap = HitMap(col, row)
             
             def update(self, frame):
@@ -277,13 +288,18 @@ class FrameService:
                 self.hitmap.add_frame(self.frames[len(self.frames) - 1])
                 self.frames.popleft()
                 self.frames.append(frame)
-                return self.hitmap.filter_frame(frame)
+                return self.hitmap.filter_frame(frame, 5000)  # Change this to achieve different out rate
 
         return MultiFrameStablizer(n)
 
 if __name__ == '__main__':
-    blocks = Blocks(20, 20)
-    blocks.resolution = 5
+    frame_service = FrameService()
 
-    p = Point(-49.99999, 0.00001)
-    print(blocks.translate_axis(p))
+    frames = frame_service.get_frames_from_file("data.txt")
+
+    stablizer = frame_service.get_multi_frame_stablizer(5)
+
+    for frame in frames:
+        stable_frame = stablizer.update(frame)
+        print(stable_frame.length, frame.length)
+        print(stable_frame.length / float(frame.length))
