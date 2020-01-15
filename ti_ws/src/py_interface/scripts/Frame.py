@@ -1,5 +1,5 @@
-# from sensor_msgs.msg import PointCloud2, std_msgs
-# from sensor_msgs import point_cloud2
+from sensor_msgs.msg import PointCloud2, std_msgs
+from sensor_msgs import point_cloud2
 from math import sqrt, pow, floor
 import numpy as np
 from collections import deque
@@ -103,10 +103,11 @@ class Blocks():
 
     def get_block(self, point):
         x, y = self.translate_axis(point)
+        if not (0 <= x < self.col * self.resolution and 0 <= y < self.row * self.resolution):
+            raise IndexError("Point is not inside the map.")
         x = int(floor(x / self.resolution))
         y = int(floor(y / self.resolution))
-        if not (0 <= x < self.col and 0 <= y < self.row):
-            raise IndexError("Point is not inside the map.")
+
         return x, y
 
     def get_neighbors(self, point):
@@ -205,7 +206,7 @@ class HitMap(Blocks):
         return stability
 
 class TimeStabilityMap(Blocks):
-    resolution = 1
+    resolution = 2
 
     def __init__(self, col, row, n):
         self.col = col
@@ -277,7 +278,7 @@ class FrameService:
             f.header = data.header
             f.fields = data.fields
             for p in gen:
-                f.append(Point(p[0], p[1], p[2], p[3]))
+                f.append(Point(p[1], p[0], p[2], p[3]))
                 f.width += 1
             return f
         except TypeError:
@@ -286,7 +287,7 @@ class FrameService:
 
     def frame_to_point_cloud(self, frame):
         header = frame.header
-        points = [(i.x, i.y, i.z, i.intensity) for i in frame]
+        points = [(i.y, i.x, i.z, i.intensity) for i in frame]
         return point_cloud2.create_cloud(header, frame.fields, points)
 
     def find_neighbors(self, source_frame, reference_frame):
@@ -314,8 +315,8 @@ class FrameService:
         class MultiFrameStablizer:
             def __init__(self, n):
                 self.frames = deque(maxlen=n)
-                self.width = 6
-                self.height = 4
+                self.width = 10
+                self.height = 10
                 for i in range(n):
                     self.frames.append(Frame())
 

@@ -14,8 +14,8 @@ class PCL_process:
 
     def process(self, pc2):
         self.pc2 = pc2
-        self.passthrough_filter()
-        # self.stablize_preframe()
+        # self.passthrough_filter()
+        self.stablize_preframe()
         # self.statistical_outlier_removal()
 
     def passthrough_filter(self):
@@ -29,7 +29,7 @@ class PCL_process:
 
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
         for p in points:
-            if p[3] > 2000 and sqrt(p[0] * p[0] + p[1] * p[1]) < 4.0:
+            if p[3] > 100 and sqrt(p[0] * p[0] + p[1] * p[1]) < 4.0:
                 res_points.append((p[0], p[1], p[2], p[3]))
 
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
@@ -37,7 +37,7 @@ class PCL_process:
     def stablize_preframe(self):
         # rospy.loginfo("Stablize ====================")
         frame_service = Frame.FrameService()
-        stablizer = frame_service.get_multi_frame_stablizer(2)
+        stablizer = frame_service.get_multi_frame_stablizer(5)
         current_frame = frame_service.point_cloud_to_frame(self.pc2)
         stable_frame = stablizer.update(current_frame)
         if stable_frame is not None:
