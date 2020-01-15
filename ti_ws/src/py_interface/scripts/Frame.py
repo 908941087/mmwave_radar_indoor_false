@@ -311,12 +311,12 @@ class FrameService:
                 match.append(p)
         return match
 
-    def get_multi_frame_stablizer(self, resolution=1, frame_num=5, threshold=0):
+    def get_multi_frame_stablizer(self, width=10, height=10, resolution=1, frame_num=5, threshold=0):
         class MultiFrameStablizer:
-            def __init__(self, resolution, frame_num, threshold):
+            def __init__(self, width, height, resolution, frame_num, threshold):
                 self.frames = deque(maxlen=frame_num)
-                self.width = 10
-                self.height = 10
+                self.width = width
+                self.height = height
                 self.resolution = resolution
                 self.frame_num = frame_num
                 self.threshold = threshold
@@ -334,14 +334,14 @@ class FrameService:
                 self.frames.append(frame)
                 return self.time_stability_map.filter_frame(frame, self.threshold)  # Change this to achieve different out rate
 
-        return MultiFrameStablizer(resolution, frame_num, threshold)
+        return MultiFrameStablizer(width, height, resolution, frame_num, threshold)
 
 if __name__ == '__main__':
     frame_service = FrameService()
 
     frames = frame_service.get_frames_from_file("data.txt")
 
-    stablizer = frame_service.get_multi_frame_stablizer(resolution=1, frame_num=5, threshold=10000)
+    stablizer = frame_service.get_multi_frame_stablizer(width=10, height=10, resolution=1, frame_num=5, threshold=10000)
 
     for frame in frames:
         stable_frame = stablizer.update(frame)
