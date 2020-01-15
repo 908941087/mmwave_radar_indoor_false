@@ -1,6 +1,7 @@
 # from sensor_msgs.msg import PointCloud2, std_msgs
 # from sensor_msgs import point_cloud2
 from math import sqrt, pow, floor
+import numpy as np
 from collections import deque
 
 
@@ -148,7 +149,7 @@ class Blocks():
         return f
     
 
-class StabilityMap(Blocks):
+class BlockStabilityMap(Blocks):
     resolution = 5  # 5cm
 
     def __init__(self, col, row):
@@ -202,6 +203,45 @@ class HitMap(Blocks):
                 if not p == point:
                     stability += p.intensity / pow(point.dist(p), 2)
         return stability
+
+class TimeStabilityMap(Blocks):
+    resolution = 1
+
+    def __init__(self, col, row, n):
+        self.col = col
+        self.row = row
+        self.variances = [[None for i in range(col)] for j in range(row)]
+        self.blocks = deque(maxlen=n)
+        for i in range(n):
+            temp = BlockStabilityMap(self.col, self.row)
+            temp.resolution = self.resolution
+            self.blocks.append(temp)
+
+    def update(self, frame):
+        self.blocks.popleft()
+        block = BlockStabilityMap(self.col, self.row)
+        block.resolution = self.resolution
+        block.add_frame(frame)
+        self.blocks.append(block)
+        self.variances = [[None for i in range(self.col)] for j in range(self.row)]
+
+    def get_variance(self, x, y):
+        if self.variances[x][y] is None:
+            # print([i.stability_map[x][y] for i in self.blocks])
+            self.variances[x][y] = np.var([i.stability_map[x][y] for i in self.blocks])
+        return self.variances[x][y]
+
+    def filter_frame(self, frame, threshold=0):
+        f = Frame()
+        f.header = frame.header
+        f.fields = frame.fields
+        for p in frame:
+            x, y = self.get_block(p)
+            variance = self.get_variance(x, y)
+            # print(variance)
+            if variance <= threshold:
+                f.append(p)
+        return f
 
 
 class FrameService:
@@ -279,16 +319,15 @@ class FrameService:
                 for i in range(n):
                     self.frames.append(Frame())
 
-                col = int(self.width * 100 / HitMap.resolution)
-                row = int(self.height * 100 / HitMap.resolution)
-                self.hitmap = HitMap(col, row)
+                col = int(self.width * 100 / TimeStabilityMap.resolution)
+                row = int(self.height * 100 / TimeStabilityMap.resolution)
+                self.time_stability_map = TimeStabilityMap(col, row, n)
             
             def update(self, frame):
-                self.hitmap.subtract_frame(self.frames[0])
-                self.hitmap.add_frame(self.frames[len(self.frames) - 1])
+                self.time_stability_map.update(self.frames[len(self.frames) - 1])
                 self.frames.popleft()
                 self.frames.append(frame)
-                return self.hitmap.filter_frame(frame, 5000)  # Change this to achieve different out rate
+                return self.time_stability_map.filter_frame(frame, 10000)  # Change this to achieve different out rate
 
         return MultiFrameStablizer(n)
 
