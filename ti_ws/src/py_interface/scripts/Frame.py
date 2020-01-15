@@ -1,5 +1,5 @@
-from sensor_msgs.msg import PointCloud2, std_msgs
-from sensor_msgs import point_cloud2
+# from sensor_msgs.msg import PointCloud2, std_msgs
+# from sensor_msgs import point_cloud2
 from math import sqrt, pow, floor
 import numpy as np
 from collections import deque
@@ -311,33 +311,37 @@ class FrameService:
                 match.append(p)
         return match
 
-    def get_multi_frame_stablizer(self, n):
+    def get_multi_frame_stablizer(self, resolution=1, frame_num=5, threshold=0):
         class MultiFrameStablizer:
-            def __init__(self, n):
-                self.frames = deque(maxlen=n)
+            def __init__(self, resolution, frame_num, threshold):
+                self.frames = deque(maxlen=frame_num)
                 self.width = 10
                 self.height = 10
-                for i in range(n):
+                self.resolution = resolution
+                self.frame_num = frame_num
+                self.threshold = threshold
+                for i in range(self.frame_num):
                     self.frames.append(Frame())
 
-                col = int(self.width * 100 / TimeStabilityMap.resolution)
-                row = int(self.height * 100 / TimeStabilityMap.resolution)
-                self.time_stability_map = TimeStabilityMap(col, row, n)
+                col = int(self.width * 100 / self.resolution)
+                row = int(self.height * 100 / self.resolution)
+                self.time_stability_map = TimeStabilityMap(col, row, frame_num)
+                self.time_stability_map.resolution = self.resolution
             
             def update(self, frame):
                 self.time_stability_map.update(self.frames[len(self.frames) - 1])
                 self.frames.popleft()
                 self.frames.append(frame)
-                return self.time_stability_map.filter_frame(frame, 10000)  # Change this to achieve different out rate
+                return self.time_stability_map.filter_frame(frame, self.threshold)  # Change this to achieve different out rate
 
-        return MultiFrameStablizer(n)
+        return MultiFrameStablizer(resolution, frame_num, threshold)
 
 if __name__ == '__main__':
     frame_service = FrameService()
 
     frames = frame_service.get_frames_from_file("data.txt")
 
-    stablizer = frame_service.get_multi_frame_stablizer(5)
+    stablizer = frame_service.get_multi_frame_stablizer(resolution=1, frame_num=5, threshold=10000)
 
     for frame in frames:
         stable_frame = stablizer.update(frame)

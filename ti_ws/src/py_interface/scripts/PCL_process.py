@@ -37,7 +37,7 @@ class PCL_process:
     def stablize_preframe(self):
         # rospy.loginfo("Stablize ====================")
         frame_service = Frame.FrameService()
-        stablizer = frame_service.get_multi_frame_stablizer(5)
+        stablizer = frame_service.get_multi_frame_stablizer(resolution=1, frame_num=5, threshold=10000)
         current_frame = frame_service.point_cloud_to_frame(self.pc2)
         stable_frame = stablizer.update(current_frame)
         if stable_frame is not None:
