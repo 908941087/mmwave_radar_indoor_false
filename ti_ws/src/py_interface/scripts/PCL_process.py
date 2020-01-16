@@ -12,11 +12,13 @@ class PCL_process:
     def __init__(self):
         self.pc2 = None
 
-    def process(self, pc2):
+    def process(self, frame_service, stablizer, pc2):
+        self.frame_service = frame_service
+        self.stablizer = stablizer
         self.pc2 = pc2
-        # self.passthrough_filter()
-        self.stablize_preframe()
-        # self.statistical_outlier_removal()
+        self.passthrough_filter()
+        # self.stablize_preframe()
+        self.statistical_outlier_removal()
 
     def passthrough_filter(self):
         # rospy.loginfo("Passthrough ====================")
@@ -25,7 +27,7 @@ class PCL_process:
         res_points = []
         intensity_list = [p[3] for p in points]
         ave_intensity = sum(intensity_list) / len(intensity_list)
-        rospy.loginfo("AVE SNR: %s", str(ave_intensity))
+        # rospy.loginfo("AVE SNR: %s", str(ave_intensity))
 
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
         for p in points:
@@ -36,12 +38,10 @@ class PCL_process:
 
     def stablize_preframe(self):
         # rospy.loginfo("Stablize ====================")
-        frame_service = Frame.FrameService()
-        stablizer = frame_service.get_multi_frame_stablizer(width=10, height=10, resolution=1, frame_num=5, threshold=10000)
-        current_frame = frame_service.point_cloud_to_frame(self.pc2)
-        stable_frame = stablizer.update(current_frame)
+        current_frame = self.frame_service.point_cloud_to_frame(self.pc2)
+        stable_frame = self.stablizer.update(current_frame)
         if stable_frame is not None:
-            return frame_service.frame_to_point_cloud(stable_frame)
+            self.pc2 = self.frame_service.frame_to_point_cloud(stable_frame)
 
     def statistical_outlier_removal(self):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)

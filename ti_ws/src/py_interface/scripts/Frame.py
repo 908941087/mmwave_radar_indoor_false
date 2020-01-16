@@ -1,5 +1,8 @@
-# from sensor_msgs.msg import PointCloud2, std_msgs
-# from sensor_msgs import point_cloud2
+import copy
+
+import rospy
+from sensor_msgs.msg import PointCloud2, std_msgs
+from sensor_msgs import point_cloud2
 from math import sqrt, pow, floor
 import numpy as np
 from collections import deque
@@ -40,13 +43,14 @@ class Point:
         return Point(x, y)
 
     def __eq__(self, other):
-        return (self.x == other.x and 
-                self.y == other.y and 
-                self.z == other.z and 
+        return (self.x == other.x and
+                self.y == other.y and
+                self.z == other.z and
                 self.intensity == other.intensity)
 
     def dist(self, other):
         return sqrt(pow((self.x - other.x), 2) + pow((self.y - other.y), 2))
+
 
 class Frame:
 
@@ -58,7 +62,7 @@ class Frame:
         self.height = 1
         self.width = 0
         self.length = 0
-        
+
     def append(self, point):
         self.points.append(point)
         self.length += 1
@@ -89,6 +93,7 @@ class Frame:
     def __len__(self):
         return self.length
 
+
 class Blocks():
     resolution = 1
 
@@ -108,7 +113,7 @@ class Blocks():
         x = int(floor(x / self.resolution))
         y = int(floor(y / self.resolution))
 
-        return x, y
+        return y, x
 
     def get_neighbors(self, point):
         # get its 4 nearest blocks
@@ -132,7 +137,8 @@ class Blocks():
         neighbors.append([block_x, block_y])
         neighbors.append([int(clamp(block_x + sgn(diff_x), 0, self.col - 1)), block_y])
         neighbors.append([block_x, int(clamp(block_y + sgn(diff_y), 0, self.row - 1))])
-        neighbors.append([int(clamp(block_x + sgn(diff_x), 0, self.col - 1)), int(clamp(block_y + sgn(diff_y), 0, self.row - 1))])
+        neighbors.append(
+            [int(clamp(block_x + sgn(diff_x), 0, self.col - 1)), int(clamp(block_y + sgn(diff_y), 0, self.row - 1))])
         return neighbors
 
     def get_stability(self, point):
@@ -211,6 +217,7 @@ class TimeStabilityMap(Blocks):
     def __init__(self, col, row, n):
         self.col = col
         self.row = row
+        self.length = n
         self.variances = [[None for i in range(col)] for j in range(row)]
         self.blocks = deque(maxlen=n)
         for i in range(n):
@@ -240,7 +247,7 @@ class TimeStabilityMap(Blocks):
             x, y = self.get_block(p)
             variance = self.get_variance(x, y)
             # print(variance)
-            if variance <= threshold:
+            if variance < threshold:
                 f.append(p)
         return f
 
@@ -331,8 +338,10 @@ class FrameService:
             def update(self, frame):
                 # self.frames.popleft()
                 # self.frames.append(frame)
-                temp = self.time_stability_map.filter_frame(frame, self.threshold)  # Change this to achieve different out rate
+                temp = self.time_stability_map.filter_frame(frame,
+                                                            self.threshold)  # Change this to achieve different out rate
                 self.time_stability_map.update(frame)
+                rospy.loginfo("Out rate: %s\n", len(temp.points) / float(len(frame.points)))
                 return temp
 
         return MultiFrameStablizer(width, height, resolution, frame_num, threshold)
@@ -342,7 +351,8 @@ if __name__ == '__main__':
 
     frames = frame_service.get_frames_from_file("data.txt")
 
-    stablizer = frame_service.get_multi_frame_stablizer(width=10, height=10, resolution=0.5, frame_num=5, threshold=10000)
+    stablizer = frame_service.get_multi_frame_stablizer(width=10, height=10, resolution=0.5, frame_num=5,
+                                                        threshold=10000)
 
     for frame in frames:
         stable_frame = stablizer.update(frame)

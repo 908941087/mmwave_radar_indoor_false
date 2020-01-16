@@ -47,10 +47,13 @@ from std_msgs.msg import String
 
 pub = None
 
+frame_service = Frame.FrameService()
+stablizer = frame_service.get_multi_frame_stablizer(width=8, height=4, resolution=0.5, frame_num=3, threshold=5000)
 
 def callback(data):
+    global frame_service, stablizer
     PCL_Ins = PCL_process.PCL_process()
-    PCL_Ins.process(data)
+    PCL_Ins.process(frame_service, stablizer, data)
     pub.publish(PCL_Ins.genrate_res())
 
 
