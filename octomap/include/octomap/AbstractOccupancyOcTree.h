@@ -189,7 +189,7 @@ namespace octomap {
     /// sets the probability for a "hit" (will be converted to logodds) - sensor model
     void setProbHit(double prob){prob_hit_log = logodds(prob); assert(prob_hit_log >= 0.0);}
     /// sets the probability for a "miss" (will be converted to logodds) - sensor model
-    void setProbMiss(double prob){prob_miss_log = logodds(prob); assert(prob_miss_log <= 0.0);}
+    void setProbMiss(double prob){prob_miss_log = logodds(prob);} //assert(prob_miss_log <= 0.0);} FIXME
     /// sets the minimum threshold for occupancy clamping (sensor model)
     void setClampingThresMin(double thresProb){clamping_thres_min = logodds(thresProb); }
     /// sets the maximum threshold for occupancy clamping (sensor model)
