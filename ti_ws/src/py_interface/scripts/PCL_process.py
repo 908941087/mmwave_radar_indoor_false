@@ -18,20 +18,20 @@ class PCL_process:
         self.pc2 = pc2
         self.passthrough_filter()
         # self.stablize_preframe()
-        self.statistical_outlier_removal()
+        # self.statistical_outlier_removal()
 
     def passthrough_filter(self):
-        # rospy.loginfo("Passthrough ====================")
+        rospy.loginfo("Passthrough ====================")
 
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
         res_points = []
         intensity_list = [p[3] for p in points]
-        ave_intensity = sum(intensity_list) / len(intensity_list)
+        # ave_intensity = sum(intensity_list) / len(intensity_list)
         # rospy.loginfo("AVE SNR: %s", str(ave_intensity))
 
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
         for p in points:
-            if p[3] > 100 and sqrt(p[0] * p[0] + p[1] * p[1]) < 4.0:
+            if p[3] > 100 and sqrt(p[0] * p[0] + p[1] * p[1]) < 2.0:
                 res_points.append((p[0], p[1], p[2], p[3]))
 
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
