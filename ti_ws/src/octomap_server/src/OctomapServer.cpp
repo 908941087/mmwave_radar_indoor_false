@@ -392,6 +392,8 @@ void OctomapServer::insertScan(const tf::Point& sensorOriginTf, const PCLPointCl
   // all other points: free on ray, occupied on endpoint:
   for (PCLPointCloud::const_iterator it = nonground.begin(); it != nonground.end(); ++it){
     point3d point(it->x, it->y, it->z);
+        //new function
+    transPoint2wall(point, sensorOrigin);
     // maxrange check
     if ((m_maxRange < 0.0) || ((point - sensorOrigin).norm() <= m_maxRange) ) {
 
@@ -1273,6 +1275,18 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
   }
 
   return color;
+}
+
+void OctomapServer::transPoint2wall(point3d& point, point3d sensorOrigin) { //self function
+  point3d midpoint = point + sensorOrigin;
+  midpoint /= 2;
+  octomap::OcTreeKey key;
+  m_octree->coordToKeyChecked(midpoint, key);
+  //use OcTreeBaseImpl::search()
+  OcTreeNode* node = m_octree->search(key);
+  if(node != NULL && node->getLogOdds() > 0) {
+    point = midpoint;
+  }
 }
 }
 

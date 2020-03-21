@@ -99,6 +99,7 @@ public:
   virtual bool openFile(const std::string& filename);
 
 protected:
+  void transPoint2wall(octomap::point3d& point, octomap::point3d sensorOrigin); //Yjh_Function
   inline static void updateMinKey(const octomap::OcTreeKey& in, octomap::OcTreeKey& min) {
     for (unsigned i = 0; i < 3; ++i)
       min[i] = std::min(in[i], min[i]);
