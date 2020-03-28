@@ -18,3 +18,39 @@ https://github.com/mgualti/PointCloudsPython
 > roslaunch ti_mmwave_rospkg rviz_6843_2d.launch
 6. 启动回放数据 (-l 为循环播放，按空格可暂停)
 > rosbag play input.bag -l
+
+# static navigation
+
+​	1. 启动minimal.launch
+
+> roslaunch turtlebot_bringup minimal.launch
+
+​	2. 启动过滤节点
+
+> rosrun py_interface listener.py
+
+3. 启动建图相关节点
+
+> roslaunch turtlebot_mmwave_launchers radar_navigation.launch
+
+4. 启动rviz 
+
+> rviz rosrun rviz rviz -d ~/catkin_ws/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
+
+# auto navigation
+
+​	1. 启动minimal.launch
+
+> roslaunch turtlebot_bringup minimal.launch
+
+​	2. 启动过滤节点
+
+> rosrun py_interface listener.py
+
+3. 启动建图相关节点
+
+> roslaunch turtlebot_mmwave_launchers radar_navigation_auto.launch
+
+4. 启动rviz 
+
+> rviz rosrun rviz rviz -d ~/catkin_ws/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
