@@ -1,0 +1,31 @@
+<launch>
+
+  <!-- 3D sensor -->
+  <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
+
+  <!-- Add nodes to filter/limit Radar data before using it for navigation -->
+  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
+  </include>
+
+
+  <!-- Fake localization node allows directly setting initial pose and goal -->
+  <node pkg="fake_localization" type="fake_localization" name="fake_localization">
+    <param name="use_map_topic" value="true"/>
+    <remap from="base_pose_ground_truth" to="odom"/>
+  </node>
+
+  <!-- Move base -->
+  <arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>
+  <include file="$(find turtlebot_navigation)/launch/includes/move_base_auto.launch.xml">
+    <arg name="custom_param_file" value="$(arg custom_param_file)"/>
+  </include>
+
+  <!-- Convert voxel_grid to point cloud for visualization and debug -->
+  <node name="voxel_grid_2_point_cloud" pkg="costmap_2d" type="costmap_2d_cloud">
+    <remap from="voxel_grid" to="/move_base/local_costmap/obstacle_layer/voxel_grid"/>
+    <remap from="voxel_marked_cloud" to="/move_base/local_costmap/obstacle_layer/marked_cloud"/>
+    <remap from="voxel_unknown_cloud" to="/move_base/local_costmap/obstacle_layer/unknown_cloud"/>
+  </node>
+
+</launch>
+
