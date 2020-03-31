@@ -1277,17 +1277,31 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
   return color;
 }
 
-void OctomapServer::transPoint2wall(point3d& point, point3d sensorOrigin) { //self function
-  point3d midpoint = point + sensorOrigin;
-  midpoint /= 2;
-  octomap::OcTreeKey key;
-  m_octree->coordToKeyChecked(midpoint, key);
-  //use OcTreeBaseImpl::search()
-  OcTreeNode* node = m_octree->search(key);
-  if(node != NULL && node->getLogOdds() > 0) {
-    point = midpoint;
-  }
-}
+    void OctomapServer::transPoint2wall(point3d& point, point3d sensorOrigin) {
+        // Neighbour arguments (self func)
+        double delta = 0.00;
+        int step = 2;
+
+        point3d originPart, pointPart, midpoint;
+        octomap::OcTreeKey key;
+        for(int disRate = 2; disRate <= step; ++disRate){
+            originPart = sensorOrigin * ((disRate-1.0) / disRate);
+            pointPart = point * (1.0/disRate);
+            midpoint = originPart + pointPart;
+            for (int i = -step; i <= step; ++i){
+                for(int j = -step; j <=step; ++j){
+                    point3d deltaP(i * delta, j * delta, 0.0);
+                    point3d tmpP = midpoint + deltaP;
+                    m_octree->coordToKeyChecked(tmpP, key);
+                    //use OcTreeBaseImpl::search()
+                    OcTreeNode* node = m_octree->search(key);
+                    if(node != NULL && node->getLogOdds() > 0.5) {
+                        point = midpoint;
+                    }
+                }
+            }
+        }
+    }
 }
 
 
