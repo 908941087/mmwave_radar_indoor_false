@@ -186,4 +186,4 @@ def get_gaussian_weight(n):
 
 
 if __name__ == "__main__":
-    print(get_gaussian_weight(7))
+    print(get_points_from_pcd('0.pcd'))
