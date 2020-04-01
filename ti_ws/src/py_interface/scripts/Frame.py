@@ -1,5 +1,3 @@
-import copy
-
 import rospy
 from sensor_msgs.msg import PointCloud2, std_msgs
 from sensor_msgs import point_cloud2
@@ -219,23 +217,23 @@ class TimeStabilityMap(Blocks):
         self.row = row
         self.length = n
         self.variances = [[None for i in range(col)] for j in range(row)]
-        self.blocks = deque(maxlen=n)
+        self.maps = deque(maxlen=n)
         for i in range(n):
             temp = BlockStabilityMap(self.col, self.row)
             temp.resolution = self.resolution
-            self.blocks.append(temp)
+            self.maps.append(temp)
 
     def update(self, frame):
-        self.blocks.popleft()
-        block = BlockStabilityMap(self.col, self.row)
-        block.resolution = self.resolution
-        block.add_frame(frame)
-        self.blocks.append(block)
+        self.maps.popleft()
+        temp_map = BlockStabilityMap(self.col, self.row)
+        temp_map.resolution = self.resolution
+        temp_map.add_frame(frame)
+        self.maps.append(temp_map)
         self.variances = [[None for i in range(self.col)] for j in range(self.row)]
 
     def get_variance(self, x, y):
         if self.variances[x][y] is None:
-            # print([i.stability_map[x][y] for i in self.blocks])
+            # print([i.stability_map[x][y] for i in self.maps])
             self.variances[x][y] = np.var([i.stability_map[x][y] for i in self.blocks])
         return self.variances[x][y]
 
@@ -347,14 +345,42 @@ class FrameService:
         return MultiFrameStablizer(width, height, resolution, frame_num, threshold)
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+
     frame_service = FrameService()
 
     frames = frame_service.get_frames_from_file("data.txt")
+    index = -1
+
+    def get_frame():
+        global frames, index
+        index += 1
+        index = index % len(frames)
+        return frames[index]
 
     stablizer = frame_service.get_multi_frame_stablizer(width=10, height=10, resolution=0.5, frame_num=5,
                                                         threshold=10000)
 
-    for frame in frames:
-        stable_frame = stablizer.update(frame)
-        print(stable_frame.length, frame.length)
-        print(stable_frame.length / float(frame.length))
+    fig = plt.figure()
+
+    xs = []
+    ys = []
+
+    def to_be_animated(i):
+        # global xs, ys
+
+        current_frame  = get_frame()
+        # xs = [i.x for i in current_frame]
+        # ys = [i.y for i in current_frame]
+        points = [[i.x, i.y] for i in current_frame]
+        scatter.set_offsets(points)
+
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.set_xlim(-8, 8)
+    ax1.set_ylim(0, 10)
+
+    scatter = ax1.scatter(xs, ys, s=10, color='r')
+
+    ani = animation.FuncAnimation(fig, to_be_animated, interval=20, blit=False)
+    plt.show()
