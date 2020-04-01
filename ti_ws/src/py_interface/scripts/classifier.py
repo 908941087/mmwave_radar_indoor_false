@@ -39,19 +39,20 @@
 import rospy
 from std_msgs.msg import String
 
-def talker():
-    pub = rospy.Publisher('chatter', String, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+def classifier():
+    pub = rospy.Publisher('/classified_point_cloud', PointCloud2, queue_size=10)
+    rospy.init_node('classifier', anonymous=True)
+    pub_interval = 1000
     while not rospy.is_shutdown():
-        hello_str = "hello world %s" % rospy.get_time()
-        rospy.loginfo(hello_str)
-        pub.publish(hello_str)
-        rate.sleep()
+        tip_str = "Publish classified map " + rospy.get_time()
+        rospy.loginfo(tip_str)
+        # TODO: Classifiy pointcloud and publish
+        # pub.publish(hello_str)
+        rospy.sleep(pub_interval)
 
 
 if __name__ == '__main__':
     try:
-        talker()
+        classifier()
     except rospy.ROSInterruptException:
         pass
