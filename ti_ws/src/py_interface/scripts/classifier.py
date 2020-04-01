@@ -37,21 +37,43 @@
 ## to the 'chatter' topic
 
 import rospy
-from std_msgs.msg import String
+from sensor_msgs.msg import PointCloud2
+import sensor_msgs.point_cloud2
+from EnvClassifier import points_generator
+
+pub = None
+pc2_generator = points_generator.PointsGenerator()
 
 def classifier():
-    pub = rospy.Publisher('/classified_point_cloud', PointCloud2, queue_size=10)
     rospy.init_node('classifier', anonymous=True)
-    pub_interval = 1000
-    while not rospy.is_shutdown():
-        tip_str = "Publish classified map " + rospy.get_time()
-        rospy.loginfo(tip_str)
-        # TODO: Classifiy pointcloud and publish
-        # pub.publish(hello_str)
-        rospy.sleep(pub_interval)
+    pub_interval = 200
+    # Log
+    tip_str = "Publish classified map " + str(rospy.get_time())
+    rospy.loginfo(tip_str)
+    rospy.Subscriber('/filtered_point_cloud_centers', PointCloud2, classifier_cb)
+    #
+    rospy.sleep(pub_interval)
+    rospy.spin()
+
+
+
+def classifier_cb(data):
+    global pc2_generator
+    point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
+    points = [[i[0], i[1]] for i in point_cloud2]
+    classified_points = pc2_generator.generate(points)
+    if classified_points is None:
+        rospy.loginfo("No enough points for classification")
+        return
+    res_points = []
+    for p in classified_points:
+        res_points.append((p[0], p[1], 0.0))
+    pub_points = sensor_msgs.point_cloud2.create_cloud(data.header, data.fields, res_points)
+    pub.publish(pub_points)
 
 
 if __name__ == '__main__':
+    pub = rospy.Publisher('/classified_point_cloud', PointCloud2, queue_size=10)
     try:
         classifier()
     except rospy.ROSInterruptException:

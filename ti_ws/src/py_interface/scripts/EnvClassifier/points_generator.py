@@ -17,7 +17,10 @@ class PointsGenerator:
         controller.set_points(points)
         controller.set_parts(divider, 0.5)
         reg = LinearRegressor()
-        controller.fit(reg)
+        try:
+            controller.fit(reg)
+        except Exception:
+            return None
         result = []
         
         for part, param, ends in zip(controller.parts, controller.parameters, controller.intersections):
