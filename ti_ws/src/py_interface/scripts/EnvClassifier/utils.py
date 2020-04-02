@@ -23,6 +23,20 @@ def get_intersection(line1, line2):
         return intersection
 
 
+def get_avg_line(line1, line2):
+    # get the average line from line1 and line2
+    slope1 = k2slope(line1[0])
+    slope2 = k2slope(line2[0])
+    slope = (slope1 + slope2) / 2.0
+    if abs(slope1 - slope2) > 90:
+        if slope < 90: slope += 90
+        else: slope -= 90
+    k = slope2k(slope) 
+    intersection = get_intersection(line1, line2)
+    b = intersection[1] - k * intersection[0]
+    return [k, b]
+
+
 def diff_vertically(point, line):
     return abs(point[1] - line[0] * point[0] - line[1])
 
@@ -122,6 +136,12 @@ def k2slope(k):
     return deg
 
 
+def slope2k(slope):
+    if slope == 90: return float('inf')
+    angle = np.radians(slope)
+    return np.sin(angle) / np.cos(angle)
+
+
 def get_k_b(points):
     a, b, c = line_fit(points)
     if b != 0:
@@ -186,4 +206,4 @@ def get_gaussian_weight(n):
 
 
 if __name__ == "__main__":
-    print(get_points_from_pcd('0.pcd'))
+    print(get_avg_line([2, 0], [-1, 0]))

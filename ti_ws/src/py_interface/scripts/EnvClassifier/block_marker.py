@@ -91,7 +91,7 @@ class Block:
 
     def get_center(self):
         if self.center is None: 
-            self.center = [np.average([p[0] for p in self.points]), np.average([p[1] for p in points])]
+            self.center = [np.average([p[0] for p in self.points]), np.average([p[1] for p in self.points])]
         return self.center
 
     def get_density(self):

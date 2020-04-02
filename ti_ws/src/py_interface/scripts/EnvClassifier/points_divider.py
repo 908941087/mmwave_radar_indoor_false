@@ -6,7 +6,7 @@ points 为一个二维数组，其中的数据为点的坐标，例如, [[1, 2],
 """
 
 from block_marker import BlockMarker, Block
-from utils import get_points_from_pcd, get_slope, get_k_b, dist, k2slope, get_gaussian_weight
+from utils import *
 from collections import deque
 from numpy import average
 from scipy import special
@@ -74,7 +74,7 @@ class PointsDivider(PointsDividerInterface):
         while (len(visited) < blocks_count):
             part = ContinuousPart([], True)
             isolated = True
-            slopes = []
+            avg_line = None
             q = deque()
             cur = start
             # 在Block为空的地方漫游，直到找到第一个不为空的Block
@@ -89,7 +89,7 @@ class PointsDivider(PointsDividerInterface):
             # 找到不为空的Block，开始向part中填充点，并向四周扩张
             q.append(cur)
             while len(q) != 0:
-                cur = q.pop()
+                cur = q.popleft()
                 visited.append(cur)
                 if cur in non_isolated_blocks: isolated = False
                 part.points.extend(self.get_block(cur).points)
@@ -100,11 +100,12 @@ class PointsDivider(PointsDividerInterface):
                             edge.append(pos)
                     continue
                 else:
-                    slopes.append(k2slope(self.get_block(cur).param[0]))
+                    if avg_line is None: avg_line = self.get_block(cur).param
+                    else: avg_line = get_avg_line(avg_line, self.get_block(cur).param)
                     for pos in surroundings:
                         if pos in visited:
                             continue
-                        elif self.is_connected(cur, pos, slopes):
+                        elif self.is_connected(cur, pos, avg_line):
                             if pos not in q:
                                 q.append(pos)
                             if pos in edge:
@@ -124,35 +125,64 @@ class PointsDivider(PointsDividerInterface):
             else: break
         return parts
     
-    def is_connected(self, pos1, pos2, slopes):
+    def is_connected(self, pos1, pos2, avg_line):
         """
         Check if two blocks are connected.
         @param pos1: position of first block
         @param pos2: position of second block
-        @param slopes: the slope of the blocks currently in that part
+        @param avg_line: the average line of the blocks currently in that part
         """
         block1 = self.get_block(pos1)
         block2 = self.get_block(pos2)
 
+        def is_near(block1, block2, avg_line):
+            """
+            Returns True if the two blocks are near or block2 is near avg_line
+            """
+            if dist(block1.get_center(), block2.get_center()) < self.marker.resolution: return True
+            intersection1 = block1.get_intersections()
+            intersection2 = block2.get_intersections()
+            dists = []
+            for p1 in intersection1:
+                for p2 in intersection2:
+                    dists.append(dist(p1, p2))
+            dists.sort()
+            if dists[0] < self.marker.resolution / 3.0: return True
+            if (dists[0] + dists[1]) / 2.0 < self.marker.resolution / 2.0: return True
+            if dist_point2line(block2.get_center(), avg_line) < self.marker.resolution / 2.0: return True
+
+        def same_direction(block1, block2):
+            """
+            Check if two blocks are in the same direction
+            """
+            slope2 = block2.get_slope()
+            slope = k2slope(avg_line[0])
+            if abs(slope - slope2) < 45: return True
+
         # 两个格子只要有一个是空，则认为不连接
         if (block1.param == None or block2.param == None): return False
 
-        # 若两个格子中的线的两个端点之间的距离最小值小于一个阈值，则认为两个格子应该连接
-        intersection1 = block1.get_intersections()
-        intersection2 = block2.get_intersections()
-        dists = []
-        for p1 in intersection1:
-            for p2 in intersection2:
-                dists.append(dist(p1, p2))
-        dists.sort()
-        if dists[0] < self.marker.resolution / 3.0: return True
-        if (dists[0] + dists[1]) / 2.0 < self.marker.resolution / 2.0: return True
+        near = is_near(block1, block2, avg_line)
+        same_direction = same_direction(block1, block2)
 
-        # 若pos2的方向与整体的方向差别小于一个阈值，则认为pos2与整体应该连接
-        slope2 = block2.get_slope()
-        weights = get_gaussian_weight(len(slopes)) # 使用高斯加权平均获取当前part的平均倾角
-        slope = sum([i * j for i, j in zip(slopes, weights)])
-        if abs(slope - slope2) < 45: return True
+        if near:
+            if same_direction:
+                return True
+            else: # near but different direction, check if the target block is on the direction of the part
+                intersection = get_intersection(block2.param, avg_line)
+                ends = block2.get_intersections()
+                if ends[0][0] <= intersection[0] <= ends[1][0]: return True
+        else:
+            if same_direction: # not so near, but on the same direction, further check if the two blocks are close enough
+                intersection1 = block1.get_intersections()
+                intersection2 = block2.get_intersections()
+                dists = []
+                for p1 in intersection1:
+                    for p2 in intersection2:
+                        dists.append(dist(p1, p2))
+                dists.sort()
+                if dists[0] < self.marker.resolution / 3.0: return True
+                if (dists[0] + dists[1]) / 2.0 < self.marker.resolution / 2.0: return True
 
         return False
 
