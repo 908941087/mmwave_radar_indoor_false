@@ -150,6 +150,7 @@ class PointsDivider(PointsDividerInterface):
             if dists[0] < self.marker.resolution / 3.0: return True
             if (dists[0] + dists[1]) / 2.0 < self.marker.resolution / 2.0: return True
             if dist_point2line(block2.get_center(), avg_line) < self.marker.resolution / 2.0: return True
+            return False
 
         def same_direction(block1, block2):
             """
@@ -158,6 +159,7 @@ class PointsDivider(PointsDividerInterface):
             slope2 = block2.get_slope()
             slope = k2slope(avg_line[0])
             if abs(slope - slope2) < 45: return True
+            return False
 
         # 两个格子只要有一个是空，则认为不连接
         if (block1.param == None or block2.param == None): return False
@@ -219,7 +221,8 @@ if __name__ == "__main__":
         y_vals = intercept + slope * x_vals
         plt.plot(x_vals, y_vals, '--')
 
-    points = get_points_from_pcd("0.pcd")
+    points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/south_one.pcd")
+    points = filter_points(points, 0, 2, 0, 2)
 
     padding = 0.2
     xy_lim = get_xy_lim(points)
@@ -239,7 +242,7 @@ if __name__ == "__main__":
     print(len(parts))
 
     for part in parts:
-        ax1.scatter([i[0] for i in part.points], [i[1] for i in part.points], s=1)
+        ax1.scatter([i[0] for i in part.points], [i[1] for i in part.points], s=8)
 
     # index = 6
     # ax1.scatter([i[0] for i in parts[index].points], [i[1] for i in parts[index].points], s=1)

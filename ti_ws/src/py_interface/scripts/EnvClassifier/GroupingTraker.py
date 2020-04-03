@@ -27,6 +27,7 @@ class GroupingTracker:
     def generate_points_per_cluster(self):
         self.res_pc2 = []
         # TODO: Use ClassMarker to filter noise cluster and set marks
+        self.class_marker.JudgeClass(self.cluster)
         for i in range(self.clusters_num):
             self.res_pc2.extend(self.point_generator.generate(self.clusters[i]))
         return self.res_pc2
