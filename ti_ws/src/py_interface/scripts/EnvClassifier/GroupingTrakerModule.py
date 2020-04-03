@@ -1,6 +1,6 @@
 from sklearn.cluster import DBSCAN
 from points_generator import PointsGenerator
-from ClassMarker import ClassMarker, Mark
+from ClassMarkerModule import ClassMarker, Mark
 from utils import *
 
 
@@ -13,6 +13,7 @@ class GroupingTracker:
         self.point_generator = PointsGenerator()
         self.class_marker = ClassMarker()
 
+
     def pc_group(self, pc2):
         self.pc2 = np.array(pc2)
         self.db = DBSCAN(eps=0.3, min_samples=10).fit(self.pc2)
@@ -21,15 +22,21 @@ class GroupingTracker:
         for i in range(self.clusters_num):
             one_cluster = self.pc2[labels == i]
             self.clusters.append(one_cluster)
+        self.class_marker.JudgeClass(self.clusters)
         return self.clusters
 
-    def generate_points_per_cluster(self):
+    def generate_points_per_cluster(self, pc2):
+        self.pc_group(pc2)
         res_points = []
         # TODO: Use ClassMarker to filter noise cluster and set marks
-        self.class_marker.JudgeClass(self.clusters)
         for i in range(self.clusters_num):
-            res_points.extend(self.point_generator.generate(self.clusters[i]))
+            # res_points.append(self.point_generator.generate(self.clusters[i]))
+            if(self.class_marker.markers[i][0] != Mark.NOISE):
+                res_points.append([p[0], p[1]] for p in self.clusters[i])
         return res_points
+
+    def generate_makers(self):
+        return self.class_marker.generate_markers()
 
     def show_clusters(self):
         labels = self.db.labels_
