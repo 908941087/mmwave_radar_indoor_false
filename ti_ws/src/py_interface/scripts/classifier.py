@@ -40,20 +40,31 @@ import rospy
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2
 from EnvClassifier import points_generator
+import threading
 
 pub = None
 pc2_generator = points_generator.PointsGenerator()
 
+
+def pub_func(data):
+    pub.publish(data)
+
 def classifier():
+    pub_interval = 10
     rospy.init_node('classifier', anonymous=True)
-    pub_interval = 200
-    # Log
-    tip_str = "Publish classified map " + str(rospy.get_time())
-    rospy.loginfo(tip_str)
-    rospy.Subscriber('/filtered_point_cloud_centers', PointCloud2, classifier_cb)
-    #
-    rospy.sleep(pub_interval)
-    rospy.spin()
+    # # Start receiving
+    # receive_thread = threading.Thread(target=receive_func)
+    # receive_thread.start()
+
+    while not rospy.is_shutdown():
+        # Log
+        tip_str = "Publish classified map " + str(rospy.get_time())
+        rospy.loginfo(tip_str)
+        pc2_data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
+        if pc2_data is not None:
+            classifier_cb(pc2_data)
+        # Sleep every interval
+        rospy.sleep(pub_interval)
 
 
 
@@ -69,7 +80,10 @@ def classifier_cb(data):
     for p in classified_points:
         res_points.append((p[0], p[1], 0.0))
     pub_points = sensor_msgs.point_cloud2.create_cloud(data.header, data.fields, res_points)
-    pub.publish(pub_points)
+    pub_thread = threading.Thread(target=pub_func(pub_points))
+    pub_thread.start()
+    # while not rospy.is_shutdown():
+    #     pub.publish(pub_points)
 
 
 if __name__ == '__main__':

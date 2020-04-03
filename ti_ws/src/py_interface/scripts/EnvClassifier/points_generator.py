@@ -55,6 +55,21 @@ class PointsGenerator:
         temp = sum([abs(a * p[0] + b * p[1] + c) for p in points])
         return temp / np.sqrt(a ** 2 + 1) / len(points) * 2.0
 
+    @staticmethod
+    def show_generated_points(self, points):
+        padding = 0.2
+        xy_lim = get_xy_lim(source_points)
+        ratio = (xy_lim[3] - xy_lim[2]) / float(xy_lim[1] - xy_lim[0])
+        fig = plt.figure(figsize=(10 * ratio, 10))
+        fig.patch.set_facecolor('#000000')
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
+        ax1.set_facecolor('#000000')
+        ax1.axis([xy_lim[0] - padding, xy_lim[1] + padding, xy_lim[2] - padding, xy_lim[3] + padding])
+
+        ax1.scatter([p[0] for p in points], [p[1] for p in points], c='blue', s=1)
+        ax1.scatter([0], [0], c='white', s=4)
+        plt.show()
 
 if __name__ == "__main__":
     import matplotlib
