@@ -1,6 +1,6 @@
 from sklearn.cluster import DBSCAN
 from points_generator import PointsGenerator
-from ClassMarker import ClassMarker
+from ClassMarker import ClassMarker, Mark
 from utils import *
 
 
@@ -29,10 +29,24 @@ class GroupingTracker:
         self.class_marker.JudgeClass(self.clusters)
         for i in range(self.clusters_num):
             mark = self.class_marker.markers[i][0]
-            if mark != "noise": 
+            if mark != Mark.NOISE: 
                 res_points.extend(self.point_generator.generate(self.clusters[i]))
+        # plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='red', s=1)
         return res_points
 
+    def generate_points_per_mark(self):
+        res_points = []
+        self.class_marker.JudgeClass(self.clusters)
+        clusters = {mark : [] for mark in Mark}
+        for i in range(len(self.clusters)):
+            cluster = self.clusters[i]
+            mark = self.class_marker.markers[i][0]
+            clusters[mark].extend(cluster)
+        # plt.scatter([p[0] for p in clusters[Mark.WALL]], [p[1] for p in clusters[Mark.WALL]], c='b', s=1)
+        for mark in Mark:
+            if mark is Mark.WALL: 
+                res_points.extend(self.point_generator.generate(clusters[mark]))
+        return res_points
 
     def show_clusters(self):
         labels = self.db.labels_
@@ -55,16 +69,16 @@ if __name__ == '__main__':
     gt = GroupingTracker()
     source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/0.pcd")
     gt.pc_group(source_points)
-    points = gt.generate_points_per_cluster()
-    plt.scatter([p[0] for p in points], [p[1] for p in points], c='red', s=1)
+    points = gt.generate_points_per_mark()
+    # plt.scatter([p[0] for p in points], [p[1] for p in points], c='red', s=1)
     
     # index = 0
     # print(gt.class_marker.markers)
     # for cluster in gt.clusters:
     #     mark = gt.class_marker.markers[index][0]
-    #     if mark == 'noise':
+    #     if mark is Mark.NOISE:
     #         plt.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='r', s=1)
-    #     elif mark == 'wall':
+    #     elif mark is Mark.WALL:
     #         plt.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='b', s=1)
     #     else:
     #         plt.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='g', s=1)
