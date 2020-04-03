@@ -41,6 +41,10 @@ def get_center(points):
     return [float(np.average([p[0] for p in points])), float(np.average([p[1] for p in points]))]
 
 
+def get_density(points):
+    return len(points) / get_area(points)
+
+
 def diff_vertically(point, line):
     return abs(point[1] - line[0] * point[0] - line[1])
 

@@ -2,9 +2,9 @@ from utils import get_area, get_density, get_center, get_xy_lim
 
 
 class ClassMarker:
-    self.AREA_THRESHOLD = 0.5 # square meter
-    self.DENSITY_THRESHOLD = 20  # lowest points per square meter
-    self.RATIO_THRESHOLD = 2 # longer edge over shorter edge
+    AREA_THRESHOLD = 0.5 # square meter
+    DENSITY_THRESHOLD = 20  # lowest points per square meter
+    RATIO_THRESHOLD = 2 # longer edge over shorter edge
 
     def __init__(self):
         self.markers = None # wall, noise, furniture
