@@ -1,40 +1,4 @@
 #!/usr/bin/env python
-# Software License Agreement (BSD License)
-#
-# Copyright (c) 2008, Willow Garage, Inc.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#  * Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-#  * Redistributions in binary form must reproduce the above
-#    copyright notice, this list of conditions and the following
-#    disclaimer in the documentation and/or other materials provided
-#    with the distribution.
-#  * Neither the name of Willow Garage, Inc. nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-# POSSIBILITY OF SUCH DAMAGE.
-#
-# Revision $Id$
-
-## Simple talker demo that published std_msgs/Strings messages
-## to the 'chatter' topic
 
 import rospy
 from sensor_msgs.msg import PointCloud2
@@ -42,53 +6,57 @@ import sensor_msgs.point_cloud2
 from EnvClassifier import points_generator
 import threading
 
-pub = None
-pc2_generator = points_generator.PointsGenerator()
+from visualization_msgs.msg import Marker
 
 
-def pub_func(data):
-    pub.publish(data)
+class ClassifierPublisher:
+    def __init__(self):
+        self.pc2_pub_thread = None
+        self.marker_pub_thread = None
 
-def classifier():
-    pub_interval = 10
-    rospy.init_node('classifier', anonymous=True)
-    # # Start receiving
-    # receive_thread = threading.Thread(target=receive_func)
-    # receive_thread.start()
-
-    while not rospy.is_shutdown():
+    def classify(self):
+        rospy.init_node('map_classifier', anonymous=True)
         # Log
         tip_str = "Publish classified map " + str(rospy.get_time())
         rospy.loginfo(tip_str)
-        pc2_data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
-        if pc2_data is not None:
-            classifier_cb(pc2_data)
+        # pc2_data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
+        # if pc2_data is not None:
+        #     classifier_cb(pc2_data)
+        rospy.Subscriber('/filtered_point_cloud_centers', PointCloud2, self.classifier_cb)
         # Sleep every interval
-        rospy.sleep(pub_interval)
+        # rospy.sleep(pub_interval)
+        rospy.spin()
 
+    @staticmethod
+    def classifier_cb(data):
+        rate = rospy.Rate(20)
 
+        pc2_generator = points_generator.PointsGenerator()
+        point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
+        points = [[i[0], i[1]] for i in point_cloud2]
+        classified_points = pc2_generator.generate(points)
+        if classified_points is None:
+            rospy.loginfo("No enough points for classification")
+            return
+        res_points = []
+        for p in classified_points:
+            res_points.append((p[0], p[1], 0.0))
+        pub_points = sensor_msgs.point_cloud2.create_cloud(data.header, data.fields, res_points)
+        pc2_pub.publish(pub_points)
 
-def classifier_cb(data):
-    global pc2_generator
-    point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
-    points = [[i[0], i[1]] for i in point_cloud2]
-    classified_points = pc2_generator.generate(points)
-    if classified_points is None:
-        rospy.loginfo("No enough points for classification")
-        return
-    res_points = []
-    for p in classified_points:
-        res_points.append((p[0], p[1], 0.0))
-    pub_points = sensor_msgs.point_cloud2.create_cloud(data.header, data.fields, res_points)
-    pub_thread = threading.Thread(target=pub_func(pub_points))
-    pub_thread.start()
-    # while not rospy.is_shutdown():
-    #     pub.publish(pub_points)
+    @staticmethod
+    def pc2_pub_func(data):
+        pc2_pub.publish(data)
 
+    @staticmethod
+    def marker_pub_func(data):
+        marker_pub.publish(data)
 
 if __name__ == '__main__':
-    pub = rospy.Publisher('/classified_point_cloud', PointCloud2, queue_size=10)
+    map_classifier = ClassifierPublisher()
+    pc2_pub = rospy.Publisher('/classified_point_cloud', PointCloud2, queue_size=10)
+    marker_pub = rospy.Publisher("/class_marker", Marker, queue_size=10)
     try:
-        classifier()
+        map_classifier.classify()
     except rospy.ROSInterruptException:
         pass
