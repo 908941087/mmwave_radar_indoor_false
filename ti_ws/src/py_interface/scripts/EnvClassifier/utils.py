@@ -37,6 +37,10 @@ def get_avg_line(line1, line2):
     return [k, b]
 
 
+def get_center(points):
+    return [float(np.average([p[0] for p in points])), float(np.average([p[1] for p in points]))]
+
+
 def diff_vertically(point, line):
     return abs(point[1] - line[0] * point[0] - line[1])
 
@@ -206,4 +210,6 @@ def get_gaussian_weight(n):
 
 
 if __name__ == "__main__":
-    print(get_avg_line([2, 0], [-1, 0]))
+    points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/south_one.pcd")
+    points = filter_points(points, 0, 2, 0, 2)
+    print(get_center(points))
