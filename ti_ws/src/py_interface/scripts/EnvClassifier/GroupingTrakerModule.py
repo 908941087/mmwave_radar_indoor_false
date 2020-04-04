@@ -1,6 +1,7 @@
 from sklearn.cluster import DBSCAN
 from points_generator import PointsGenerator
 from ClassMarkerModule import ClassMarker, Mark
+from wall_finder import WallFinder
 from utils import *
 
 
@@ -12,6 +13,7 @@ class GroupingTracker:
         self.clusters = []
         self.point_generator = PointsGenerator()
         self.class_marker = ClassMarker()
+        self.wall_finder = WallFinder()
 
 
     def pc_group(self, pc2):
@@ -28,21 +30,31 @@ class GroupingTracker:
     def generate_points_per_cluster(self, pc2):
         self.pc_group(pc2)
         res_points = []
-        # TODO: Use ClassMarker to filter noise cluster and set marks
+        self.class_marker.JudgeClass(self.clusters)
         for i in range(self.clusters_num):
             # res_points.append(self.point_generator.generate(self.clusters[i]))
-            if self.class_marker.markers[i][0] != Mark.NOISE:
+            if(self.class_marker.markers[i][0] != Mark.NOISE):
                 res_points.append([p[0], p[1]] for p in self.clusters[i])
         return res_points
 
-        # xs, ys = [], []
-        # import matplotlib.pyplot as plt
-        # for cluster in res_points:
-        #     for p in cluster:
-        #         xs.append(p[0])
-        #         ys.append(p[1])
-        #     plt.plot(xs, ys, 'o')
-        # plt.show()
+    def generate_points_per_mark(self, pc2):
+        self.pc_group(pc2)
+        res_points = []
+        self.class_marker.JudgeClass(self.clusters)
+        clusters = {mark : [] for mark in Mark}
+        for i in range(len(self.clusters)):
+            mark = self.class_marker.markers[i][0]
+            cluster = self.clusters[i]
+            clusters[mark].extend(cluster)
+        for mark in Mark:
+            if mark is Mark.WALL:
+                # plt.scatter([p[0] for p in clusters[mark]], [p[1] for p in clusters[mark]], c='r', s=1)
+                walls = self.wall_finder.find_walls(clusters[mark])
+                for w in walls:
+                #     plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
+                    res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
+        plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
+        return res_points
 
     def generate_makers(self):
         return self.class_marker.generate_markers()
@@ -68,8 +80,7 @@ if __name__ == '__main__':
 
     gt = GroupingTracker()
     source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/0.pcd")
-    gt.pc_group(source_points)
-    points = gt.generate_points_per_mark()
+    points = gt.generate_points_per_mark(source_points)
     # plt.scatter([p[0] for p in points], [p[1] for p in points], c='red', s=1)
 
     # index = 0
