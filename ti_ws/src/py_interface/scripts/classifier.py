@@ -24,13 +24,16 @@ class SubThread(threading.Thread):
     def run(self):
         rospy.loginfo("Start sub thread: " + self.thread_name)
         while not rospy.is_shutdown():
-            data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=self.duration)
+            data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
             point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
             points = [[i[0], i[1]] for i in point_cloud2]
             # Generate points and marks
-            classified_points = self.group_tracker.generate_points_per_cluster(points)
-            classified_marks = self.group_tracker.generate_makers()
-
+            if points is not None and len(points) > 0:
+                classified_points = self.group_tracker.generate_points_per_mark(points)
+                classified_marks = self.group_tracker.generate_makers()
+            else:
+                rospy.sleep(self.duration)
+                continue
             # self.group_tracker.show_clusters()
 
             # Transform classified points to rosmsg
@@ -40,9 +43,8 @@ class SubThread(threading.Thread):
                 continue
             # Just store generated points TODO: dilation
             res_points = []
-            for i_cluster in classified_points:
-                for p in i_cluster:
-                    res_points.append((p[0], p[1], 0.0))
+            for p in classified_points:
+                res_points.append((p[0], p[1], 0.0))
             pub_points = sensor_msgs.point_cloud2.create_cloud(data.header, data.fields, res_points)
 
             # Publish points and markers(result of classification)
@@ -77,7 +79,7 @@ class PubThread(threading.Thread):
                     self.publisher.publish(self.data)
                 else:
                     rospy.loginfo("Nothing to Pub " + self.thread_name)
-
+            rospy.sleep(2.0)
 
 if __name__ == '__main__':
     # Pub components
