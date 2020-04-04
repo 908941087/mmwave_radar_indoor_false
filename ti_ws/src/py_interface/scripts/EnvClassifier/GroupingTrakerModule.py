@@ -31,14 +31,24 @@ class GroupingTracker:
         # TODO: Use ClassMarker to filter noise cluster and set marks
         for i in range(self.clusters_num):
             # res_points.append(self.point_generator.generate(self.clusters[i]))
-            if(self.class_marker.markers[i][0] != Mark.NOISE):
+            if self.class_marker.markers[i][0] != Mark.NOISE:
                 res_points.append([p[0], p[1]] for p in self.clusters[i])
         return res_points
+
+        # xs, ys = [], []
+        # import matplotlib.pyplot as plt
+        # for cluster in res_points:
+        #     for p in cluster:
+        #         xs.append(p[0])
+        #         ys.append(p[1])
+        #     plt.plot(xs, ys, 'o')
+        # plt.show()
 
     def generate_makers(self):
         return self.class_marker.generate_markers()
 
     def show_clusters(self):
+        import matplotlib.pyplot as plt
         labels = self.db.labels_
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
