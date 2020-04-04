@@ -37,6 +37,7 @@ class SegmentedLinearRegressor(RegressorBase):
         @param points: points need to fit
         @return: list of intersections
         """
+        self.parameters = []
         # Rotate points to horizontal
         slope = get_slope(points)
         matrix = get_rotation_matrix(-slope)
