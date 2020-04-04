@@ -50,13 +50,14 @@ class GroupingTracker:
                 for w in walls:
                 #     plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
                     res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
-        plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
+        # plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
         return res_points
 
     def generate_makers(self):
         return self.class_marker.generate_markers()
 
     def show_clusters(self):
+        import matplotlib.pyplot as plt
         labels = self.db.labels_
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 

@@ -1,7 +1,7 @@
 from utils import get_area, get_density, get_center, get_xy_lim
 from enum import Enum
-# import rospy
-# from visualization_msgs.msg import Marker
+import rospy
+from visualization_msgs.msg import Marker
 
 
 class Mark(Enum):
@@ -47,7 +47,7 @@ class ClassMarker:
                 continue
             self.markers.append([Mark.WALL, get_center(cluster)])
 
-    def generate_markers(self):
+    def generate_markers(self, duration=5.0):
         mark_index = 0
         for marker_info in self.markers:
             if not self._show_noise and marker_info[0] == Mark.NOISE:
