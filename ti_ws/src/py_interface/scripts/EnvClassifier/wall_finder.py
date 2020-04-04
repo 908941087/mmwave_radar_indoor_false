@@ -18,7 +18,7 @@ class WallFinder(object):
         avg_dist = self.get_avg_distance(cluster, line)
         print(avg_dist)
         if avg_dist < self.AVG_DIST_THRESHOLD:
-            self.walls.append({"line": line, "ends":ends})
+            self.walls.append({"line": line, "ends":self.prolong_ends(ends), "width": avg_dist * 2})
         else:
             clusters = self.branch(cluster)
             for one_cluster in clusters:
@@ -30,8 +30,8 @@ class WallFinder(object):
         xy_lim = get_xy_lim(cluster)
         x_mid = (xy_lim[0] + xy_lim[1]) / 2.0
         y_mid = (xy_lim[2] + xy_lim[3]) / 2.0
-        plt.plot([x_mid, x_mid], [xy_lim[2], xy_lim[3]], c='r', linewidth=1, linestyle='dotted')
-        plt.plot([xy_lim[0], xy_lim[1]], [y_mid, y_mid], c='r', linewidth=1, linestyle='dotted')
+        # plt.plot([x_mid, x_mid], [xy_lim[2], xy_lim[3]], c='r', linewidth=1, linestyle='dotted')
+        # plt.plot([xy_lim[0], xy_lim[1]], [y_mid, y_mid], c='r', linewidth=1, linestyle='dotted')
         result = []
         result.append(filter_points(cluster, xy_lim[0], x_mid, xy_lim[2], y_mid))
         result.append(filter_points(cluster, x_mid, xy_lim[1], xy_lim[2], y_mid))
@@ -46,3 +46,11 @@ class WallFinder(object):
         c = line[1]
         temp = sum([abs(a * p[0] + b * p[1] + c) for p in points])
         return temp / np.sqrt(a ** 2 + 1) / float(len(points))
+
+    @staticmethod
+    def prolong_ends(ends, ratio=1.1):
+        """
+        Prolong the ends according to the ratio
+        """
+        mid = [sum([p[0] for p in ends]) / 2.0, sum([p[1] for p in ends]) / 2.0]
+        return [[mid[0] - (mid[0] - p[0]) * ratio, mid[1] - (mid[1] - p[1]) * ratio] for p in ends]

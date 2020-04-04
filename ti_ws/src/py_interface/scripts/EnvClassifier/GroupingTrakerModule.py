@@ -48,12 +48,12 @@ class GroupingTracker:
             clusters[mark].extend(cluster)
         for mark in Mark:
             if mark is Mark.WALL:
-                plt.scatter([p[0] for p in clusters[mark]], [p[1] for p in clusters[mark]], c='r', s=1)
+                # plt.scatter([p[0] for p in clusters[mark]], [p[1] for p in clusters[mark]], c='r', s=1)
                 walls = self.wall_finder.find_walls(clusters[mark])
                 for w in walls:
-                    plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
-                # res_points.extend(self.point_generator.generate(clusters[mark]))
-                # plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
+                #     plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
+                    res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
+        plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
         return res_points
 
     def generate_makers(self):
