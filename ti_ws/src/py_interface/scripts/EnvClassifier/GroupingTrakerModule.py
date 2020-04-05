@@ -34,11 +34,8 @@ class GroupingTracker:
                 wall_finder = WallFinder()
                 cluster = self.clusters[i]
                 walls = wall_finder.find_walls(cluster)
-                # plt.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='r', s = 1)
                 for w in walls:
-                    # plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
                     res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
-            # plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
         return res_points
 
     def generate_points_per_mark(self, pc2):
@@ -57,7 +54,6 @@ class GroupingTracker:
                 for w in walls:
                     plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
                     res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
-        # plt.scatter([p[0] for p in res_points], [p[1] for p in res_points], c='b', s=1)
         return res_points
 
     def generate_makers(self):
@@ -91,28 +87,38 @@ class GroupingTracker:
         ax1.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
         return ax1
 
-    def show_marked_clusters(self, source_points):
+    def show_marked_clusters(self, source_points, verbose=False):
         self.pc_group(source_points)
         ax = self.plt_setup()
 
         index = 0
         for cluster in self.clusters:
             marker = self.class_marker.markers[index]
-            information = "area: " + str(round(marker["area"], 2)) + \
-                "\ndensity: " + str(round(marker["density"], 2))
+
+            information = ""
+            if verbose:
+                information = "\narea: " + str(round(marker["area"], 2)) + \
+                "\ndensity: " + str(round(marker["density"], 2)) + \
+                    "\npoint count: " + str(len(cluster)) + \
+                    "\n d / a: " + str(round(marker["density"] / marker["area"], 2))
+
             if marker["mark"] is Mark.NOISE:
                 ax.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='r', s=1)
+                information = "NOISE" + information
             elif marker["mark"] is Mark.WALL:
                 ax.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='b', s=1)
-                information += "\nratio: " + str(round(marker["length"] / marker["width"], 2)) + \
+                information = "WALL" + information
+                if verbose:
+                    information += "\nratio: " + str(round(marker["length"] / marker["width"], 2)) + \
                     "\nlength: " + str(round(marker["length"], 2)) + \
                         "\nwidth: " + str(round(marker["width"], 2))
-                walls = marker["walls"]
+                # walls = marker["walls"]
                 # for w in walls:
-                    # plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
+                #     plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
             else:
-                ax.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='g', s=1)            
-            # ax.text(marker["center"][0], marker["center"][1], information, style='italic', fontsize=8, bbox={'facecolor': 'red', 'alpha': 0.7, 'pad': 5})
+                ax.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='g', s=1)
+                information = "FURNITURE" + information    
+            ax.text(marker["center"][0], marker["center"][1], information, style='italic', fontsize=6, bbox={'facecolor': 'white', 'alpha': 0.7, 'pad': 5})
             index += 1
 
         plt.show()
@@ -120,8 +126,8 @@ class GroupingTracker:
 
 if __name__ == '__main__':
     gt = GroupingTracker()
-    source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/lab_1.pcd")
-    gt.show_generated_points(source_points)
-    # gt.show_marked_clusters(source_points)
+    source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/0.pcd")
+    # gt.show_generated_points(source_points)
+    gt.show_marked_clusters(source_points, verbose=False)
     # gt.show_clusters()
     # points = gt.generate_points_per_cluster(source_points)    

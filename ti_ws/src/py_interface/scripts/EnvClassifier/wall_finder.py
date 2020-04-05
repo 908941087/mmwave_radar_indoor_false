@@ -1,3 +1,5 @@
+# coding=utf-8
+
 from utils import *
 from linear_regressor import LinearRegressor
 import matplotlib

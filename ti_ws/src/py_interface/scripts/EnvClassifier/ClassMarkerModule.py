@@ -1,7 +1,7 @@
 from utils import get_area, get_density, get_center, get_xy_lim, dist
 from enum import Enum
-# import rospy
-# from visualization_msgs.msg import Marker
+import rospy
+from visualization_msgs.msg import Marker
 from wall_finder import WallFinder
 import numpy as np
 
@@ -13,10 +13,13 @@ class Mark(Enum):
 
 
 class ClassMarker:
-    AREA_THRESHOLD = 0.35  # in square meter, area smaller than this threshold will be considered as noise
-    DENSITY_THRESHOLD = 150  # lowest points per square meter
-    RATIO_THRESHOLD = 6  # longer edge over shorter edge
+    AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
+    DENSITY_THRESHOLD = 120  # lowest points per square meter
+    RATIO_THRESHOLD = 6.2  # longer edge over shorter edge
     MAX_WALL_WIDTH = 0.4
+    MIN_WALL_LENGTH = 1.1
+    NOISE_POINTS_COUNT_THRESHOLD = 40
+    DENSITY_PER_SQUARE_METER_THRESHOLD = 20000
 
     def __init__(self):
         self.markers = None  # wall, noise, furniture
@@ -37,21 +40,17 @@ class ClassMarker:
             # use aera and density to recognize noise
             area = get_area(cluster)
             density = len(cluster) / area
-            if area < self.AREA_THRESHOLD:
-                self.markers.append({"mark": Mark.NOISE, "center": get_center(cluster), "area": area, "density": density})
-                continue
-            if density < self.DENSITY_THRESHOLD:
+            if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
+                len(cluster) < self.NOISE_POINTS_COUNT_THRESHOLD and density / area < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
                 self.markers.append({"mark": Mark.NOISE, "center": get_center(cluster), "area": area, "density": density})
                 continue
             # try to treat this cluster as wall, see if it fits well
             wall_finder = WallFinder()
             walls = wall_finder.find_walls(cluster)
             avg_width = np.average([w["width"] for w in walls])
-            if avg_width > self.MAX_WALL_WIDTH:
-                self.markers.append({"mark": Mark.FURNITURE, "center": get_center(cluster), "area": area, "density": density})
-                continue
             total_length = sum([dist(ends[0], ends[1]) for ends in [w["ends"] for w in walls]])
-            if total_length / avg_width < self.RATIO_THRESHOLD:
+            if avg_width > self.MAX_WALL_WIDTH or total_length < self.MIN_WALL_LENGTH or \
+                total_length / avg_width < self.RATIO_THRESHOLD:
                 self.markers.append({"mark": Mark.FURNITURE, "center": get_center(cluster), "area": area, "density": density})
                 continue
             else: 
