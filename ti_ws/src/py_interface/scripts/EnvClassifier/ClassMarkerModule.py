@@ -1,7 +1,9 @@
-from utils import get_area, get_density, get_center, get_xy_lim
+from utils import get_area, get_density, get_center, get_xy_lim, dist
 from enum import Enum
-import rospy
-from visualization_msgs.msg import Marker
+# import rospy
+# from visualization_msgs.msg import Marker
+from wall_finder import WallFinder
+import numpy as np
 
 
 class Mark(Enum):
@@ -11,9 +13,10 @@ class Mark(Enum):
 
 
 class ClassMarker:
-    AREA_THRESHOLD = 0.5  # square meter
-    DENSITY_THRESHOLD = 20  # lowest points per square meter
-    RATIO_THRESHOLD = 2  # longer edge over shorter edge
+    AREA_THRESHOLD = 0.35  # in square meter, area smaller than this threshold will be considered as noise
+    DENSITY_THRESHOLD = 150  # lowest points per square meter
+    RATIO_THRESHOLD = 6  # longer edge over shorter edge
+    MAX_WALL_WIDTH = 0.4
 
     def __init__(self):
         self.markers = None  # wall, noise, furniture
@@ -31,26 +34,34 @@ class ClassMarker:
         else:
             return
         for cluster in clusters:
+            # use aera and density to recognize noise
             area = get_area(cluster)
+            density = len(cluster) / area
             if area < self.AREA_THRESHOLD:
-                self.markers.append([Mark.NOISE, get_center(cluster)])
+                self.markers.append({"mark": Mark.NOISE, "center": get_center(cluster), "area": area, "density": density})
                 continue
-            density = get_density(cluster)
             if density < self.DENSITY_THRESHOLD:
-                self.markers.append([Mark.NOISE, get_center(cluster)])
+                self.markers.append({"mark": Mark.NOISE, "center": get_center(cluster), "area": area, "density": density})
                 continue
-            xy_lim = get_xy_lim(cluster)
-            ratio = (xy_lim[3] - xy_lim[2]) / (xy_lim[1] - xy_lim[0])
-            if ratio < 1: ratio = 1 / ratio
-            if ratio < self.RATIO_THRESHOLD:
-                self.markers.append([Mark.FURNITURE, get_center(cluster)])
+            # try to treat this cluster as wall, see if it fits well
+            wall_finder = WallFinder()
+            walls = wall_finder.find_walls(cluster)
+            avg_width = np.average([w["width"] for w in walls])
+            if avg_width > self.MAX_WALL_WIDTH:
+                self.markers.append({"mark": Mark.FURNITURE, "center": get_center(cluster), "area": area, "density": density})
                 continue
-            self.markers.append([Mark.WALL, get_center(cluster)])
+            total_length = sum([dist(ends[0], ends[1]) for ends in [w["ends"] for w in walls]])
+            if total_length / avg_width < self.RATIO_THRESHOLD:
+                self.markers.append({"mark": Mark.FURNITURE, "center": get_center(cluster), "area": area, "density": density})
+                continue
+            else: 
+                self.markers.append({"mark": Mark.WALL, "center": get_center(cluster), "area": area, "density": density, "length": total_length, "width": avg_width, "walls": walls})
+
 
     def generate_markers(self, duration=5.0):
         mark_index = 0
         for marker_info in self.markers:
-            if not self._show_noise and marker_info[0] == Mark.NOISE:
+            if not self._show_noise and marker_info["mark"] == Mark.NOISE:
                 continue
             t_marker = Marker()
             t_marker.header.frame_id = "/map"

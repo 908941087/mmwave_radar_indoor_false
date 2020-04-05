@@ -6,6 +6,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import random
 from scipy import special
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 
 
 def get_points_from_pcd(path):
@@ -76,9 +79,37 @@ def get_rectangle(points):
     return edges
 
 
-def get_area(points):
-    xy_lim = get_xy_lim(points)
-    return abs((xy_lim[1] - xy_lim[0]) * (xy_lim[3] - xy_lim[2]))
+MIN_RECTANGLE_AREA = 0.07 # square meters
+
+def get_area(cluster):
+    return get_area_core(cluster, get_rectangle_area(cluster))
+
+
+def get_area_core(cluster, rectangle_area):
+    if len(cluster) == 0: return 0
+    if rectangle_area < MIN_RECTANGLE_AREA: return rectangle_area
+    sub_clusters = branch(cluster)
+    sub_rectangle_area = rectangle_area / 4.0
+    return sum([get_area_core(c, sub_rectangle_area) for c in sub_clusters])
+
+
+def get_rectangle_area(cluster):
+    xy_lim = get_xy_lim(cluster)
+    return (xy_lim[1] - xy_lim[0]) * (xy_lim[3] - xy_lim[2])
+
+
+def branch(cluster):
+        xy_lim = get_xy_lim(cluster)
+        x_mid = (xy_lim[0] + xy_lim[1]) / 2.0
+        y_mid = (xy_lim[2] + xy_lim[3]) / 2.0
+        # plt.plot([x_mid, x_mid], [xy_lim[2], xy_lim[3]], c='r', linewidth=1, linestyle='dotted')
+        # plt.plot([xy_lim[0], xy_lim[1]], [y_mid, y_mid], c='r', linewidth=1, linestyle='dotted')
+        result = []
+        result.append(filter_points(cluster, xy_lim[0], x_mid, xy_lim[2], y_mid))
+        result.append(filter_points(cluster, x_mid, xy_lim[1], xy_lim[2], y_mid))
+        result.append(filter_points(cluster, xy_lim[0], x_mid, y_mid, xy_lim[3]))
+        result.append(filter_points(cluster, x_mid, xy_lim[1], y_mid, xy_lim[3]))
+        return result
 
 
 def get_rotation_matrix(deg):
@@ -214,6 +245,11 @@ def get_gaussian_weight(n):
 
 
 if __name__ == "__main__":
-    points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/south_one.pcd")
-    points = filter_points(points, 0, 2, 0, 2)
-    print(get_center(points))
+    # points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/south_one.pcd")
+    # points = filter_points(points, 0, 2, 0, 2)
+    # plt.scatter([p[0] for p in points], [p[1] for p in points], c='r', s=1)
+    # print(get_area(points))
+    # print(get_rectangle_area(points))
+
+    # plt.show()
+    print(dist([-1.9900000512599947, 3.380329543417887], [1.6400000274181368, 3.52325060806384]))

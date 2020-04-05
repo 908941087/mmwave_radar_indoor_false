@@ -5,7 +5,10 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 class WallFinder(object):
-    AVG_DIST_THRESHOLD = 0.15
+    """
+    一个WallFinder实例只能用来识别一个cluster， 不可重复使用
+    """
+    AVG_DIST_THRESHOLD = 0.16
     LEAST_POINTS_COUNT_TO_FIND_WALL = 20
 
     def __init__(self):
@@ -16,7 +19,6 @@ class WallFinder(object):
         ends = self.regressor.process(cluster)
         line = self.regressor.get_parameters()[0]
         avg_dist = self.get_avg_distance(cluster, line)
-        print(avg_dist)
         if avg_dist < self.AVG_DIST_THRESHOLD:
             self.walls.append({"line": line, "ends":self.prolong_ends(ends), "width": avg_dist * 2})
         else:
