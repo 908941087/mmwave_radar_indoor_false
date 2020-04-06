@@ -19,6 +19,7 @@ class PCL_process:
         self.passthrough_filter()
         # self.stablize_preframe()
         # self.statistical_outlier_removal()
+        # self.add_z_info()
 
     def passthrough_filter(self):
         rospy.loginfo("Passthrough ====================")
@@ -31,7 +32,7 @@ class PCL_process:
 
         points_list.sort(key=lambda p: p[3])
         FiltOutRate = 0.1
-        GroundFiltOutRate = 0.7
+        GroundFiltOutRate = 0.9
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
             if 2.0 > t_dis > 0.5:
@@ -61,6 +62,17 @@ class PCL_process:
             p = cloud[i]
             res_points.append((p[0], p[1], p[2], 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
+    def add_z_info(self, height = 0.5, step = 10):
+        points = sensor_msgs.point_cloud2.read_points(self.pc2)
+        res_points = []
+        points_list = [(p[0], p[1], p[2], p[3]) for p in points]
+
+        for p in points_list:
+            for i in range(step):
+                res_points.append((p[0], p[1], p[2] + (i*height/step), 40.0))
+        self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
 
     def genrate_res(self):
         return self.pc2

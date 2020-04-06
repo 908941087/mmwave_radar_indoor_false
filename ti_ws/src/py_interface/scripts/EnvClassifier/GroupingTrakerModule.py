@@ -15,6 +15,7 @@ class GroupingTracker:
         self.class_marker = ClassMarker()
 
     def pc_group(self, pc2):
+        self.clusters = []
         self.pc2 = np.array(pc2)
         self.db = DBSCAN(eps=0.3, min_samples=10).fit(self.pc2)
         labels = self.db.labels_
@@ -51,9 +52,12 @@ class GroupingTracker:
                 wall_finder = WallFinder()
                 walls = wall_finder.find_walls(clusters[mark])
                 plt.scatter([p[0] for p in clusters[mark]], [p[1] for p in clusters[mark]], c='r', s = 1)
-                for w in walls:
-                    plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
-                    res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
+                if walls is not None:
+                    for w in walls:
+                        plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
+                        res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
+            if mark is Mark.FURNITURE:
+                res_points.extend(clusters[mark])
         return res_points
 
     def generate_makers(self):

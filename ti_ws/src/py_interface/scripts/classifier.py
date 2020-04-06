@@ -55,11 +55,21 @@ class SubThread(threading.Thread):
 
             # Modify old markers
             self.marker_array_pub_event.clear()
+            t_markers = self.marker_array_pub_thread.data
+            if t_markers is not None:
+                for t_marker in t_markers:
+                    t_marker.action = Marker.DELETE
+            self.marker_array_pub_thread.data = t_markers
+            self.marker_array_pub_event.set()
+            # rospy.sleep(0.5)
+
+            self.marker_array_pub_event.clear()
             self.marker_array_pub_thread.data = classified_marks
             self.marker_array_pub_event.set()
             rospy.loginfo("Change Markers")
             # Sleep every interval
             rospy.sleep(self.duration)
+
 
 class PubThread(threading.Thread):
     def __init__(self, thread_name, publisher, pub_event, pub_rate=3):
@@ -75,11 +85,12 @@ class PubThread(threading.Thread):
         while not rospy.is_shutdown():
             while self.pub_event.is_set():
                 if self.data is not None:
-                    rospy.loginfo("Pub " + self.thread_name)
+                    # rospy.loginfo("Pub " + self.thread_name)
                     self.publisher.publish(self.data)
                 else:
                     rospy.loginfo("Nothing to Pub " + self.thread_name)
             rospy.sleep(2.0)
+
 
 if __name__ == '__main__':
     # Pub components
@@ -97,6 +108,7 @@ if __name__ == '__main__':
         pc2_sub_thread.start()
         pc2_pub_thread.start()
         marker_array_pub_thread.start()
-
+        # spin() simply keeps python from exiting until this node is stopped
+        rospy.spin()
     except rospy.ROSInterruptException:
         pass
