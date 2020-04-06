@@ -23,7 +23,7 @@
     <rosparam command="load" file="$(find turtlebot_bringup)/param/$(arg base)/diagnostics.yaml" />
   </node>
   
-  <!-- Call mmWave sensor launch file
+  <!-- Call mmWave sensor launch file -->
   <include file="$(find ti_mmwave_rospkg)/launch/ti_mmwave_sensor.launch">
     <arg name="device" value="6843ISK" doc="TI mmWave sensor device type [1443, 1642,6843]"/>
     <arg name="config" value="3d_custom" doc="TI mmWave sensor device configuration [3d (not supported by 1642 EVM), 2d]"/>
@@ -39,7 +39,7 @@
   <node pkg="tf" type="static_transform_publisher" name="static_transorm_publisher_map" args="0 0 0 0 0 0 map odom 100"/>
 
   <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_base_radar_link" args="0 0 0 0 0 0 base_link base_radar_link 100"/>
-  -->
+
  <!--
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="Radar_to_Laser">
     <param name="min_range" value="0"/>

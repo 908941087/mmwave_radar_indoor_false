@@ -13,7 +13,7 @@
   <arg name="serialport"        default="$(env TURTLEBOT_SERIAL_PORT)"  doc="used by create to configure the port it is connected on [/dev/ttyUSB0, /dev/ttyS0]"/>
   <!--arg name=参数名           default=默认值            说明=通过构建配置它在[/dev/ttyUSB0，/dev/ttyS0]上连接的端口。-->
   <!--设置为采用模拟时间-->
-  <param name="/use_sim_time" value="false"/>
+  <param name="/use_sim_time" value="$(arg simulation)"/>
   <!--include模块，启动robot.launch文件-->
   <include file="$(find turtlebot_bringup)/launch/includes/robot.launch.xml">
     <arg name="base" value="$(arg base)" />
