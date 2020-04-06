@@ -29,7 +29,7 @@ class SubThread(threading.Thread):
             points = [[i[0], i[1]] for i in point_cloud2]
             # Generate points and marks
             if points is not None and len(points) > 0:
-                classified_points = self.group_tracker.generate_points_per_mark(points)
+                classified_points = self.group_tracker.generate_points_per_cluster(points)
                 classified_marks = self.group_tracker.generate_makers()
             else:
                 rospy.sleep(self.duration)

@@ -37,6 +37,8 @@ class GroupingTracker:
                 walls = wall_finder.find_walls(cluster)
                 for w in walls:
                     res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
+            if self.class_marker.markers[i]["mark"] is Mark.FURNITURE:
+                res_points.extend(self.clusters[i])
         return res_points
 
     def generate_points_per_mark(self, pc2):
