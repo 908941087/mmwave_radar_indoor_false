@@ -54,3 +54,13 @@ https://github.com/mgualti/PointCloudsPython
 4. 启动rviz 
 
 > rviz rosrun rviz rviz -d ~/catkin_ws/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
+
+
+录制数据：
+rosbag record -a
+查看相关节点话题信息命令 :
+rosnode list
+rosnode info /
+rostopic list
+rostopic info /节点名
+rostopic echo / 节点名
