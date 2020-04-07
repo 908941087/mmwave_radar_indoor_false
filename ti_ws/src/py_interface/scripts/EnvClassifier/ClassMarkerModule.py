@@ -15,7 +15,7 @@ class Mark(Enum):
 class ClassMarker:
     AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
     DENSITY_THRESHOLD = 120  # lowest points per square meter
-    RATIO_THRESHOLD = 6.2  # longer edge over shorter edge
+    RATIO_THRESHOLD = 10  # longer edge over shorter edge
     MAX_WALL_WIDTH = 0.4
     MIN_WALL_LENGTH = 1.1
     NOISE_POINTS_COUNT_THRESHOLD = 40
