@@ -18,6 +18,8 @@ class WallFinder(object):
         self.regressor = LinearRegressor()
 
     def find_walls(self, cluster):
+        if cluster is None or len(cluster) == 0:
+            return None
         ends = self.regressor.process(cluster)
         line = self.regressor.get_parameters()[0]
         avg_dist = self.get_avg_distance(cluster, line)
