@@ -432,7 +432,7 @@ void *DataUARTHandler::sortIncomingData( void )
 
                     mmwData.objOut.x = tempRange*sin(tempAzimuth);
                     mmwData.objOut.y = tempRange*cos(tempAzimuth);
-                    mmwData.objOut.z = 0.0f;
+                    mmwData.objOut.z = 0.1f;
 
                     //convert from Qformat to float(meters)
                     float temp[4];
