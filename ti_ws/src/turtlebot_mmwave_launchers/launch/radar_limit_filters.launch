@@ -43,7 +43,7 @@
       <remap from="~output" to="xyzi_filt_out" />
       <rosparam>
          filter_field_name: intensity
-         filter_limit_min: 0
+         filter_limit_min: -1
          filter_limit_max: 500000
          filter_limit_negative: False
       </rosparam>
