@@ -75,7 +75,7 @@ void *DataUARTHandler::readIncomingData(void)
     uint8_t last8Bytes[8] = {0};
 
 
-    serial::Serial mySerialObject("", dataBaudRate, serial::Timeout::simpleTimeout(100));
+    serial::Serial mySerialObject("", dataBaudRate, serial::Timeout::simpleTimeout(50));
     mySerialObject.setPort(dataSerialPort);
     try
     {
