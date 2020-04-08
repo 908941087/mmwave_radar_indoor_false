@@ -1,4 +1,7 @@
-# mmwave_radar_indoor_false
+# mmwave_radar_indoor_false(3D)
+
+## Branch: 3d_PC
+> 使用3d的bin版本
 
 ## Related library
 ### SOR
