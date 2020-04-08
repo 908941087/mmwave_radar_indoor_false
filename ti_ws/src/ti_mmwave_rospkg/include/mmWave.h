@@ -135,14 +135,12 @@ struct MmwDemo_output_message_header_t
     /*! @brief SW Version: : MajorNum * 2^24 + MinorNum * 2^16 + BugfixNum * 2^8 + BuildNum   */
     uint32_t    version;
 
+    /*! @brief   Total packet length including header in Bytes */
+    uint32_t    totalPacketLen;
+
     /*! @brief HW platform type */
     uint32_t    platform;
 
-    /*! @brief Time in CPU cycles when the message was created, R4F CPU cycles */
-    uint32_t    timeCpuCycles;
-
-    /*! @brief   Total packet length including header in Bytes */
-    uint32_t    totalPacketLen;
 
     /*! @brief   Frame number */
     uint32_t    frameNumber;
@@ -204,6 +202,8 @@ typedef struct MmwDemo_output_message_tl_t
  */
 typedef struct MmwDemo_output_message_point_unit_t
 {
+    /*! @brief elevation  reporting unit, in radians */
+    float       elevationUnit;
     /*! @brief azimuth  reporting unit, in radians */
     float		azimuthUnit;
     /*! @brief Doppler  reporting unit, in m/s */
@@ -222,14 +222,30 @@ typedef struct MmwDemo_output_message_point_unit_t
  * @details
  * For each detected point, we report range, azimuth, and doppler
  */
+//typedef struct MmwDemo_output_message_UARTpoint_t
+//{
+//    /*! @brief Detected point azimuth, in number of azimuthUnit */
+//    int8_t		azimuth;
+//    /*! @brief Detected point doppler, in number of dopplerUnit */
+//    int8_t		doppler;
+//    /*! @brief Detected point range, in number of rangeUnit */
+//    uint16_t		range;
+//    /*! @brief Range detection SNR, in number of snrUnit */
+//    uint16_t       snr;
+//
+//}
+//MmwDemo_output_message_UARTpoint;
+
 typedef struct MmwDemo_output_message_UARTpoint_t
 {
+    /*! @brief Detected point elevation, in number of azimuthUnit */
+    int8_t      elevation;
     /*! @brief Detected point azimuth, in number of azimuthUnit */
-    int8_t		azimuth;
+    int8_t      azimuth;
     /*! @brief Detected point doppler, in number of dopplerUnit */
-    int8_t		doppler;
+    int16_t      doppler;
     /*! @brief Detected point range, in number of rangeUnit */
-    uint16_t		range;
+    uint16_t        range;
     /*! @brief Range detection SNR, in number of snrUnit */
     uint16_t       snr;
 
@@ -280,12 +296,14 @@ typedef struct DPIF_PointCloudSideInfo_t
 }DPIF_PointCloudSideInfo;
 
 typedef struct UART_OutputPoint{
+    /*! @brief Detected point elevation, in number of elevUnit */
+    int8_t      elevation;
     /*! @brief Detected point azimuth, in number of azimuthUnit */
-    int8_t		azimuth;
+    int8_t      azimuth;
     /*! @brief Detected point doppler, in number of dopplerUnit */
-    int8_t		doppler;
+    int16_t      doppler;
     /*! @brief Detected point range, in number of rangeUnit */
-    uint16_t		range;
+    uint16_t        range;
     /*! @brief Range detection SNR, in number of snrUnit */
     uint16_t       snr;
 };

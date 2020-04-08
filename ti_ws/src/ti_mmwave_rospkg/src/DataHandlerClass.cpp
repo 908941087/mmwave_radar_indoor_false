@@ -285,19 +285,16 @@ void *DataUARTHandler::sortIncomingData( void )
             memcpy( &mmwData.header.version, &currentBufp->at(currentDatap), sizeof(mmwData.header.version));
             currentDatap += ( sizeof(mmwData.header.version) );
 
-            //get platform (4 bytes)
-            memcpy( &mmwData.header.platform, &currentBufp->at(currentDatap), sizeof(mmwData.header.platform));
-            currentDatap += ( sizeof(mmwData.header.platform) );
-
-            //get timeStamp (4 bytes)
-            memcpy( &mmwData.header.timeCpuCycles, &currentBufp->at(currentDatap), sizeof(mmwData.header.timeCpuCycles));
-            currentDatap += ( sizeof(mmwData.header.timeCpuCycles) );
-
             //get totalPacketLen (4 bytes)
             memcpy( &mmwData.header.totalPacketLen, &currentBufp->at(currentDatap), sizeof(mmwData.header.totalPacketLen));
             currentDatap += ( sizeof(mmwData.header.totalPacketLen) );
 
-                //if packet doesn't have correct header size (which is based on platform), throw it away
+            //get platform (4 bytes)
+            memcpy( &mmwData.header.platform, &currentBufp->at(currentDatap), sizeof(mmwData.header.platform));
+            currentDatap += ( sizeof(mmwData.header.platform) );
+
+
+            //if packet doesn't have correct header size (which is based on platform), throw it away
             //  (does not include magicWord since it was already removed)
             headerSize = sizeof(MmwDemo_output_message_header_t);
             if(currentBufp->size() < headerSize)
@@ -408,6 +405,10 @@ void *DataUARTHandler::sortIncomingData( void )
                 if (((mmwData.header.version >> 24) & 0xFF) >= 3)  // SDK version is 3.x
                 {
 
+                    //get point elevation
+                    memcpy( &mmwData.pointOut.azimuth, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.azimuth));
+                    currentDatap += ( sizeof(mmwData.pointOut.azimuth) );
+
                     //get point azimuth
                     memcpy( &mmwData.pointOut.azimuth, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.azimuth));
                     currentDatap += ( sizeof(mmwData.pointOut.azimuth) );
@@ -424,15 +425,15 @@ void *DataUARTHandler::sortIncomingData( void )
                     memcpy( &mmwData.pointOut.snr, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.snr));
                     currentDatap += ( sizeof(mmwData.pointOut.snr) );
 
-                    // FIXME: Import math lib
-                    float tempAzimuth, tempRange, tempSnr;
+                    float tempElev, tempAzimuth, tempRange, tempSnr;
+                    tempElev = (mmwData.unitOut.elevationUnit * mmwData.pointOut.elevation * M_PI/180);
                     tempAzimuth = (mmwData.unitOut.azimuthUnit * mmwData.pointOut.azimuth * M_PI/180);
                     tempRange = mmwData.unitOut.rangeUnit * mmwData.pointOut.range;
                     tempSnr = mmwData.unitOut.snrUnit * mmwData.pointOut.snr;
 
-                    mmwData.objOut.x = tempRange*sin(tempAzimuth);
-                    mmwData.objOut.y = tempRange*cos(tempAzimuth);
-                    mmwData.objOut.z = 0.0f;
+                    mmwData.objOut.x = tempRange*cos(tempElev)*sin(tempAzimuth);
+                    mmwData.objOut.y = tempRange*cos(tempElev)*cos(tempAzimuth);
+                    mmwData.objOut.z = tempRange*sin(tempElev);
 
                     //convert from Qformat to float(meters)
                     float temp[4];
@@ -442,19 +443,7 @@ void *DataUARTHandler::sortIncomingData( void )
                     temp[2] = (float) mmwData.objOut.z;
                     //temp[4] = //doppler
 
-                    /*
-                    for(int j = 0; j < 3; j++)
-                    {
-                        if(temp[j] > 32767)
-                            temp[j] -= 65535;
 
-                        temp[j] = temp[j] / pow(2,mmwData.xyzQFormat);
-                     }
-
-                    // Convert intensity to dB
-                    temp[3] = 10 * log10(tempSnr + 1);  // intensity
-
-                    */
                     temp[3] = tempSnr * 10;
 
                     // Map mmWave sensor coordinates to ROS coordinate system
