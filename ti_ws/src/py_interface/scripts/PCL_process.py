@@ -17,8 +17,8 @@ class PCL_process:
         self.stablizer = stablizer
         self.pc2 = pc2
         self.passthrough_filter()
-        self.stablize_preframe()
-        self.statistical_outlier_removal()
+        # self.stablize_preframe()
+        # self.statistical_outlier_removal()
         self.add_z_info()
 
     def passthrough_filter(self):

@@ -22,7 +22,7 @@ obstacle_layer:
   observation_sources:  scan bump
   scan:
     data_type: PointCloud2
-    topic: py_test
+    topic: mmWaveDataHdl/RScan
     marking: true
     clearing: false
     min_obstacle_height: 0.0
