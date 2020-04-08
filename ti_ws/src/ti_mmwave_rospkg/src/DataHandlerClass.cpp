@@ -1,11 +1,48 @@
-/**
- * @file DataHandlerClass.cpp
- * @version 0.0.0
- * @author yzc
- * @brief 这个.cpp文件实现了DataHandlerClass.h中的类。这个文件将以下三个函数通过线程的方式启动，来处理从雷达端获取的数据。第一个函数是读取数据，第二个函数是将数据分类，
- * 第三个函数是交换同步数据。
- */
-
+/*
+ * DataHandlerClass.cpp
+ *
+ * This is the implementation of the DataHandlerClass.h
+ * Three threads are spawned when start() is called.
+ *  1) readIncomingData() thread
+ *  2) sortIncomingData() thread
+ *  3) syncedBufferSwap() thread
+ *  
+ * Together they implement a double-buffered read from the data serial port 
+ * which sorts the data into the class's mmwDataPacket struct.
+ *
+ *
+ * Copyright (C) 2017 Texas Instruments Incorporated - http://www.ti.com/ 
+ * 
+ * 
+ *  Redistribution and use in source and binary forms, with or without 
+ *  modification, are permitted provided that the following conditions 
+ *  are met:
+ *
+ *    Redistributions of source code must retain the above copyright 
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ *    Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the 
+ *    documentation and/or other materials provided with the   
+ *    distribution.
+ *
+ *    Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+ *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+*/
 
 
 #include <DataHandlerClass.h>
@@ -28,53 +65,38 @@ DataUARTHandler::DataUARTHandler(ros::NodeHandle* nh) : currentBufp(&pingPongBuf
     maxAllowedAzimuthAngleDeg = 90; // Use max angle if none specified
 }
 
-/**
- * @brief 设置获取数据的端口
- * @param[in] mySerialPort 端口名称
- */
+/*Implementation of setUARTPort*/
 void DataUARTHandler::setUARTPort(char* mySerialPort)
 {
     dataSerialPort = mySerialPort;
 }
 
-/**
- * @brief 设置波特率 
- * @param[in] myBaudRate 波特率
- */
+/*Implementation of setBaudRate*/
 void DataUARTHandler::setBaudRate(int myBaudRate)
 {
     dataBaudRate = myBaudRate;
 }
 
-/**
- * @brief 设置雷达获取数据的最大垂直角度
- * @param[in] myMaxAllowedElevationAngleDeg 最大垂直角度
- */
+/*Implementation of setMaxAllowedElevationAngleDeg*/
 void DataUARTHandler::setMaxAllowedElevationAngleDeg(int myMaxAllowedElevationAngleDeg)
 {
     maxAllowedElevationAngleDeg = myMaxAllowedElevationAngleDeg;
 }
 
-/**
- * @brief 设置雷达获取数据的最大水平角度
- * @param[in] myMaxAllowedAzimuthAngleDeg 最大水平角度
- */
+/*Implementation of setMaxAllowedAzimuthAngleDeg*/
 void DataUARTHandler::setMaxAllowedAzimuthAngleDeg(int myMaxAllowedAzimuthAngleDeg)
 {
     maxAllowedAzimuthAngleDeg = myMaxAllowedAzimuthAngleDeg;
 }
 
-/**
- * @brief 读线程所启动的函数。该函数将雷达从串口传输过来的数据读到读内存中，在读的过程中，会对所读的内存进行加锁。等读入的数据读满内存后，便会调用内存交换函数内存
- * 中的内容进行交换。
- */
+/*Implementation of readIncomingData*/
 void *DataUARTHandler::readIncomingData(void)
 {
     
     int firstPacketReady = 0;
     uint8_t last8Bytes[8] = {0};
-
-
+    
+    /*Open UART Port and error checking*/
     serial::Serial mySerialObject("", dataBaudRate, serial::Timeout::simpleTimeout(100));
     mySerialObject.setPort(dataSerialPort);
     try
@@ -85,6 +107,7 @@ void *DataUARTHandler::readIncomingData(void)
         ROS_INFO("DataUARTHandler Read Thread: Waiting 20 seconds before trying again...");
         try
         {
+            // Wait 20 seconds and try to open serial port again
             ros::Duration(20).sleep();
             mySerialObject.open();
         } catch (std::exception &e2) {
@@ -99,7 +122,7 @@ void *DataUARTHandler::readIncomingData(void)
     else
         ROS_ERROR("DataUARTHandler Read Thread: Port could not be opened");
     
-
+    /*Quick magicWord check to synchronize program with data Stream*/
     while(!isMagicWord(last8Bytes))
     {
 
@@ -114,12 +137,12 @@ void *DataUARTHandler::readIncomingData(void)
         
     }
     
-
+    /*Lock nextBufp before entering main loop*/
     pthread_mutex_lock(&nextBufp_mutex);
     
     while(ros::ok())
     {
-
+        /*Start reading UART data and writing to buffer while also checking for magicWord*/
         last8Bytes[0] = last8Bytes[1];
         last8Bytes[1] = last8Bytes[2];
         last8Bytes[2] = last8Bytes[3];
@@ -133,12 +156,12 @@ void *DataUARTHandler::readIncomingData(void)
         
         //ROS_INFO("DataUARTHandler Read Thread: last8bytes = %02x%02x %02x%02x %02x%02x %02x%02x",  last8Bytes[7], last8Bytes[6], last8Bytes[5], last8Bytes[4], last8Bytes[3], last8Bytes[2], last8Bytes[1], last8Bytes[0]);
         
-
+        /*If a magicWord is found wait for sorting to finish and switch buffers*/
         if( isMagicWord(last8Bytes) )
         {
             //ROS_INFO("Found magic word");
         
-
+            /*Lock countSync Mutex while unlocking nextBufp so that the swap thread can use it*/
             pthread_mutex_lock(&countSync_mutex);
             pthread_mutex_unlock(&nextBufp_mutex);
             
@@ -178,9 +201,7 @@ void *DataUARTHandler::readIncomingData(void)
     pthread_exit(NULL);
 }
 
-/**
- * @brief 判断是否是MagicWord
- */
+
 int DataUARTHandler::isMagicWord(uint8_t last8Bytes[8])
 {
     int val = 0, i = 0, j = 0;
@@ -239,9 +260,7 @@ void *DataUARTHandler::syncedBufferSwap(void)
     pthread_exit(NULL);
     
 }
-/**
- * @brief 处理线程所启动的函数。会处理处理内存中的内容，并将其转换为PointCloud2类型数据结构。
- */
+
 void *DataUARTHandler::sortIncomingData( void )
 {
     MmwDemo_Output_TLV_Types tlvType = MMWDEMO_OUTPUT_MSG_NULL;
@@ -274,8 +293,8 @@ void *DataUARTHandler::sortIncomingData( void )
             //init variables
             mmwData.numObjOut = 0;
 
-            //make sure packet has at least first four fields ( bytes) before we read them (not include magicWord)
-            if(currentBufp->size() < 16)
+            //make sure packet has at least first three fields (12 bytes) before we read them (does not include magicWord since it was already removed)
+            if(currentBufp->size() < 12)
             {
                sorterState = SWAP_BUFFERS;
                break;
@@ -284,22 +303,25 @@ void *DataUARTHandler::sortIncomingData( void )
             //get version (4 bytes)
             memcpy( &mmwData.header.version, &currentBufp->at(currentDatap), sizeof(mmwData.header.version));
             currentDatap += ( sizeof(mmwData.header.version) );
-
-            //get platform (4 bytes)
-            memcpy( &mmwData.header.platform, &currentBufp->at(currentDatap), sizeof(mmwData.header.platform));
-            currentDatap += ( sizeof(mmwData.header.platform) );
-
-            //get timeStamp (4 bytes)
-            memcpy( &mmwData.header.timeCpuCycles, &currentBufp->at(currentDatap), sizeof(mmwData.header.timeCpuCycles));
-            currentDatap += ( sizeof(mmwData.header.timeCpuCycles) );
-
+            
             //get totalPacketLen (4 bytes)
             memcpy( &mmwData.header.totalPacketLen, &currentBufp->at(currentDatap), sizeof(mmwData.header.totalPacketLen));
             currentDatap += ( sizeof(mmwData.header.totalPacketLen) );
-
-                //if packet doesn't have correct header size (which is based on platform), throw it away
+            
+            //get platform (4 bytes)
+            memcpy( &mmwData.header.platform, &currentBufp->at(currentDatap), sizeof(mmwData.header.platform));
+            currentDatap += ( sizeof(mmwData.header.platform) );      
+            
+            //if packet doesn't have correct header size (which is based on platform), throw it away
             //  (does not include magicWord since it was already removed)
-            headerSize = sizeof(MmwDemo_output_message_header_t);
+            if ((mmwData.header.platform & 0xFFFF) == 0x1443)  // platform is xWR1443)
+            {
+               headerSize = 7 * 4;  // xWR1443 SDK demo header does not have subFrameNumber field
+            }
+            else
+            {
+               headerSize = 8 * 4;  // header includes subFrameNumber field
+            }
             if(currentBufp->size() < headerSize)
             {
                sorterState = SWAP_BUFFERS;
@@ -309,7 +331,19 @@ void *DataUARTHandler::sortIncomingData( void )
             //get frameNumber (4 bytes)
             memcpy( &mmwData.header.frameNumber, &currentBufp->at(currentDatap), sizeof(mmwData.header.frameNumber));
             currentDatap += ( sizeof(mmwData.header.frameNumber) );
-
+            
+            //get timeCpuCycles (4 bytes)
+            memcpy( &mmwData.header.timeCpuCycles, &currentBufp->at(currentDatap), sizeof(mmwData.header.timeCpuCycles));
+            currentDatap += ( sizeof(mmwData.header.timeCpuCycles) );
+            
+            //get numDetectedObj (4 bytes)
+            memcpy( &mmwData.header.numDetectedObj, &currentBufp->at(currentDatap), sizeof(mmwData.header.numDetectedObj));
+            currentDatap += ( sizeof(mmwData.header.numDetectedObj) );
+            
+            //get numTLVs (4 bytes)
+            memcpy( &mmwData.header.numTLVs, &currentBufp->at(currentDatap), sizeof(mmwData.header.numTLVs));
+            currentDatap += ( sizeof(mmwData.header.numTLVs) );
+            
             //get subFrameNumber (4 bytes) (not used for XWR1443)
             if ((mmwData.header.platform & 0xFFFF) == 0x1443)  // platform is xWR1443)
             {
@@ -317,27 +351,11 @@ void *DataUARTHandler::sortIncomingData( void )
             }
             else
             {
-                memcpy( &mmwData.header.subFrameNumber, &currentBufp->at(currentDatap), sizeof(mmwData.header.subFrameNumber));
-                currentDatap += ( sizeof(mmwData.header.subFrameNumber) );
+               memcpy( &mmwData.header.subFrameNumber, &currentBufp->at(currentDatap), sizeof(mmwData.header.subFrameNumber));
+               currentDatap += ( sizeof(mmwData.header.subFrameNumber) );
             }
 
-            // skip chirpProcessingMargin (4 bytes)
-            // chirpProcessingMargin (4 bytes)
-            // trackingProcessingTime;(4 bytes)
-            // uartSendingTime;(4 bytes)
-            currentDatap += ( 4*sizeof(mmwData.header.frameNumber) );
-
-            //get numDetectedObj (4 bytes) (no numDetectedObj)
-            //  memcpy( &mmwData.header.numDetectedObj, &currentBufp->at(currentDatap), sizeof(mmwData.header.numDetectedObj));
-            //  currentDatap += ( sizeof(mmwData.header.numDetectedObj) );
-            
-            //get numTLVs (2 bytes)
-            memcpy( &mmwData.header.numTLVs, &currentBufp->at(currentDatap), sizeof(uint16_t));
-            currentDatap += ( sizeof(uint16_t) );
-
-            // skip checkSum;(2 bytes)
-            currentDatap += ( sizeof(uint16_t) );
-
+            //if packet lengths do not match, throw it away
             if(mmwData.header.totalPacketLen == currentBufp->size() )
             {
                sorterState = CHECK_TLV_TYPE;
@@ -346,14 +364,28 @@ void *DataUARTHandler::sortIncomingData( void )
 
             break;
             
-         case READ_OBJ_STRUCT:
-
+        case READ_OBJ_STRUCT:
+            
             // CHECK_TLV_TYPE code has already read tlvType and tlvLen
 
             i = 0;
             offset = 0;
-
-            // FIXME: Removed code for getting numObjs from header
+            
+            if (((mmwData.header.version >> 24) & 0xFF) < 3)  // SDK version is older than 3.x
+            {
+                //get number of objects
+                memcpy( &mmwData.numObjOut, &currentBufp->at(currentDatap), sizeof(mmwData.numObjOut));
+                currentDatap += ( sizeof(mmwData.numObjOut) );
+            
+                //get xyzQFormat
+                memcpy( &mmwData.xyzQFormat, &currentBufp->at(currentDatap), sizeof(mmwData.xyzQFormat));
+                currentDatap += ( sizeof(mmwData.xyzQFormat) );
+            }
+            else  // SDK version is at least 3.x
+            {
+                mmwData.numObjOut = mmwData.header.numDetectedObj;
+            }
+            
             RScan->header.seq = 0;
             //RScan->header.stamp = (uint32_t) mmwData.header.timeCpuCycles;
             RScan->header.frame_id = "base_radar_link";
@@ -386,82 +418,85 @@ void *DataUARTHandler::sortIncomingData( void )
 
 
             // Populate pointcloud
-            // TODO: Change point-cloud parsing module
-
-            //get object point unit (Reduce cost of uart data transport)
-            memcpy(&mmwData.unitOut, &currentBufp->at(currentDatap), sizeof(MmwDemo_output_message_point_unit));
-            currentDatap += sizeof(MmwDemo_output_message_point_unit);
-
-            // FIXME: Print info
-            std::cout << "PointNum: " << mmwData.numObjOut << std::endl;
-            std::cout << "azimuthUnit: " << mmwData.unitOut.azimuthUnit << std::endl;
-            std::cout << "rangeUnit: " << mmwData.unitOut.rangeUnit << std::endl;
-            std::cout << "snrUnit: " << mmwData.unitOut.snrUnit << std::endl;
-
-
-                while( i < mmwData.numObjOut )
+            while( i < mmwData.numObjOut )
             {
-                // FIXME: Print info
-                std::cout << "Point" << i << ": " << std::endl;
-                std::cout << "Currentdata: " << currentDatap << std::endl;
-                std::cout << "CurrentBufpSize: " << currentBufp->size() << std::endl;
-                if (((mmwData.header.version >> 24) & 0xFF) >= 3)  // SDK version is 3.x
+
+                if (((mmwData.header.version >> 24) & 0xFF) < 3)  // SDK version is older than 3.x
                 {
 
-                    //get point azimuth
-                    memcpy( &mmwData.pointOut.azimuth, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.azimuth));
-                    currentDatap += ( sizeof(mmwData.pointOut.azimuth) );
+                    //get object range index
+                    memcpy( &mmwData.objOut.rangeIdx, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.rangeIdx));
+                    currentDatap += ( sizeof(mmwData.objOut.rangeIdx) );
                 
-                    //get point doppler
-                    memcpy( &mmwData.pointOut.doppler, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.doppler));
-                    currentDatap += ( sizeof(mmwData.pointOut.doppler) );
-
-                    //get point range
-                    memcpy( &mmwData.pointOut.range, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.range));
-                    currentDatap += ( sizeof(mmwData.pointOut.range) );
-
-                    //get point snr
-                    memcpy( &mmwData.pointOut.snr, &currentBufp->at(currentDatap), sizeof(mmwData.pointOut.snr));
-                    currentDatap += ( sizeof(mmwData.pointOut.snr) );
-
-                    // FIXME: Import math lib
-                    float tempAzimuth, tempRange, tempSnr;
-                    tempAzimuth = (mmwData.unitOut.azimuthUnit * mmwData.pointOut.azimuth * M_PI/180);
-                    tempRange = mmwData.unitOut.rangeUnit * mmwData.pointOut.range;
-                    tempSnr = mmwData.unitOut.snrUnit * mmwData.pointOut.snr;
-
-                    mmwData.objOut.x = tempRange*sin(tempAzimuth);
-                    mmwData.objOut.y = tempRange*cos(tempAzimuth);
-                    mmwData.objOut.z = 0.1f;
-
+                    //get object doppler index
+                    memcpy( &mmwData.objOut.dopplerIdx, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.dopplerIdx));
+                    currentDatap += ( sizeof(mmwData.objOut.dopplerIdx) );
+                
+                    //get object peak intensity value
+                    memcpy( &mmwData.objOut.peakVal, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.peakVal));
+                    currentDatap += ( sizeof(mmwData.objOut.peakVal) );
+                
+                    //get object x-coordinate
+                    memcpy( &mmwData.objOut.x, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.x));
+                    currentDatap += ( sizeof(mmwData.objOut.x) );
+                
+                    //get object y-coordinate
+                    memcpy( &mmwData.objOut.y, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.y));
+                    currentDatap += ( sizeof(mmwData.objOut.y) );
+                
+                    //get object z-coordinate
+                    memcpy( &mmwData.objOut.z, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.z));
+                    currentDatap += ( sizeof(mmwData.objOut.z) );
+                
                     //convert from Qformat to float(meters)
                     float temp[4];
-
+                
                     temp[0] = (float) mmwData.objOut.x;
                     temp[1] = (float) mmwData.objOut.y;
                     temp[2] = (float) mmwData.objOut.z;
-                    //temp[4] = //doppler
-
-                    /*
+                    //temp[4] = //doppler 
+                
                     for(int j = 0; j < 3; j++)
                     {
                         if(temp[j] > 32767)
                             temp[j] -= 65535;
-
+                    
                         temp[j] = temp[j] / pow(2,mmwData.xyzQFormat);
-                     }
-
+                     }   
+                 
                     // Convert intensity to dB
-                    temp[3] = 10 * log10(tempSnr + 1);  // intensity
-
-                    */
-                    temp[3] = tempSnr * 10;
-
+                    temp[3] = 10 * log10(mmwData.objOut.peakVal + 1);  // intensity
+                
                     // Map mmWave sensor coordinates to ROS coordinate system
                     RScan->points[i].x = temp[1];   // ROS standard coordinate system X-axis is forward which is the mmWave sensor Y-axis
                     RScan->points[i].y = -temp[0];  // ROS standard coordinate system Y-axis is left which is the mmWave sensor -(X-axis)
                     RScan->points[i].z = temp[2];   // ROS standard coordinate system Z-axis is up which is the same as mmWave sensor Z-axis
                     RScan->points[i].intensity = temp[3];
+                }
+                else  // SDK version is 3.x+
+                {
+                    //get object x-coordinate (meters)
+                    memcpy( &mmwData.newObjOut.x, &currentBufp->at(currentDatap), sizeof(mmwData.newObjOut.x));
+                    currentDatap += ( sizeof(mmwData.newObjOut.x) );
+                
+                    //get object y-coordinate (meters)
+                    memcpy( &mmwData.newObjOut.y, &currentBufp->at(currentDatap), sizeof(mmwData.newObjOut.y));
+                    currentDatap += ( sizeof(mmwData.newObjOut.y) );
+                
+                    //get object z-coordinate (meters)
+                    memcpy( &mmwData.newObjOut.z, &currentBufp->at(currentDatap), sizeof(mmwData.newObjOut.z));
+                    currentDatap += ( sizeof(mmwData.newObjOut.z) );
+                
+                    //get object velocity (m/s)
+                    memcpy( &mmwData.newObjOut.velocity, &currentBufp->at(currentDatap), sizeof(mmwData.newObjOut.velocity));
+                    currentDatap += ( sizeof(mmwData.newObjOut.velocity) );
+
+                    // Map mmWave sensor coordinates to ROS coordinate system
+                    RScan->points[i].x = mmwData.newObjOut.y;   // ROS standard coordinate system X-axis is forward which is the mmWave sensor Y-axis
+                    RScan->points[i].y = -mmwData.newObjOut.x;  // ROS standard coordinate system Y-axis is left which is the mmWave sensor -(X-axis)
+                    RScan->points[i].z = mmwData.newObjOut.z;   // ROS standard coordinate system Z-axis is up which is the same as mmWave sensor Z-axis
+
+                    // For SDK 3.x, intensity is replaced by snr in sideInfo and is parsed in the READ_SIDE_INFO code
                 }
                 i++;
 
@@ -498,7 +533,7 @@ void *DataUARTHandler::sortIncomingData( void )
                      //ROS_INFO("DataUARTHandler Sort Thread : Parsing Side Info i=%d and tlvLen = %u", i, tlvLen);
               }
             
-              currentDatap += (tlvLen - sizeof(MmwDemo_output_message_tl));
+              currentDatap += tlvLen;
             }
 
             sorterState = CHECK_TLV_TYPE;
@@ -654,15 +689,9 @@ void *DataUARTHandler::sortIncomingData( void )
                 case MMWDEMO_OUTPUT_MSG_NULL:
                 
                     break;
-                // FIXME: Modified tlv_type for indoor_false_det bin
-                case MMWDEMO_OUTPUT_MSG_POINT_CLOUD:
+                
+                case MMWDEMO_OUTPUT_MSG_DETECTED_POINTS:
                     //ROS_INFO("DataUARTHandler Sort Thread : Object TLV");
-                    mmwData.numObjOut = (tlvLen - sizeof(MmwDemo_output_message_tl) - sizeof(MmwDemo_output_message_point_unit)) / sizeof(MmwDemo_output_message_UARTpoint);
-
-                    // FIXME: Print info
-                    std::cout << "Tlvlen: " << tlvLen << std::endl;
-                    std::cout << "NumObj: " << mmwData.numObjOut << std::endl;
-
                     sorterState = READ_OBJ_STRUCT;
                     break;
                 
@@ -701,14 +730,7 @@ void *DataUARTHandler::sortIncomingData( void )
                     sorterState = READ_HEADER;
                     break;
                 
-                default:
-                    // Skip target info of Indoor_false_det
-                    if(tlvLen != 0) {
-                        currentDatap += (tlvLen-sizeof(MmwDemo_output_message_tl));
-                    }
-                    sorterState = CHECK_TLV_TYPE;
-
-                    break;
+                default: break;
                 }
             }
             
@@ -747,12 +769,6 @@ void *DataUARTHandler::sortIncomingData( void )
     pthread_exit(NULL);
 }
 
-/**
- * @brief 该系统利用了多线程双缓存机制来与雷达板的数据进行串口通讯。双缓存的基本原理是读线程先清空一部分缓存，然后将数据读到这部分缓存地址中，与此同时，处理线程
- * 也同时处理处理缓存中的数据，当读缓存数据读满，并且处理缓存中的数据处理完毕以后，利用交换线程将处理缓存与读缓存中的内容进行交换，再运行读线程和处理线程。该函数
- * 首先创建了三个线程，分别用来读取数据、处理数据以及交换缓存区的内容。其次创建了互斥锁以及条件变量，防止三个线程对在读缓存以及在处理缓存中的数据同时进行操作。最
- * 后等程序停止后销毁了互斥锁以及条件变量。
- */
 void DataUARTHandler::start(void)
 {
     
@@ -768,7 +784,8 @@ void DataUARTHandler::start(void)
     pthread_cond_init(&sort_go_cv, NULL);
     
     countSync = 0;
-
+    
+    /* Create independent threads each of which will execute function */
     iret1 = pthread_create( &uartThread, NULL, this->readIncomingData_helper, this);
     if(iret1)
     {
