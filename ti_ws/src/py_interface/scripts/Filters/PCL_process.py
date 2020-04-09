@@ -38,7 +38,7 @@ class PCL_process:
             if 2.0 > t_dis > 0.5:
                 if t_dis < 1.0 and p[3] > points_list[int(GroundFiltOutRate * len(points_list))][3]:
                     continue
-                res_points.append((p[0], p[1], p[2], p[3]))
+                res_points.append((p[0], p[1], 0.0, p[3]))
 
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 

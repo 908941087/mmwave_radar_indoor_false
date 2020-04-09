@@ -74,7 +74,7 @@ void *DataUARTHandler::readIncomingData(void)
     int firstPacketReady = 0;
     uint8_t last8Bytes[8] = {0};
 
-
+    ROS_INFO("Check Serial: Open serial port");
     serial::Serial mySerialObject("", dataBaudRate, serial::Timeout::simpleTimeout(50));
     mySerialObject.setPort(dataSerialPort);
     try
@@ -99,10 +99,15 @@ void *DataUARTHandler::readIncomingData(void)
     else
         ROS_ERROR("DataUARTHandler Read Thread: Port could not be opened");
     
-
+    int count = 0;
     while(!isMagicWord(last8Bytes))
     {
-
+        if(count == 8) {
+            std::stringstream ss;
+            ss << std::hex << std::uppercase << last8Bytes;
+            std::string t_str = ss.str();
+            ROS_INFO("Check Serial: First 8 bytes is %s", t_str.c_str());
+        }
         last8Bytes[0] = last8Bytes[1];
         last8Bytes[1] = last8Bytes[2];
         last8Bytes[2] = last8Bytes[3];
@@ -111,7 +116,9 @@ void *DataUARTHandler::readIncomingData(void)
         last8Bytes[5] = last8Bytes[6];
         last8Bytes[6] = last8Bytes[7];
         mySerialObject.read(&last8Bytes[7], 1);
-        
+        if(0 == (++count %1000)) {
+            ROS_INFO("Check Serial: Have tried count times, couldn't find magic word.", count);
+        }
     }
     
 
