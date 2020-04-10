@@ -10,6 +10,7 @@ global_costmap:
    resolution: 0.02
    transform_tolerance: 10
    plugins:
+     - {name: static_layer,            type: "costmap_2d::StaticLayer"}
      - {name: obstacle_layer,          type: "costmap_2d::VoxelLayer"}
      - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
      
