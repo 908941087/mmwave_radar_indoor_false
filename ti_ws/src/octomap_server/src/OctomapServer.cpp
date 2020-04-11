@@ -1277,28 +1277,55 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
   return color;
 }
 
+    double OctomapServer::calHitRate(const point3d& point, const double delta, const int step) const {
+        uint32_t hitCnt = 1;
+        double hitRate = 0.0; // HitRate = Neighbor points hit / Neighbor area
+        octomap::OcTreeKey key;
+
+        for (int i = -step; i <= step; ++i){
+            for(int j = -step; j <=step; ++j){
+                point3d deltaP(i * delta, j * delta, 0.0);
+                point3d tmpP = point + deltaP;
+                m_octree->coordToKeyChecked(tmpP, key);
+                //use OcTreeBaseImpl::search()
+                OcTreeNode* node = m_octree->search(key);
+                if(node != NULL && node->getLogOdds() > 0.5) {
+                    ++ hitCnt;
+                }
+            }
+        }
+        hitRate = (double)hitCnt / (step*step);
+        return hitRate;
+    }
+
     void OctomapServer::transPoint2wall(point3d& point, point3d sensorOrigin) {
         // Neighbour arguments (self func)
-        double delta = 0.00;
-        int step = 2;
-
+        double delta = 0.1;
+        int step = 1;
+        double distance = sensorOrigin.distance(point), disRate = 1.5;
+        step = int(distance / 1.5);
+        if(step <= 1) return;
+        // TODO: Add config param to set hitRateThre and step
+        // ("hit_rate_thre", hitRate);
+        /**
+         * Algorithm:
+         *  |i       |1            |2                        | 3
+         *  |points  |point -----> | 2*distance ponit -----> | 3*distance point |-----> ....
+         *  |dis*dis |3*3 neighbor |  5*5 neighbor           | 7*7 neighbor     |
+         *  |hitRate |hit/neighbor |                         |                  |
+         *  > if hitRate[i] * dis[i] < hitRate[j] * hitRate[j]
+         */
         point3d originPart, pointPart, midpoint;
         octomap::OcTreeKey key;
+        double remoteRate = 0.0, nearRate = 1.0;
+        remoteRate = calHitRate(point, delta, step);
         for(int disRate = 2; disRate <= step; ++disRate){
             originPart = sensorOrigin * ((disRate-1.0) / disRate);
             pointPart = point * (1.0/disRate);
             midpoint = originPart + pointPart;
-            for (int i = -step; i <= step; ++i){
-                for(int j = -step; j <=step; ++j){
-                    point3d deltaP(i * delta, j * delta, 0.0);
-                    point3d tmpP = midpoint + deltaP;
-                    m_octree->coordToKeyChecked(tmpP, key);
-                    //use OcTreeBaseImpl::search()
-                    OcTreeNode* node = m_octree->search(key);
-                    if(node != NULL && node->getLogOdds() > 0.5) {
-                        point = midpoint;
-                    }
-                }
+            nearRate = calHitRate(midpoint, delta, disRate);
+            if(step*remoteRate < nearRate) {
+                point = midpoint;
             }
         }
     }

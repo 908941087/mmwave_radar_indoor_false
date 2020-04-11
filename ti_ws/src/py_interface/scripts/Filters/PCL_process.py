@@ -27,19 +27,14 @@ class PCL_process:
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
         res_points = []
         points_list = [(p[0], p[1], p[2], p[3]) for p in points]
-        ave_intensity = sum(points_list[3]) / len(points_list)
-        # rospy.loginfo("AVE SNR: %s", str(ave_intensity))
 
-        points_list.sort(key=lambda p: p[3])
-        FiltOutRate = 0.1
-        GroundFiltOutRate = 0.9
+        # points_list.sort(key=lambda p: p[3])
+        FiltOutRate = 0
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 2.0 > t_dis > 0.5:
-                if t_dis < 1.0 and p[3] > points_list[int(GroundFiltOutRate * len(points_list))][3]:
-                    continue
-                res_points.append((p[0], p[1], 0.0, p[3]))
-
+            if 2.0 > t_dis:
+                if 1.5 > p[2] > 0:
+                    res_points.append((p[0], p[1], p[2], p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
     def stablize_preframe(self):
@@ -54,6 +49,8 @@ class PCL_process:
         res_points = []
         for p in points:
             res_points.append([p[0], p[1], p[2]])
+        if len(res_points) <= 1:
+            return
         cloud = np.array(res_points, dtype='float32', order='C')
         cloud = point_cloud.RemoveStatisticalOutliers(cloud, 5, 0.05)
 
@@ -63,16 +60,15 @@ class PCL_process:
             res_points.append((p[0], p[1], p[2], 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
-    def add_z_info(self, height = 0.5, step = 10):
+    def add_z_info(self, height=0.5, step=10):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
         res_points = []
         points_list = [(p[0], p[1], p[2], p[3]) for p in points]
 
         for p in points_list:
             for i in range(step):
-                res_points.append((p[0], p[1], p[2] + (i*height/step), 40.0))
+                res_points.append((p[0], p[1], p[2] + (i * height / step), 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
-
 
     def genrate_res(self):
         return self.pc2

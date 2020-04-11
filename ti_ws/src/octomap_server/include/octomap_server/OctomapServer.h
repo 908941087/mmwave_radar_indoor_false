@@ -98,6 +98,7 @@ public:
   virtual void insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& cloud);
   virtual bool openFile(const std::string& filename);
 
+  double calHitRate(const octomap::point3d& point, const double delta, const int step) const;
 protected:
   void transPoint2wall(octomap::point3d& point, octomap::point3d sensorOrigin); //Yjh_Function
   inline static void updateMinKey(const octomap::OcTreeKey& in, octomap::OcTreeKey& min) {
