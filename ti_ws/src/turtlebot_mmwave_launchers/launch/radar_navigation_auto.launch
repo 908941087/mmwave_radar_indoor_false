@@ -8,7 +8,7 @@
   </include>
 
   <!-- Map server -->
-  <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/oy19.bt projected_map:=map" />
+  <!-- <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/mapping_li.bt projected_map:=map" /> -->
 
   <!-- Fake localization node allows directly setting initial pose and goal -->
   <node pkg="fake_localization" type="fake_localization" name="fake_localization">
