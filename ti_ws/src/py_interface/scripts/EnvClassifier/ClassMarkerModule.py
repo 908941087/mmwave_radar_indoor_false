@@ -1,15 +1,17 @@
 from utils import get_area, get_density, get_center, get_xy_lim, dist
 from enum import Enum
-import rospy
-from visualization_msgs.msg import Marker
+# import rospy
+# from visualization_msgs.msg import Marker
 from wall_finder import WallFinder
 import numpy as np
+from sklearn.neighbors import KDTree
 
 
 class Mark(Enum):
     NOISE = 0
     WALL = 1
     FURNITURE = 2
+    OBSTACLE = 3
 
 
 class ClassMarker:
@@ -20,30 +22,40 @@ class ClassMarker:
     MIN_WALL_LENGTH = 1.1
     NOISE_POINTS_COUNT_THRESHOLD = 40
     DENSITY_PER_SQUARE_METER_THRESHOLD = 20000
+    MIN_ISOLATION_DIST = 0.7 # meters
+
+    CLASS_TIP_STR = {
+        Mark.NOISE: "Noise",
+        Mark.WALL: "Wall",
+        Mark.FURNITURE: "Fnt",
+        Mark.OBSTACLE: "Obst"
+    }
 
     def __init__(self):
         self.markers = None  # wall, noise, furniture
+        self.distances = {}
         self.pub_markers = []
         self._show_noise = False
-        self.CLASS_TIP_STR = {
-            Mark.NOISE: "Noise",
-            Mark.WALL: "Wall",
-            Mark.FURNITURE: "Fnt"
-        }
-
+        
     def JudgeClass(self, clusters):
         if clusters is None:
             return
         self.markers = []
-        for cluster in clusters:
+        self.distances = {}
+
+        cluster_centers = np.array([get_center(c) for c in clusters]).reshape(-1, 2)
+        
+        for i in range(len(clusters)):
+            cluster = clusters[i]
+            info = {"ID": i, "center": cluster_centers[i]}
+
             # use aera and density to recognize noise
-            area = get_area(cluster)
-            density = len(cluster) / area
-            if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
-                    len(
-                        cluster) < self.NOISE_POINTS_COUNT_THRESHOLD and density / area < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
-                self.markers.append(
-                    {"mark": Mark.NOISE, "center": get_center(cluster), "area": area, "density": density})
+            info["area"] = get_area(cluster)
+            info["density"] = len(cluster) / info["area"]
+            if (info["area"] < self.AREA_THRESHOLD or info["density"] < self.DENSITY_THRESHOLD) and \
+                    len(cluster) < self.NOISE_POINTS_COUNT_THRESHOLD and info["density"] / info["area"] < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
+                info["mark"] = Mark.NOISE
+                self.markers.append(info)
                 continue
             # try to treat this cluster as wall, see if it fits well
             wall_finder = WallFinder()
@@ -52,12 +64,50 @@ class ClassMarker:
             total_length = sum([dist(ends[0], ends[1]) for ends in [w["ends"] for w in walls]])
             if avg_width > self.MAX_WALL_WIDTH or total_length < self.MIN_WALL_LENGTH or \
                     total_length / avg_width < self.RATIO_THRESHOLD:
-                self.markers.append(
-                    {"mark": Mark.FURNITURE, "center": get_center(cluster), "area": area, "density": density})
+                info["mark"] = Mark.OBSTACLE
+                self.markers.append(info)
                 continue
             else:
-                self.markers.append({"mark": Mark.WALL, "center": get_center(cluster), "area": area, "density": density,
-                                     "length": total_length, "width": avg_width, "walls": walls})
+                info["mark"] = Mark.WALL
+                info["length"] = total_length
+                info["width"] = avg_width
+                info["walls"] = walls
+                self.markers.append(info)
+
+        # build KDTree using cluster centers that don't contain noise
+        clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]
+        cluster_centers_without_noise = np.array([cluster_centers[i] for i in range(len(cluster_centers)) if self.markers[i]["mark"] is not Mark.NOISE])
+        tree = KDTree(cluster_centers_without_noise, leaf_size=2)
+
+        for i in range(len(cluster_centers)):
+            # use KDTree to find the nearest cluster, check if current cluster is isolated
+            distance, ind = tree.query(cluster_centers[i].reshape(-1, 2), k=4)
+            min_dist = min([self.dist_cluster2cluster(clusters[i], clusters_without_noise[index], list(cluster_centers[i]), list(cluster_centers_without_noise[index])) for index in ind[0][1:]])
+            self.markers[i]["isolated"] = min_dist > self.MIN_ISOLATION_DIST
+            self.markers[i]["min_dist"] = min_dist
+
+
+    def dist_cluster2cluster(self, cluster1, cluster2, center1, center2):
+        key = ""
+        if center1[0] > center2[0]:
+            key = str(center2) + "," + str(center1)
+        else:
+            key = str(center1) + "," + str(center2)
+        if self.distances.has_key(key): return self.distances[key]
+        min_dist = float('inf')
+        p2 = None
+        for p in cluster2:
+            temp = dist(p, center1)
+            if min_dist > temp:
+                min_dist = temp
+                p2 = p
+        min_dist = float('inf')
+        for p in cluster1:
+            temp = dist(p, p2)
+            if min_dist > temp:
+                min_dist = temp
+        self.distances[key] = min_dist
+        return min_dist
 
     def generate_markers(self, duration=5.0):
         mark_index = 0

@@ -37,7 +37,7 @@ class GroupingTracker:
                 walls = wall_finder.find_walls(cluster)
                 for w in walls:
                     res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
-            if self.class_marker.markers[i]["mark"] is Mark.FURNITURE:
+            if self.class_marker.markers[i]["mark"] in [Mark.FURNITURE, Mark.OBSTACLE]:
                 res_points.extend(self.clusters[i])
         return res_points
 
@@ -58,7 +58,7 @@ class GroupingTracker:
                     for w in walls:
                         plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
                         res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
-            if mark is Mark.FURNITURE:
+            if mark in [Mark.FURNITURE, Mark.OBSTACLE]:
                 res_points.extend(clusters[mark])
         return res_points
 
@@ -101,13 +101,8 @@ class GroupingTracker:
         for cluster in self.clusters:
             marker = self.class_marker.markers[index]
 
-            information = ""
-            if verbose:
-                information = "\narea: " + str(round(marker["area"], 2)) + \
-                "\ndensity: " + str(round(marker["density"], 2)) + \
-                    "\npoint count: " + str(len(cluster)) + \
-                    "\n d / a: " + str(round(marker["density"] / marker["area"], 2))
-
+            information = "\nID: " + str(marker["ID"]) + "\nisolated: " + str(marker["isolated"]) + "\nmin_dist: " + str(round(marker["min_dist"], 2))
+            
             if marker["mark"] is Mark.NOISE:
                 ax.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='r', s=1)
                 information = "NOISE" + information
@@ -118,21 +113,27 @@ class GroupingTracker:
                     information += "\nratio: " + str(round(marker["length"] / marker["width"], 2)) + \
                     "\nlength: " + str(round(marker["length"], 2)) + \
                         "\nwidth: " + str(round(marker["width"], 2))
-                # walls = marker["walls"]
-                # for w in walls:
-                #     plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='b', linewidth=2)
+                walls = marker["walls"]
+                for w in walls:
+                    plt.plot([i[0] for i in w['ends']], [i[1] for i in w['ends']], c='orange', linewidth=2)
             else:
                 ax.scatter([p[0] for p in cluster], [p[1] for p in cluster], c='g', s=1)
-                information = "FURNITURE" + information    
+                information = "OBSTACLE" + information
             ax.text(marker["center"][0], marker["center"][1], information, style='italic', fontsize=6, bbox={'facecolor': 'white', 'alpha': 0.7, 'pad': 5})
             index += 1
+            if verbose:
+                information = "\narea: " + str(round(marker["area"], 2)) + \
+                "\ndensity: " + str(round(marker["density"], 2)) + \
+                    "\npoint count: " + str(len(cluster)) + \
+                    "\n d / a: " + str(round(marker["density"] / marker["area"], 2))
+
 
         plt.show()
 
 
 if __name__ == '__main__':
     gt = GroupingTracker()
-    source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/0.pcd")
+    source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd")
     # gt.show_generated_points(source_points)
     gt.show_marked_clusters(source_points, verbose=False)
     # gt.show_clusters()

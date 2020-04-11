@@ -1,0 +1,1 @@
+rosrun pcl_ros pointcloud_to_pcd input:=/filtered_point_cloud_centers
