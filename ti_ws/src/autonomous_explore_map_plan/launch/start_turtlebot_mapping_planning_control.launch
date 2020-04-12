@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="enable_z_projection" value="true"/>
-	<arg name="enable_octomap" value="true"/>
+	<arg name="enable_octomap" value="false"/>
 	<arg name="enable_controller" value="true"/>
 	<arg name="enable_planner" value="true"/>
 	<arg name="enable_exploration" value="true"/>
