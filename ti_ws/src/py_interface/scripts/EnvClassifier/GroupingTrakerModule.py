@@ -32,9 +32,7 @@ class GroupingTracker:
         for i in range(self.clusters_num):
             # res_points.append(self.point_generator.generate(self.clusters[i]))
             if self.class_marker.markers[i]["mark"] is Mark.WALL:
-                wall_finder = WallFinder()
-                cluster = self.clusters[i]
-                walls = wall_finder.find_walls(cluster)
+                walls = self.class_marker.markers[i]["walls"]
                 for w in walls:
                     res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
             if self.class_marker.markers[i]["mark"] in [Mark.FURNITURE, Mark.OBSTACLE]:
@@ -133,7 +131,7 @@ class GroupingTracker:
 
 if __name__ == '__main__':
     gt = GroupingTracker()
-    source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd")
+    source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/0.pcd")
     # gt.show_generated_points(source_points)
     gt.show_marked_clusters(source_points, verbose=False)
     # gt.show_clusters()

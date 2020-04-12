@@ -45,6 +45,7 @@ class ClassMarker:
 
         cluster_centers = np.array([get_center(c) for c in clusters]).reshape(-1, 2)
         
+        # mark clusters for the first round
         for i in range(len(clusters)):
             cluster = clusters[i]
             info = {"ID": i, "center": cluster_centers[i]}
@@ -77,14 +78,26 @@ class ClassMarker:
         # build KDTree using cluster centers that don't contain noise
         clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]
         cluster_centers_without_noise = np.array([cluster_centers[i] for i in range(len(cluster_centers)) if self.markers[i]["mark"] is not Mark.NOISE])
+        if len(cluster_centers_without_noise) in [0, 1]: return
+        
         tree = KDTree(cluster_centers_without_noise, leaf_size=2)
+        query_size = 6
+        if query_size > len(cluster_centers_without_noise): query_size = len(cluster_centers_without_noise)
 
         for i in range(len(cluster_centers)):
             # use KDTree to find the nearest cluster, check if current cluster is isolated
-            distance, ind = tree.query(cluster_centers[i].reshape(-1, 2), k=4)
+            distance, ind = tree.query(cluster_centers[i].reshape(-1, 2), k=query_size)
             min_dist = min([self.dist_cluster2cluster(clusters[i], clusters_without_noise[index], list(cluster_centers[i]), list(cluster_centers_without_noise[index])) for index in ind[0][1:]])
             self.markers[i]["isolated"] = min_dist > self.MIN_ISOLATION_DIST
             self.markers[i]["min_dist"] = min_dist
+
+        # remark walls that are isolated as obstacles
+        for marker, cluster in zip(self.markers, clusters):
+            if marker["isolated"] and marker["mark"] is Mark.WALL:
+                marker["mark"] = Mark.OBSTACLE
+                del marker["length"]
+                del marker["width"]
+                del marker["walls"]
 
 
     def dist_cluster2cluster(self, cluster1, cluster2, center1, center2):
