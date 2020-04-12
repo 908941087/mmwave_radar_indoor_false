@@ -1300,10 +1300,10 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
 
     void OctomapServer::transPoint2wall(point3d& point, point3d sensorOrigin) {
         // Neighbour arguments (self func)
-        double delta = 0.1;
+        double delta = 0.15; // 1 deg and five meters
         int step = 1;
         double distance = sensorOrigin.distance(point), disRate = 1.5;
-        step = int(distance / 1.5);
+        step = int(distance / 0.75);
         if(step <= 1) return;
         // TODO: Add config param to set hitRateThre and step
         // ("hit_rate_thre", hitRate);
