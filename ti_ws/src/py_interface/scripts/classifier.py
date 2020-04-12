@@ -19,7 +19,7 @@ class SubThread(threading.Thread):
         self.marker_array_pub_thread = marker_array_pub_thread
         self.marker_array_pub_event = marker_array_pub_event
         self.group_tracker = GroupingTrakerModule.GroupingTracker()
-        self.duration = 2.0
+        self.duration = 10.0
 
     def run(self):
         rospy.loginfo("Start sub thread: " + self.thread_name)

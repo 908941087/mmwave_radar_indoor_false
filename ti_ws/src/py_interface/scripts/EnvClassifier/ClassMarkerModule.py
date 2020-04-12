@@ -77,11 +77,17 @@ class ClassMarker:
         # build KDTree using cluster centers that don't contain noise
         clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]
         cluster_centers_without_noise = np.array([cluster_centers[i] for i in range(len(cluster_centers)) if self.markers[i]["mark"] is not Mark.NOISE])
+        if len(cluster_centers_without_noise) in [0, 1]:
+            return
         tree = KDTree(cluster_centers_without_noise, leaf_size=2)
 
+
+        query_size = 4
+        if query_size > len(cluster_centers_without_noise):
+            query_size = len(cluster_centers_without_noise)
         for i in range(len(cluster_centers)):
             # use KDTree to find the nearest cluster, check if current cluster is isolated
-            distance, ind = tree.query(cluster_centers[i].reshape(-1, 2), k=4)
+            distance, ind = tree.query(cluster_centers[i].reshape(-1, 2), k=query_size)
             min_dist = min([self.dist_cluster2cluster(clusters[i], clusters_without_noise[index], list(cluster_centers[i]), list(cluster_centers_without_noise[index])) for index in ind[0][1:]])
             self.markers[i]["isolated"] = min_dist > self.MIN_ISOLATION_DIST
             self.markers[i]["min_dist"] = min_dist
