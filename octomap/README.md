@@ -5,8 +5,10 @@
 
 2. 编译
 > mkdir build && cd build	
+
 > cmake ..
-> 使用下面的参数可按Debug模式编译，方便后继调试
+
+使用下面的参数可按Debug模式编译，方便后继调试
 > cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 3. 生成链接库
@@ -14,6 +16,7 @@
 
 4. 用编译好的链接库替换ros自带的
 > cd <path to octomap>/octomap/
+
 > sudo ./cp2roslib.sh
 
 

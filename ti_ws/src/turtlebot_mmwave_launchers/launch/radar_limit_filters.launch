@@ -21,8 +21,8 @@
       <remap from="~output" to="xy_filt_out" />
       <rosparam>
          filter_field_name: y
-         filter_limit_min: -4
-         filter_limit_max: 4
+         filter_limit_min: -3
+         filter_limit_max: 3
          filter_limit_negative: False
       </rosparam>
    </node>
@@ -33,7 +33,7 @@
       <rosparam>
          filter_field_name: z
          filter_limit_min: -0.4
-         filter_limit_max: 0.10
+         filter_limit_max: 1.0
          filter_limit_negative: False
       </rosparam>
    </node>
@@ -43,7 +43,7 @@
       <remap from="~output" to="xyzi_filt_out" />
       <rosparam>
          filter_field_name: intensity
-         filter_limit_min: 28
+         filter_limit_min: 0
          filter_limit_max: 300000
          filter_limit_negative: False
       </rosparam>

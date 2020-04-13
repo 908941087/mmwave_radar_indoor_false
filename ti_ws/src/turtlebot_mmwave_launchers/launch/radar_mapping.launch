@@ -1,6 +1,7 @@
 <!--
   Launch file to perform mapping using octomap with the radar
  -->
+
 <launch>
 
   <!-- Publish static transform from map to odom for mapping using only odometry info -->
@@ -10,17 +11,17 @@
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
   </include>
 
-  <!-- Create "raw" 3D map using first octomap node -->
-  <node pkg="octomap_server" type="octomap_server_node" name="octomap_raw" output="screen" launch-prefix="xterm -e gdb --args">
-    <remap from="octomap_point_cloud_centers" to="raw_point_cloud_centers" />
-    <remap from="projected_map" to="raw_map" />
-    <remap from="cloud_in" to="xyzi_filt_out" />
-  </node>
+<!--  &lt;!&ndash; Create "raw" 3D map using first octomap node &ndash;&gt;-->
+<!--  <node pkg="octomap_server" type="octomap_server_node" name="octomap_raw" output="screen">-->
+<!--    <remap from="octomap_point_cloud_centers" to="raw_point_cloud_centers" />-->
+<!--    <remap from="projected_map" to="raw_map" />-->
+<!--    <remap from="cloud_in" to="xyzi_filt_out" />-->
+<!--  </node>-->
   
-  <!-- Perform SOR filtering on output from "raw" octomap node -->
+  <!-- Perform SOR filtering on output from "raw" octomap node  -->
   <node pkg="nodelet" type="nodelet" name="mapping_SOR_filt_mapping" args="standalone pcl/StatisticalOutlierRemoval" output="screen" >
-    <remap from="~input" to="raw_point_cloud_centers" />
-    <remap from="~output" to="mapping_SOR_filter_out" />
+    <remap from="~input" to="xyzi_filt_out" />
+    <remap from="~output" to="raw_point_cloud_centers" />
     <param name="mean_k" value="20" />
     <param name="stddev" value="0.04" />
   </node>
@@ -28,8 +29,9 @@
   <!-- Create "filtered" 3D map using second octomap node -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_filtered" output="screen" >
     <remap from="octomap_point_cloud_centers" to="filtered_point_cloud_centers" />
-    <remap from="projected_map" to="filtered_map" />
-    <remap from="cloud_in" to="mapping_SOR_filter_out" />
+    <remap from="projected_map" to="map" />
+    <!-- <remap from="projected_map" to="filtered_map" /> -->
+    <remap from="cloud_in" to="raw_point_cloud_centers" />
   </node>
   
 </launch>
