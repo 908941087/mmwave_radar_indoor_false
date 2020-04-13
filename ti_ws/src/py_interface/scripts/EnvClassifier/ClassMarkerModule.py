@@ -1,7 +1,7 @@
 from utils import get_area, get_density, get_center, get_xy_lim, dist
 from enum import Enum
-import rospy
-from visualization_msgs.msg import Marker
+# import rospy
+# from visualization_msgs.msg import Marker
 from wall_finder import WallFinder
 import numpy as np
 from sklearn.neighbors import KDTree
@@ -17,7 +17,7 @@ class Mark(Enum):
 class ClassMarker:
     AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
     DENSITY_THRESHOLD = 120  # lowest points per square meter
-    RATIO_THRESHOLD = 6.2  # longer edge over shorter edge
+    RATIO_THRESHOLD = 10  # longer edge over shorter edge
     MAX_WALL_WIDTH = 0.4
     MIN_WALL_LENGTH = 1.1
     NOISE_POINTS_COUNT_THRESHOLD = 40
@@ -45,6 +45,7 @@ class ClassMarker:
 
         cluster_centers = np.array([get_center(c) for c in clusters]).reshape(-1, 2)
         
+        # mark clusters for the first round
         for i in range(len(clusters)):
             cluster = clusters[i]
             info = {"ID": i, "center": cluster_centers[i]}
@@ -77,14 +78,12 @@ class ClassMarker:
         # build KDTree using cluster centers that don't contain noise
         clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]
         cluster_centers_without_noise = np.array([cluster_centers[i] for i in range(len(cluster_centers)) if self.markers[i]["mark"] is not Mark.NOISE])
-        if len(cluster_centers_without_noise) in [0, 1]:
-            return
+        if len(cluster_centers_without_noise) in [0, 1]: return
+        
         tree = KDTree(cluster_centers_without_noise, leaf_size=2)
+        query_size = 6
+        if query_size > len(cluster_centers_without_noise): query_size = len(cluster_centers_without_noise)
 
-
-        query_size = 4
-        if query_size > len(cluster_centers_without_noise):
-            query_size = len(cluster_centers_without_noise)
         for i in range(len(cluster_centers)):
             # use KDTree to find the nearest cluster, check if current cluster is isolated
             distance, ind = tree.query(cluster_centers[i].reshape(-1, 2), k=query_size)
@@ -92,6 +91,13 @@ class ClassMarker:
             self.markers[i]["isolated"] = min_dist > self.MIN_ISOLATION_DIST
             self.markers[i]["min_dist"] = min_dist
 
+        # remark walls that are isolated as obstacles
+        for marker, cluster in zip(self.markers, clusters):
+            if marker["isolated"] and marker["mark"] is Mark.WALL:
+                marker["mark"] = Mark.OBSTACLE
+                del marker["length"]
+                del marker["width"]
+                del marker["walls"]
 
     def dist_cluster2cluster(self, cluster1, cluster2, center1, center2):
         key = ""
