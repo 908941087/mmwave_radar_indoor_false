@@ -2,7 +2,7 @@ import Frame
 import sensor_msgs.point_cloud2
 # import open3d as o3d
 import rospy
-import point_cloud
+# import point_cloud
 import numpy as np
 from math import sqrt, floor, pi, sin, cos, tan
 
@@ -20,7 +20,8 @@ class PCL_process:
 
         # For testing and tracing
         self.delta_angle = pi * 30 / 180
-        self.enable_trace = True
+        self.enable_trace = False
+        # self.enable_trace = True
         self.reflect_trace_cnt = 0.0
 
     def process(self, frame_service, stablizer, pc2):

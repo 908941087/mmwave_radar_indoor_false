@@ -14,13 +14,16 @@
 	<include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
   </include>
 
-	<node pkg="fake_localization" type="fake_localization" name="fake_localization">
+  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_navigation_auto.launch">
+  </include>
+
+	<!-- <node pkg="fake_localization" type="fake_localization" name="fake_localization">
     <param name="use_map_topic" value="true"/>
     <remap from="base_pose_ground_truth" to="odom"/>
   </node>
 
 	<arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>
-  <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml">
+  <include file="$(find turtlebot_navigation)/launch/includes/move_base_auto.launch.xml">
     <arg name="custom_param_file" value="$(arg custom_param_file)"/>
   </include>
 
@@ -28,7 +31,7 @@
     <remap from="voxel_grid" to="/move_base/local_costmap/obstacle_layer/voxel_grid"/>
     <remap from="voxel_marked_cloud" to="/move_base/local_costmap/obstacle_layer/marked_cloud"/>
     <remap from="voxel_unknown_cloud" to="/move_base/local_costmap/obstacle_layer/unknown_cloud"/>
-  </node>
+  </node> -->
     
 	<group if="$(arg enable_octomap)">
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" args=" " cwd="node" output="screen">
