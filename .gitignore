@@ -6119,3 +6119,4 @@ env/lib/python2.7/site-packages/enum34-1.1.10.dist-info/WHEEL
 ti_ws/src/py_interface/scripts/EnvClassifier/ClassMarkerModule.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/wall_finder.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/points_generator.pyc
+ti_ws/src/py_interface/scripts/EnvClassifier/wall_trimmer.pyc

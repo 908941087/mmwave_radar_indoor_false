@@ -99,7 +99,6 @@ class ClassMarker:
                 del marker["width"]
                 del marker["walls"]
 
-
     def dist_cluster2cluster(self, cluster1, cluster2, center1, center2):
         key = ""
         if center1[0] > center2[0]:

@@ -112,8 +112,6 @@ class WallFinder(object):
                         if pos not in q and pos not in edge: 
                             edge.append(pos)
             if len(part) != 0: 
-                # print("\npart: ")
-                # print(part)
                 parts.append(part)
             if len(edge) != 0:
                 start = edge.popleft()
