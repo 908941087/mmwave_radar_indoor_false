@@ -11,7 +11,7 @@ class PCL_process:
 
     def __init__(self):
         self.pc2 = None
-        self.delta = 0.15
+        self.delta = 0.10
         self.heat_map = None
         self.min_x = None
         self.max_x = None
@@ -27,12 +27,27 @@ class PCL_process:
         self.frame_service = frame_service
         self.stablizer = stablizer
         self.pc2 = pc2
-        self.adjust_perspective()
-        self.passthrough_filter()
+        # self.adjust_perspective()
+        # self.adjust_spherical()
         self.handle_reflection()
+        self.passthrough_filter()
         # self.stablize_preframe()
         # self.statistical_outlier_removal()
         # self.add_z_info()
+
+    def adjust_spherical(self):
+        points = sensor_msgs.point_cloud2.read_points(self.pc2)
+        res_points = []
+        points_list = [(p[0], p[1], p[2], p[3]) for p in points]
+        for p in points_list:
+            x, y, z, i = p[0], p[1], p[2], p[3]
+            # r*cos(elev) = sqrt(x**2+y**w)
+            # 1/cos(elev)
+            mul_fac = sqrt(x**2+y**2+z**2) / sqrt(x**2+y**2)
+            res_points.append((x*mul_fac, y*mul_fac, z*mul_fac, i))
+        self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
+
 
     def adjust_perspective(self, direct="y"):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
@@ -67,9 +82,9 @@ class PCL_process:
         FiltOutRate = 0
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 4.0 > t_dis > 0.2:
+            if 6.0 > t_dis > 0.2:
                 if 1.0 > p[2] > 0:
-                    res_points.append((p[0], p[1], p[2], p[3]))
+                    res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
     def handle_reflection(self):
@@ -95,8 +110,8 @@ class PCL_process:
                 for step in range(1, 1 + int(dis / 1.5)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)
-                    if near_prob * step * step > prob:
-                        prob = near_prob * step * step
+                    if near_prob * step > prob:
+                        prob = near_prob * step
                         res_p = [p[i] / step for i in range(4)]
                 if res_p is not None:
                     if res_p[0] != p[0] or res_p[1] != p[1]:

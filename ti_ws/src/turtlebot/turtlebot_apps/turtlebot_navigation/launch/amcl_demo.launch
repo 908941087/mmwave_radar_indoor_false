@@ -8,7 +8,7 @@
   <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="map1.bt" /> -->
   
 
-  <!-- AMCL 
+  <!-- AMCL -->
   <arg name="custom_amcl_launch_file" default="$(find turtlebot_navigation)/launch/includes/amcl/$(arg 3d_sensor)_amcl.launch.xml"/>
   <arg name="initial_pose_x" default="0.0"/> 
   <arg name="initial_pose_y" default="0.0"/> 
@@ -17,19 +17,49 @@
     <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
     <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
     <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
-  </include>-->
-  
-  <node pkg="fake_localization" type="fake_localization" name="fake_localization">
-    <param name="use_map_topic" value="true"/>
-    <remap from="base_pose_ground_truth" to="odom"/>
+  </include>
+
+  <!-- run pointcloud_to_laserscan node -->
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+    <remap from="cloud_in" to="py_test"/>
+
+    <rosparam>
+      # target_frame: rslidar # Leave disabled to output scan in pointcloud frame
+      transform_tolerance: 0.01
+      min_height: -0.4
+      max_height: 1.0
+
+      angle_min: -3.1415926 # -M_PI
+      angle_max: 3.1415926 # M_PI
+      angle_increment: 0.003 # 0.17degree
+      scan_time: 0.1
+      range_min: 0.2
+      range_max: 100
+      use_inf: true
+      inf_epsilon: 1.0
+
+      # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+      # 0 : Detect number of cores
+      # 1 : Single threaded
+      # 2->inf : Parallelism level
+      concurrency_level: 1
+    </rosparam>
+
   </node>
   
+<!--  <node pkg="fake_localization" type="fake_localization" name="fake_localization">-->
+<!--    <param name="use_map_topic" value="true"/>-->
+<!--    <remap from="base_pose_ground_truth" to="odom"/>-->
+<!--  </node>-->
+  
 
-  <!-- Move base -->
+  <!-- Move base
   <arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>
   <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml">
     <arg name="custom_param_file" value="$(arg custom_param_file)"/>
   </include>
+  -->
 
 </launch>
 
