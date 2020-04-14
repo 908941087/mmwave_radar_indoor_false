@@ -32,9 +32,10 @@ def force_move_Callback(msg):
     global current_position_, desired_position_, current_orientation_
     rate = rospy.Rate(10)   # 10hz
     ticks = 20
+    safety_dis = 0.3
     command = Twist()
-    desired_position_[0] = current_position_[0] + math.cos(current_orientation_) * 0.2
-    desired_position_[1] = current_position_[1] + math.sin(current_orientation_) * 0.2
+    desired_position_[0] = current_position_[0] + math.cos(current_orientation_) * safety_dis
+    desired_position_[1] = current_position_[1] + math.sin(current_orientation_) * safety_dis
     obs1 = check_unknown_obstacle()
     if obs1 == False :
         command.linear.x = 0.1
@@ -43,8 +44,8 @@ def force_move_Callback(msg):
             rate.sleep()
         return
     # rotate 90 
-    desired_position_[0] = current_position_[0] - math.sin(current_orientation_) * 0.2
-    desired_position_[1] = current_position_[1] + math.cos(current_orientation_) * 0.2
+    desired_position_[0] = current_position_[0] - math.sin(current_orientation_) * safety_dis
+    desired_position_[1] = current_position_[1] + math.cos(current_orientation_) * safety_dis
     obs2 = check_unknown_obstacle()
     if obs2 == False :
         command.angular.z = wrapAngle(90)
@@ -58,8 +59,8 @@ def force_move_Callback(msg):
             rate.sleep()
         return
     # rotate 180
-    desired_position_[0] = current_position_[0] - math.cos(current_orientation_) * 0.2
-    desired_position_[1] = current_position_[1] - math.sin(current_orientation_) * 0.2
+    desired_position_[0] = current_position_[0] - math.cos(current_orientation_) * safety_dis
+    desired_position_[1] = current_position_[1] - math.sin(current_orientation_) * safety_dis
     obs3 = check_unknown_obstacle()
     if obs3 == False :
         command.angular.z = wrapAngle(180)
@@ -73,8 +74,8 @@ def force_move_Callback(msg):
             rate.sleep()
         return
     # rotate 270
-    desired_position_[0] = current_position_[0] + math.sin(current_orientation_) * 0.2
-    desired_position_[1] = current_position_[1] - math.cos(current_orientation_) * 0.2
+    desired_position_[0] = current_position_[0] + math.sin(current_orientation_) * safety_dis
+    desired_position_[1] = current_position_[1] - math.cos(current_orientation_) * safety_dis
     obs4 = check_unknown_obstacle()
     if obs4 == False :
         command.angular.z = wrapAngle(-90)
@@ -187,7 +188,7 @@ if __name__ == '__main__':
     odom_sub = rospy.Subscriber("/odom", Odometry, odomCallback, queue_size = 1)
     force_move_sub = rospy.Subscriber("/force_move", Int8, force_move_Callback, queue_size = 1)
     tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
-    map_sub_ = rospy.Subscriber("/map", OccupancyGrid, OccupancyGridCallback, queue_size = 1)
+    map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, OccupancyGridCallback, queue_size = 1)
 
     rospy.spin()
     
