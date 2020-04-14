@@ -1,38 +1,22 @@
 <launch>
 
-  <arg name="enable_z_projection" value="true"/>
-	<arg name="enable_octomap" value="false"/>
-	<arg name="enable_controller" value="true"/>
-	<arg name="enable_planner" value="true"/>
-	<arg name="enable_exploration" value="true"/>
+  <arg name="enable_octomap" value="false"/>
+  <arg name="enable_controller" value="true"/>
+  <arg name="enable_planner" value="true"/>
+  <arg name="enable_exploration" value="true"/>
   <arg name="enable_return" value="true"/>
   <arg name="enable_rviz" value="false"/>
   <arg name="enable_py_test" value="true"/>
+  <arg name="enable_force" value="true"/>
 
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
 
 	<include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
   </include>
 
-  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_navigation_auto.launch">
-  </include>
-
-	<!-- <node pkg="fake_localization" type="fake_localization" name="fake_localization">
-    <param name="use_map_topic" value="true"/>
-    <remap from="base_pose_ground_truth" to="odom"/>
-  </node>
-
-	<arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>
-  <include file="$(find turtlebot_navigation)/launch/includes/move_base_auto.launch.xml">
-    <arg name="custom_param_file" value="$(arg custom_param_file)"/>
-  </include>
-
-	<node name="voxel_grid_2_point_cloud" pkg="costmap_2d" type="costmap_2d_cloud">
-    <remap from="voxel_grid" to="/move_base/local_costmap/obstacle_layer/voxel_grid"/>
-    <remap from="voxel_marked_cloud" to="/move_base/local_costmap/obstacle_layer/marked_cloud"/>
-    <remap from="voxel_unknown_cloud" to="/move_base/local_costmap/obstacle_layer/unknown_cloud"/>
-  </node> -->
-    
+	<!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_navigation_auto.launch">
+  </include> -->
+  
 	<group if="$(arg enable_octomap)">
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server" args=" " cwd="node" output="screen">
       <param name="frame_id"            	  value="/odom" />
@@ -45,10 +29,6 @@
   </group>
   
   <!-- <node pkg="autonomous_explore_map_plan" type="laserscan_2_pointcloud" name="laserscan_to_pointcloud" respawn="true" output="screen" /> -->
-    
-  <group if="$(arg enable_z_projection)"> 
-    <node pkg="autonomous_explore_map_plan" type="z_axis_projection.py" name="z_axis_projection" respawn="true" output="screen" />
-  </group>
 
   <group if="$(arg enable_controller)"> 
     <node pkg="autonomous_explore_map_plan" type="turtlebot_drive.py" name="turtlebot_drive" respawn="true" output="screen" />
@@ -64,6 +44,10 @@
 
   <group if="$(arg enable_py_test)">
     <node pkg="py_interface" type="listener.py" name="py_test" respawn="true" output="screen" />
+  </group>
+
+  <group if="$(arg enable_force)">
+    <node pkg="autonomous_explore_map_plan" type="force_move.py" name="force_move_handler" respawn="true" output="screen" />
   </group>
 
   <group if="$(arg enable_planner)">

@@ -34,6 +34,8 @@
 #include <autonomous_explore_map_plan/FindPathToGoal.h>
 #include <geometry_msgs/Pose2D.h>
 
+#include "std_msgs/Int8.h"
+
 // *** IO ***
 #include <iostream>
 #include <string>
@@ -77,6 +79,9 @@ class OfflinePlannerR2
 		std::vector<double> planning_bounds_x_, planning_bounds_y_, current_position_;
 		double planning_depth_, solving_time_;
 		std::string planner_name_;
+
+		ros::Publisher forceMovePub;
+		int pathNotFoundCount;
 };
 
 //!  Constructor.
@@ -116,6 +121,9 @@ OfflinePlannerR2::OfflinePlannerR2()
 	planner_name_ = "RRT";
 	//node_handler_.planner_name_ = "RRTstar";
 	//node_handler_.solving_time_ = 20;
+
+	forceMovePub = node_handler_.advertise<std_msgs::Int8> ("/force_move", 10);
+	pathNotFoundCount = 0;
 	//=======================================================================
 	// Service
 	//=======================================================================
@@ -239,11 +247,21 @@ void OfflinePlannerR2::planWithSimpleSetup(std::vector<double> start_state, std:
 			response.poses.push_back(pose);
 		}
 
-
-		ROS_INFO("%s: path has been found with simple_setup", ros::this_node::getName().c_str());
+		pathNotFoundCount = 0;
+		ROS_INFO("%s: found path", ros::this_node::getName().c_str());
 	}
-	else
+	else {
 		ROS_INFO("%s: path has not been found", ros::this_node::getName().c_str());
+		pathNotFoundCount++;
+		ROS_INFO("pathNotFoundCount : %d ", pathNotFoundCount);
+		if (pathNotFoundCount >= 3) {
+			ROS_INFO("call force move");
+			std_msgs::Int8 msg;
+			msg.data = 1;
+			forceMovePub.publish(msg);
+		}
+	}
+		
 }
 
 //!  Resulting path visualization.

@@ -1,20 +1,20 @@
 from sklearn.neighbors import KDTree
 import numpy as np
-from utils import dist, k2slope, get_intersection
+from utils import dist, k2slope
 from collections import deque
+from wall_finder import WallFinder
 
-class WallTrimmer(object):
-    PERPENDICULAR_LOWER_THRESHOLD = 70 # degrees
-    PERPENDICULAR_HIGHER_THRESHOLD = 110 # degrees
-    WALL_LINK_THRESHOLD = 1.2 # meters
+class WallLinker(object):
+    WALL_LINK_THRESHOLD = 0.5
+    SAME_DIRECTION_THRESHOLD = 45 # degrees
 
     def __init__(self):
         pass
 
-    def trim(self, walls):
-        if (len(walls) == 0): raise Exception("No walls available.")
+    def link_fit(self, clusters, walls):
+        if (len(clusters) == 0): raise Exception("No clusters available.")
         wall_centers = [[(wall["ends"][0][0] + wall["ends"][1][0]) / 2.0, (wall["ends"][0][1] + wall["ends"][1][1]) / 2.0] for wall in walls]
-        if len(wall_centers) in [0, 1]: return walls
+        if len(wall_centers) in [0, 1]: return
         wall_centers = np.array(wall_centers).reshape(-1, 2)
         tree = KDTree(wall_centers, leaf_size=2)
         query_size = 6 # bigger means better accuracy, smaller means better speed
@@ -30,27 +30,18 @@ class WallTrimmer(object):
 
             slope1 = k2slope(walls[id1]["line"][0])
             slope2 = k2slope(walls[id2]["line"][0])
-            # print("\nIDs: " + str(id1) + " " + str(id2) + "\n        dist & direction: " + str(dists[0]) + " " + str(min(abs(slope1 - slope2), 180 - abs(slope1 - slope2))))
-            perpendicular = self.PERPENDICULAR_LOWER_THRESHOLD <= min(abs(slope1 - slope2), 180 - abs(slope1 - slope2)) <= self.PERPENDICULAR_HIGHER_THRESHOLD
+            same_direction = min(abs(slope1 - slope2), 180 - abs(slope1 - slope2)) < self.SAME_DIRECTION_THRESHOLD
 
-            return near and perpendicular
+            return near and same_direction
 
-        def trim_corner(id1, id2):
-            wall1, wall2 = walls[id1], walls[id2]
-            intersection = get_intersection(wall1["line"], wall2["line"])
-            for wall in [wall1, wall2]:
-                dists = [dist(p, intersection) for p in wall["ends"]]
-                if (dists[0] < dists[1]):
-                    wall["ends"][0] = intersection
-                else:
-                    wall["ends"][1] = intersection
-
-        blocks_count = len(walls)
+        blocks_count = len(clusters)
         visited = set()
         unvisited = set([i for i in range(blocks_count)])
         edge = deque()
+        parts = []
         start = 0
         while (len(visited) < blocks_count):
+            part = []
             q = deque()
             cur = start
             q.append(cur)
@@ -59,13 +50,13 @@ class WallTrimmer(object):
                 if cur in visited: raise Exception("Duplicate entry in the loop.")
                 visited.add(cur)
                 unvisited.remove(cur)
+                part.extend(clusters[cur])
                 distances, ind = tree.query(np.array(wall_centers[cur]).reshape(-1, 2), k=query_size)
                 surroundings = ind[0][1:]
                 for pos in surroundings:
                     if pos in visited:
                         continue
                     elif is_connected(cur, pos):
-                        trim_corner(cur, pos)
                         if pos not in q:
                             q.append(pos)
                         if pos in edge:
@@ -73,6 +64,8 @@ class WallTrimmer(object):
                     else:
                         if pos not in q and pos not in edge: 
                             edge.append(pos)
+            if len(part) != 0: 
+                parts.append(part)
             if len(edge) != 0:
                 start = edge.popleft()
             else: 
@@ -80,6 +73,13 @@ class WallTrimmer(object):
                     start = unvisited.pop()
                     unvisited.add(start)
                 else: break
-        return walls
-
         
+        wall_finder = WallFinder()
+        walls = []
+        index = 0
+        for part in parts:
+            wall = wall_finder.fit_a_wall(part)
+            wall["ID"] = index
+            walls.append(wall)
+            index += 1
+        return walls

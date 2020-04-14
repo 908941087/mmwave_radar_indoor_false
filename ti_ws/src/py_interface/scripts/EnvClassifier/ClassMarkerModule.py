@@ -60,7 +60,7 @@ class ClassMarker:
                 continue
             # try to treat this cluster as wall, see if it fits well
             wall_finder = WallFinder()
-            walls = wall_finder.find_walls(cluster)
+            divided_clusters, walls = wall_finder.find_walls(cluster)
             avg_width = np.average([w["width"] for w in walls])
             total_length = sum([dist(ends[0], ends[1]) for ends in [w["ends"] for w in walls]])
             if avg_width > self.MAX_WALL_WIDTH or total_length < self.MIN_WALL_LENGTH or \
@@ -73,6 +73,7 @@ class ClassMarker:
                 info["length"] = total_length
                 info["width"] = avg_width
                 info["walls"] = walls
+                info["clusters"] = divided_clusters
                 self.markers.append(info)
 
         # build KDTree using cluster centers that don't contain noise
