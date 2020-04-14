@@ -19,7 +19,7 @@ class PCL_process:
         self.max_y = None
 
         # For testing and tracing
-        self.delta_angle = pi * 30 / 180
+        self.delta_angle = pi * (-5) / 180
         self.enable_trace = True
         self.reflect_trace_cnt = 0.0
 
@@ -29,7 +29,7 @@ class PCL_process:
         self.pc2 = pc2
         # self.adjust_perspective()
         # self.adjust_spherical()
-        self.handle_reflection()
+        # self.handle_reflection()
         self.passthrough_filter()
         # self.stablize_preframe()
         # self.statistical_outlier_removal()
@@ -43,11 +43,9 @@ class PCL_process:
             x, y, z, i = p[0], p[1], p[2], p[3]
             # r*cos(elev) = sqrt(x**2+y**w)
             # 1/cos(elev)
-            mul_fac = sqrt(x**2+y**2+z**2) / sqrt(x**2+y**2)
-            res_points.append((x*mul_fac, y*mul_fac, z*mul_fac, i))
+            mul_fac = sqrt(x ** 2 + y ** 2 + z ** 2) / sqrt(x ** 2 + y ** 2)
+            res_points.append((x * mul_fac, y * mul_fac, z * mul_fac, i))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
-
-
 
     def adjust_perspective(self, direct="y"):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
@@ -82,9 +80,9 @@ class PCL_process:
         FiltOutRate = 0
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 8.0 > t_dis > 0.2:
-                if 1.0 > p[2] > 0:
-                    res_points.append((p[0], p[1], p[2], p[3]))
+            if 8.0 > t_dis > 0.5:
+                if 1.0 > p[2] > 0.2:
+                    res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
     def handle_reflection(self):
@@ -102,8 +100,8 @@ class PCL_process:
             self.heat_map[self.hm_axis(p)[0]][self.hm_axis(p)[1]] += 1.0
 
         # Reduce reflection
-        prob = 0.0
         for p in points_list:
+            prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
             if dis >= 1.5:  # minimum reflect distance is about 0.75m

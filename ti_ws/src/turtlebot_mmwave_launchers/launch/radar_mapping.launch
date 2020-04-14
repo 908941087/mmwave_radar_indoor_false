@@ -28,15 +28,31 @@
     <param name="mean_k" value="20" />
     <param name="stddev" value="0.04" />
   </node>
-  
+
+
+<!--  TODO: Implement morphology filter to link points of wall -->
+<!--  <node pkg="octomap_server" type="morphology_filter_node" name="mapping_morphology"  output="screen">-->
+<!--    <remap from="input" to="raw_point_cloud_centers" />-->
+<!--    <remap from="output" to="morphology_map" />-->
+<!--  </node>-->
+
+
   <!-- Create "filtered" 3D map using second octomap node -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_filtered" output="screen" >
     <param name="enable_reflection" value="false" />
-    <param name="sensor_model/hit" value ="0.7"/>
+    <param name="sensor_model/hit" value ="0.85"/>
     <param name="sensor_model/miss" value ="0.4"/>
     <remap from="octomap_point_cloud_centers" to="filtered_point_cloud_centers" />
     <remap from="projected_map" to="map" />
     <remap from="cloud_in" to="sor_out" />
   </node>
-  
+
+  <!-- Perform SOR filtering on output from "raw" octomap node  -->
+  <node pkg="nodelet" type="nodelet" name="planning_sor_points" args="standalone pcl/StatisticalOutlierRemoval" output="screen" >
+    <remap from="~input" to="/mmWaveDataHdl/RScan" />
+    <remap from="~output" to="path_plan_scan" />
+    <param name="mean_k" value="5" />
+    <param name="stddev" value="0.04" />
+  </node>
+
 </launch>
