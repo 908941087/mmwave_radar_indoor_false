@@ -1,10 +1,9 @@
 <launch>
 
-  <arg name="enable_z_projection" value="true"/>
-	<arg name="enable_octomap" value="false"/>
-	<arg name="enable_controller" value="true"/>
-	<arg name="enable_planner" value="true"/>
-	<arg name="enable_exploration" value="true"/>
+  <arg name="enable_octomap" value="false"/>
+  <arg name="enable_controller" value="true"/>
+  <arg name="enable_planner" value="true"/>
+  <arg name="enable_exploration" value="true"/>
   <arg name="enable_return" value="true"/>
   <arg name="enable_rviz" value="false"/>
   <arg name="enable_py_test" value="true"/>
@@ -30,10 +29,6 @@
   </group>
   
   <!-- <node pkg="autonomous_explore_map_plan" type="laserscan_2_pointcloud" name="laserscan_to_pointcloud" respawn="true" output="screen" /> -->
-    
-  <group if="$(arg enable_z_projection)"> 
-    <node pkg="autonomous_explore_map_plan" type="z_axis_projection.py" name="z_axis_projection" respawn="true" output="screen" />
-  </group>
 
   <group if="$(arg enable_controller)"> 
     <node pkg="autonomous_explore_map_plan" type="turtlebot_drive.py" name="turtlebot_drive" respawn="true" output="screen" />
