@@ -3,12 +3,20 @@
   <!-- 3D sensor -->
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
 
+  <arg name="auto_navi" value="false" />
+
   <!-- Add nodes to filter/limit Radar data before using it for navigation -->
-  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
-  </include>
+  <group if="$(arg auto_navi)">
+  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch" />
+
+  <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch" /> -->
 
   <!-- Map server -->
-  <!-- <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/mapping_li.bt " /> -->
+  <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/oy19.bt projected_map:=map" />
+
+  <include file="$(find autonomous_explore_map_plan)/launch/view_robot.launch"/> 
+
+  </group>
 
   <!-- Fake localization node allows directly setting initial pose and goal -->
   <node pkg="fake_localization" type="fake_localization" name="fake_localization">
@@ -28,6 +36,6 @@
     <remap from="voxel_marked_cloud" to="/move_base/local_costmap/obstacle_layer/marked_cloud"/>
     <remap from="voxel_unknown_cloud" to="/move_base/local_costmap/obstacle_layer/unknown_cloud"/>
   </node>
-
+  
 </launch>
 

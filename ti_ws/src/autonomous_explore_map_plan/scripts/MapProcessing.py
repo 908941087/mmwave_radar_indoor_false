@@ -20,7 +20,8 @@ class ProcessMap(object):
                 self.current_position = np.zeros(2)
 
                 # get the map >> call ProcessProjectedMap() 
-                self.map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
+                # self.map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
+                self.map_sub_ = rospy.Subscriber("/map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
                 
                 # Use RRT* to go to best point 
                 rospy.wait_for_service('/turtlebot_drive/goto')

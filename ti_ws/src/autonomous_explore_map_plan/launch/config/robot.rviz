@@ -468,7 +468,7 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: Map
-      Topic: /projected_map
+      Topic: /map
       Unreliable: false
       Value: true
   Enabled: true

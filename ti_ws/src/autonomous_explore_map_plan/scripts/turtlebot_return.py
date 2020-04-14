@@ -39,7 +39,8 @@ class Returner(object):
 
         self.odometry_sub_ = rospy.Subscriber("/odom", Odometry, self.odomCallback, queue_size = 1)
         #self.model_sub = rospy.Subscriber("/gazebo/model_states", ModelStates, self.modelcallback)
-        self.map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
+        # self.map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
+        self.map_sub_ = rospy.Subscriber("/map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
         
         self.serv_ = rospy.Service('/turtlebot_return/goto', 

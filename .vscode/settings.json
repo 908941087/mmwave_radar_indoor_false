@@ -1,3 +1,8 @@
 {
+<<<<<<< HEAD
+    "python.pythonPath": "/usr/bin/python",
+    "git.ignoreLimitWarning": true
+=======
     "python.pythonPath": "env/bin/python"
+>>>>>>> 4f260b3e09a64aedc2bff04449f3b9358e76bafa
 }
