@@ -2,6 +2,7 @@ from sklearn.cluster import DBSCAN
 from points_generator import PointsGenerator
 from ClassMarkerModule import ClassMarker, Mark
 from wall_finder import WallFinder
+from wall_linker import WallLinker
 from wall_trimmer import WallTrimmer
 from utils import *
 
@@ -14,6 +15,7 @@ class GroupingTracker:
         self.clusters = []
         self.point_generator = PointsGenerator()
         self.class_marker = ClassMarker()
+        self.wall_linker = WallLinker()
         self.wall_trimmer = WallTrimmer()
 
     def pc_group(self, pc2):
@@ -32,13 +34,16 @@ class GroupingTracker:
         self.pc_group(pc2)
         res_points = []
         walls = []
+        divided_clusters = []
         for i in range(self.clusters_num):
             # res_points.append(self.point_generator.generate(self.clusters[i]))
             if self.class_marker.markers[i]["mark"] is Mark.WALL:
                 walls.extend(self.class_marker.markers[i]["walls"])
+                divided_clusters.extend(self.class_marker.markers[i]["clusters"])
             if self.class_marker.markers[i]["mark"] in [Mark.FURNITURE, Mark.OBSTACLE]:
                 res_points.extend(self.clusters[i])
-        self.wall_trimmer.trim(walls)
+        walls = self.wall_linker.link_fit(divided_clusters, walls)
+        walls = self.wall_trimmer.trim(walls)
         for w in walls:
             res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
         return res_points
