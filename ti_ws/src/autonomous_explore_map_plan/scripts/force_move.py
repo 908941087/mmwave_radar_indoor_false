@@ -187,7 +187,7 @@ if __name__ == '__main__':
     odom_sub = rospy.Subscriber("/odom", Odometry, odomCallback, queue_size = 1)
     force_move_sub = rospy.Subscriber("/force_move", Int8, force_move_Callback, queue_size = 1)
     tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
-    map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, OccupancyGridCallback, queue_size = 1)
+    map_sub_ = rospy.Subscriber("/map", OccupancyGrid, OccupancyGridCallback, queue_size = 1)
 
     rospy.spin()
     
