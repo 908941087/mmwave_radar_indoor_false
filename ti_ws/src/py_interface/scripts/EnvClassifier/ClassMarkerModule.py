@@ -1,7 +1,7 @@
 from utils import get_area, get_density, get_center, get_xy_lim, dist
 from enum import Enum
-# import rospy
-# from visualization_msgs.msg import Marker
+import rospy
+from visualization_msgs.msg import Marker
 from wall_finder import WallFinder
 import numpy as np
 from sklearn.neighbors import KDTree
