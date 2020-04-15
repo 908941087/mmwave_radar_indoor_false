@@ -20,8 +20,9 @@ class PCL_process:
 
         # For testing and tracing
         self.delta_angle = pi * (-5) / 180
-        self.enable_trace = True
+        self.enable_trace = False
         self.reflect_trace_cnt = 0.0
+        self.min_prob_thre = 5
 
     def process(self, frame_service, stablizer, pc2):
         self.frame_service = frame_service
@@ -104,10 +105,11 @@ class PCL_process:
             prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
-            if dis >= 1.0:  # minimum reflect distance is about 0.5m
-                for step in range(1, 1 + int(dis / 1.5)):
+            if dis >= 1.0:  # minimum reflect distance is about 0.75m
+                for step in range(1, 1 + int(dis / 0.5)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)
+                    if near_prob < self.min_prob_thre: near_prob = 0
                     if near_prob * step > prob:
                         prob = near_prob * step
                         res_p = [p[i] / step for i in range(4)]
