@@ -6,6 +6,7 @@
   <arg name="enable_exploration" value="true"/>
   <arg name="enable_return" value="true"/>
   <arg name="enable_rviz" value="false"/>
+  <arg name="enable_unknown_point_find" value="false"/>
   <arg name="enable_py_test" value="true"/>
   <arg name="enable_py_classifier" value="true"/>
   <arg name="enable_force" value="true"/>
@@ -41,6 +42,10 @@
 
   <group if="$(arg enable_return)">
     <node pkg="autonomous_explore_map_plan" type="turtlebot_return.py" name="turtlebot_return" respawn="true" output="screen" />
+  </group>
+
+  <group if="$(arg enable_py_test)">
+    <node pkg="py_interface" type="ForceUnknownFind.py" name="force_unknown_find" respawn="true" output="screen" />
   </group>
 
   <group if="$(arg enable_py_test)">

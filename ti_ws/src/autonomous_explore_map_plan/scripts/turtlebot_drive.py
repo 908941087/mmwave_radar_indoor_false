@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 # ROS imports
-import roslib; roslib.load_manifest('autonomous_explore_map_plan')
+import roslib;
+from std_msgs.msg import Int8
+
+roslib.load_manifest('autonomous_explore_map_plan')
 import rospy
 import tf
 import math
@@ -47,8 +50,9 @@ class Controller(object):
         self.serv_ = rospy.Service('/turtlebot_drive/goto', 
                                   GotoWaypoint, 
                                   self.calculateControlInput2)
-        
-        
+        # Call ForceUnknownFind
+        self.force_unknown_find_pub = rospy.Publisher("force_unknown_find",  Int8, queue_size = 1)
+
         
         # rotate once at the beginning before exploring
         rospy.sleep(1)
@@ -388,6 +392,7 @@ class Controller(object):
                 print ('rotate' + str(rotate))
             if rotate == 1:
                 break
+        self.force_unknown_find_pub.publish(1)
          
 
 def angle_wrap(angle): #angle_wrap
