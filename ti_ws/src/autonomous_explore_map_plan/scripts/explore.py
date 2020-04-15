@@ -64,7 +64,7 @@ if __name__ == '__main__':
     rospy.sleep(10)
     start_time = rospy.Time.now()
 
-    three_min_timeout = rospy.Duration(240)
+    three_min_timeout = rospy.Duration(600)
     #while rospy.Time.now() - start_time < three_min_timeout:
         #print (str(rospy.Time.now() - start_time))
 
