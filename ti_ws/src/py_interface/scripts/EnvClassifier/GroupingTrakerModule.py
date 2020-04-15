@@ -4,6 +4,7 @@ from ClassMarkerModule import ClassMarker, Mark
 from wall_finder import WallFinder
 from wall_linker import WallLinker
 from wall_trimmer import WallTrimmer
+from MorphologyOperator import MorphologyOperator
 from utils import *
 
 
@@ -17,15 +18,18 @@ class GroupingTracker:
         self.class_marker = ClassMarker()
         self.wall_linker = WallLinker()
         self.wall_trimmer = WallTrimmer()
+        self.morph = MorphologyOperator(0.1)
 
     def pc_group(self, pc2):
         self.clusters = []
+        # pc2 = self.morph.closing(pc2, 3)
         self.pc2 = np.array(pc2)
         self.db = DBSCAN(eps=0.3, min_samples=10).fit(self.pc2)
         labels = self.db.labels_
         self.clusters_num = len(set(labels)) - (1 if -1 in labels else 0)
         for i in range(self.clusters_num):
             one_cluster = self.pc2[labels == i]
+            one_cluster = self.morph.closing(one_cluster, 3)
             self.clusters.append(one_cluster)
         self.class_marker.JudgeClass(self.clusters)
         return self.clusters
@@ -139,7 +143,7 @@ class GroupingTracker:
 if __name__ == '__main__':
     gt = GroupingTracker()
     source_points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd")
-    gt.show_generated_points(source_points)
-    # gt.show_marked_clusters(source_points, verbose=False)
+    # gt.show_generated_points(source_points)
+    gt.show_marked_clusters(source_points, verbose=False)
     # gt.show_clusters()
     # points = gt.generate_points_per_cluster(source_points)    
