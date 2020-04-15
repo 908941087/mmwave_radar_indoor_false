@@ -7,6 +7,7 @@
   <arg name="enable_return" value="true"/>
   <arg name="enable_rviz" value="false"/>
   <arg name="enable_py_test" value="true"/>
+  <arg name="enable_py_classifier" value="true"/>
   <arg name="enable_force" value="true"/>
 
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
@@ -44,6 +45,10 @@
 
   <group if="$(arg enable_py_test)">
     <node pkg="py_interface" type="listener.py" name="py_test" respawn="true" output="screen" />
+  </group>
+
+  <group if="$(arg enable_py_classifier)">
+    <node pkg="py_interface" type="classifier.py" name="py_classifier" respawn="true" output="screen" />
   </group>
 
   <group if="$(arg enable_force)">

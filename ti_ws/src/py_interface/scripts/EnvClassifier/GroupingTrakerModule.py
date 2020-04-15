@@ -48,6 +48,8 @@ class GroupingTracker:
                 res_points.extend(self.clusters[i])
         walls = self.wall_linker.link_fit(divided_clusters, walls)
         walls = self.wall_trimmer.trim(walls)
+        if walls is None:
+            return
         for w in walls:
             res_points.extend(self.point_generator.generate_for_line(w['line'], w['ends'], w['width']))
         return res_points

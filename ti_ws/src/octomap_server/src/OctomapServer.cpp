@@ -161,6 +161,7 @@ OctomapServer::OctomapServer(const ros::NodeHandle private_nh_, const ros::NodeH
   m_nh_private.param("enable_reflection", m_enable_reflect, false);
   m_nh_private.param("dis_rate", m_dis_rate, 1.0);
   m_nh_private.param("neighbor_delta", m_neighbor_delta, 0.05);
+  m_nh_private.param("min_reflect_thre", m_min_reflect_thre, 5.0);
 
     if(m_enable_reflect) {
      ROS_INFO("Start Handle Reflect via octoree");
@@ -1303,6 +1304,9 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
                     ++ hitCnt;
                 }
             }
+        }
+        if(hitCnt <= m_min_reflect_thre) {
+            hitCnt = 0;
         }
         hitRate = (double)hitCnt / (step*step);
         return hitRate;

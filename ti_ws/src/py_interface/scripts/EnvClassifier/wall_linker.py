@@ -12,7 +12,8 @@ class WallLinker(object):
         pass
 
     def link_fit(self, clusters, walls):
-        if (len(clusters) == 0): raise Exception("No clusters available.")
+        if (len(clusters) == 0):
+            return
         wall_centers = [[(wall["ends"][0][0] + wall["ends"][1][0]) / 2.0, (wall["ends"][0][1] + wall["ends"][1][1]) / 2.0] for wall in walls]
         if len(wall_centers) in [0, 1]: return
         wall_centers = np.array(wall_centers).reshape(-1, 2)

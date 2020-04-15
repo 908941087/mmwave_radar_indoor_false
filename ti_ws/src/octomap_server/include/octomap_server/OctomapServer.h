@@ -228,7 +228,7 @@ protected:
   bool m_enable_reflect;
   double m_dis_rate;
   double m_neighbor_delta;
-
+  double m_min_reflect_thre;
   double m_res;
   unsigned m_treeDepth;
   unsigned m_maxTreeDepth;

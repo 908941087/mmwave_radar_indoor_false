@@ -12,7 +12,8 @@ class WallTrimmer(object):
         pass
 
     def trim(self, walls):
-        if (len(walls) == 0): raise Exception("No walls available.")
+        if walls is None or len(walls) == 0:
+            return
         wall_centers = [[(wall["ends"][0][0] + wall["ends"][1][0]) / 2.0, (wall["ends"][0][1] + wall["ends"][1][1]) / 2.0] for wall in walls]
         if len(wall_centers) in [0, 1]: return walls
         wall_centers = np.array(wall_centers).reshape(-1, 2)

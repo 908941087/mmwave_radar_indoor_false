@@ -52,7 +52,8 @@ class ClassMarker:
 
             # use aera and density to recognize noise
             info["area"] = get_area(cluster)
-            info["density"] = len(cluster) / info["area"]
+            if info["area"] > 0:
+                info["density"] = len(cluster) / info["area"]
             if (info["area"] < self.AREA_THRESHOLD or info["density"] < self.DENSITY_THRESHOLD) and \
                     len(cluster) < self.NOISE_POINTS_COUNT_THRESHOLD and info["density"] / info["area"] < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
                 info["mark"] = Mark.NOISE

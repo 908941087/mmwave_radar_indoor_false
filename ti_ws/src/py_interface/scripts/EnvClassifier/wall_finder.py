@@ -63,6 +63,7 @@ class WallFinder(object):
 
     @staticmethod
     def get_avg_distance(points, line):
+        if len(points) == 0: return
         a = line[0]
         b = -1
         c = line[1]

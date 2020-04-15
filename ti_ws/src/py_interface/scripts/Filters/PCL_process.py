@@ -81,7 +81,7 @@ class PCL_process:
         FiltOutRate = 0
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 8.0 > t_dis > 0.5:
+            if 6.0 > t_dis > 0.2:
                 if 1.0 > p[2] > 0.2:
                     res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
