@@ -29,8 +29,8 @@ class PCL_process:
         self.pc2 = pc2
         # self.adjust_perspective()
         # self.adjust_spherical()
-        # self.handle_reflection()
         self.passthrough_filter()
+        self.handle_reflection()
         # self.stablize_preframe()
         # self.statistical_outlier_removal()
         # self.add_z_info()
@@ -104,7 +104,7 @@ class PCL_process:
             prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
-            if dis >= 1.5:  # minimum reflect distance is about 0.75m
+            if dis >= 1.0:  # minimum reflect distance is about 0.5m
                 for step in range(1, 1 + int(dis / 1.5)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)

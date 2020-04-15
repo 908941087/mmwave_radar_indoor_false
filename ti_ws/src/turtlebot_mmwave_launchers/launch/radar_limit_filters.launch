@@ -11,7 +11,7 @@
       <rosparam>
          filter_field_name: x
          filter_limit_min: 0.1
-         filter_limit_max: 5
+         filter_limit_max: 6
          filter_limit_negative: False
       </rosparam>
    </node>
@@ -21,8 +21,8 @@
       <remap from="~output" to="xy_filt_out" />
       <rosparam>
          filter_field_name: y
-         filter_limit_min: -3
-         filter_limit_max: 3
+         filter_limit_min: -5
+         filter_limit_max: 5
          filter_limit_negative: False
       </rosparam>
    </node>

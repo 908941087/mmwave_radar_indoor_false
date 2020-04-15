@@ -14,8 +14,8 @@
   <!-- Create "raw" 3D map using first octomap node -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_raw" output="screen">
     <param name="enable_reflection" value="true" />
-    <param name="sensor_model/hit" value ="0.85"/>
-    <param name="sensor_model/miss" value ="0.48"/>
+    <param name="sensor_model/hit" value ="0.99"/>
+    <param name="sensor_model/miss" value ="0.49"/>
     <remap from="octomap_point_cloud_centers" to="raw_point_cloud_centers" />
     <remap from="projected_map" to="raw_map" />
     <remap from="cloud_in" to="xyzi_filt_out" />
@@ -40,8 +40,8 @@
   <!-- Create "filtered" 3D map using second octomap node -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_filtered" output="screen" >
     <param name="enable_reflection" value="false" />
-    <param name="sensor_model/hit" value ="0.85"/>
-    <param name="sensor_model/miss" value ="0.4"/>
+    <param name="sensor_model/hit" value ="0.9"/>
+    <param name="sensor_model/miss" value ="0.49"/>
     <remap from="octomap_point_cloud_centers" to="filtered_point_cloud_centers" />
     <remap from="projected_map" to="map" />
     <remap from="cloud_in" to="sor_out" />
