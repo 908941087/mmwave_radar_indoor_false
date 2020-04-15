@@ -159,7 +159,10 @@ OctomapServer::OctomapServer(const ros::NodeHandle private_nh_, const ros::NodeH
 
   m_nh_private.param("publish_free_space", m_publishFreeSpace, m_publishFreeSpace);
   m_nh_private.param("enable_reflection", m_enable_reflect, false);
-  if(m_enable_reflect) {
+  m_nh_private.param("dis_rate", m_dis_rate, 1.0);
+  m_nh_private.param("neighbor_delta", m_neighbor_delta, 0.05);
+
+    if(m_enable_reflect) {
      ROS_INFO("Start Handle Reflect via octoree");
      ROS_INFO("HitProb: %f MisProb: %f", probHit, probMiss);
   }
@@ -1307,10 +1310,10 @@ std_msgs::ColorRGBA OctomapServer::heightMapColor(double h) {
 
     void OctomapServer::transPoint2wall(point3d& point, point3d sensorOrigin) {
         // Neighbour arguments (self func)
-        double delta = 0.03; // 1 deg and five meters
+        double delta = m_neighbor_delta; // 1 deg and five meters
         int step = 1;
-        double distance = sensorOrigin.distance(point), disRate = 1.5;
-        step = int(distance / disRate);
+        double distance = sensorOrigin.distance(point);
+        step = int(distance / m_dis_rate);
         if(step <= 1) return;
         // TODO: Add config param to set hitRateThre and step
         // ("hit_rate_thre", hitRate);

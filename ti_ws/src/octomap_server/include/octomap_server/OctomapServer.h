@@ -226,6 +226,8 @@ protected:
   bool m_latchedTopics;
   bool m_publishFreeSpace;
   bool m_enable_reflect;
+  double m_dis_rate;
+  double m_neighbor_delta;
 
   double m_res;
   unsigned m_treeDepth;

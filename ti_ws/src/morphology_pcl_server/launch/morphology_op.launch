@@ -1,0 +1,8 @@
+<launch>
+    <node pkg="morphology_pcl_server" type="morphology_pcl_server_node" name="mapping_morphology"  output="screen">
+        <remap from="input" to="raw_point_cloud_centers" />
+        <remap from="output" to="morphology_point_cloud" />
+        <param name="window_size" value="0.5" />
+        <param name="open_or_close" value="true" />
+    </node>
+</launch>
