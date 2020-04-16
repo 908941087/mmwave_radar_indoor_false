@@ -159,6 +159,8 @@ OctomapServer::OctomapServer(const ros::NodeHandle private_nh_, const ros::NodeH
 
   m_nh_private.param("publish_free_space", m_publishFreeSpace, m_publishFreeSpace);
   m_nh_private.param("enable_reflection", m_enable_reflect, false);
+  m_nh_private.param("origin_point", m_origin_point, true);
+
   m_nh_private.param("dis_rate", m_dis_rate, 1.0);
   m_nh_private.param("neighbor_delta", m_neighbor_delta, 0.05);
   m_nh_private.param("min_reflect_thre", m_min_reflect_thre, 5.0);
@@ -352,8 +354,19 @@ void OctomapServer::insertCloudCallback(const sensor_msgs::PointCloud2::ConstPtr
     pc_nonground.header = pc.header;
   }
 
+    tf::StampedTransform sensorTf;
+    try {
+        m_tfListener.lookupTransform(m_worldFrameId, "base_radar_link", cloud->header.stamp, sensorTf);
+    } catch(tf::TransformException& ex){
+        ROS_ERROR_STREAM( "Transform error of sensor data: " << ex.what() << ", quitting callback");
+        return;
+    }
 
-  insertScan(sensorToWorldTf.getOrigin(), pc_ground, pc_nonground);
+  if(m_origin_point) {
+      insertScan(sensorTf.getOrigin(), pc_ground, pc_nonground);
+  } else {
+      insertScan(sensorToWorldTf.getOrigin(), pc_ground, pc_nonground);
+  }
 
   double total_elapsed = (ros::WallTime::now() - startTime).toSec();
   ROS_DEBUG("Pointcloud insertion in OctomapServer done (%zu+%zu pts (ground/nonground), %f sec)", pc_ground.size(), pc_nonground.size(), total_elapsed);

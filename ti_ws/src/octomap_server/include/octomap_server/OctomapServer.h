@@ -226,6 +226,7 @@ protected:
   bool m_latchedTopics;
   bool m_publishFreeSpace;
   bool m_enable_reflect;
+  bool m_origin_point;
   double m_dis_rate;
   double m_neighbor_delta;
   double m_min_reflect_thre;

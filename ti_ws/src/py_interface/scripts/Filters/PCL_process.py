@@ -30,8 +30,8 @@ class PCL_process:
         self.pc2 = pc2
         # self.adjust_perspective()
         # self.adjust_spherical()
-        self.passthrough_filter()
         self.handle_reflection()
+        self.passthrough_filter()
         # self.stablize_preframe()
         # self.statistical_outlier_removal()
         # self.add_z_info()
@@ -81,7 +81,7 @@ class PCL_process:
         FiltOutRate = 0
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 6.0 > t_dis > 0.2:
+            if 8.0 > t_dis > 0.2:
                 if 1.0 > p[2] > 0.2:
                     res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
@@ -105,8 +105,8 @@ class PCL_process:
             prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
-            if dis >= 1.0:  # minimum reflect distance is about 0.75m
-                for step in range(1, 1 + int(dis / 0.5)):
+            if dis >= 2.0:  # minimum reflect distance is about 0.75m
+                for step in range(1, int(dis / 1.0)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)
                     if near_prob < self.min_prob_thre: near_prob = 0
