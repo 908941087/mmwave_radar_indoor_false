@@ -291,7 +291,8 @@ class Returner(object):
 
 
             #self.vmsg = temp_msg
-        
+        # UPDATE
+        self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
         self.control_input_pub_.publish(self.vmsg)
 
         '''
