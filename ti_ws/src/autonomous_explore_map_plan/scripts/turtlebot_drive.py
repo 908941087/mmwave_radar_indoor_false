@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 # ROS imports
-import roslib;
-from std_msgs.msg import Int8
-
-roslib.load_manifest('autonomous_explore_map_plan')
+import roslib; roslib.load_manifest('autonomous_explore_map_plan')
 import rospy
 import tf
 import math
@@ -13,6 +10,7 @@ import time
 from tf.transformations import euler_from_quaternion
 from probabilistic_lib.functions import angle_wrap #Normalize angles between -pi and pi
 
+from std_msgs.msg import Int8
 
 #ROS messages
 from geometry_msgs.msg import Twist
@@ -43,19 +41,19 @@ class Controller(object):
         #rospy.loginfo("%s: starting turtlebot controller", rospy.get_name())
         self.odometry_sub_ = rospy.Subscriber("/odom", Odometry, self.odomCallback, queue_size = 1)
         #self.model_sub = rospy.Subscriber("/gazebo/model_states", ModelStates, self.modelcallback)
-        # self.map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
         self.map_sub_ = rospy.Subscriber("/map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
         
         self.serv_ = rospy.Service('/turtlebot_drive/goto', 
                                   GotoWaypoint, 
                                   self.calculateControlInput2)
-        # Call ForceUnknownFind
-        self.force_unknown_find_pub = rospy.Publisher("force_unknown_find",  Int8, queue_size = 1)
-
+        
+        
         
         # rotate once at the beginning before exploring
         rospy.sleep(1)
+        self.force_move_pub = rospy.Publisher("force_move",  Int8, queue_size = 1)
+        self.force_unknown_find_pub = rospy.Publisher("force_unknown_find",  Int8, queue_size = 1)
         self.rotateOnce()
         
         #print ('before service wait')
@@ -297,8 +295,8 @@ class Controller(object):
             #self.vmsg.linear.x = self.vmsg.linear.x * 0.5
 
             #self.vmsg = temp_msg
-        
-        self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
+        # UPDATE
+        # self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
         # rospy.loginfo("driver speed : %f %f", self.vmsg.angular.z, self.vmsg.linear.x)
         self.control_input_pub_.publish(self.vmsg)
 
@@ -370,11 +368,11 @@ class Controller(object):
     def rotateOnce(self):
         print ('current orientation' + str(self.current_orientation_))
         control_input = Twist()
-        control_input.angular.z = 0.2
+        control_input.angular.z = 0.6
         #rate = rospy.Rate(10) # 10hz
         while np.abs(self.current_orientation_) < 0.5:
             #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
-            self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
+            # self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
             # rospy.loginfo("driver speed : %f %f", self.vmsg.angular.z, self.vmsg.linear.x)
             self.control_input_pub_.publish(control_input)
 
@@ -382,7 +380,7 @@ class Controller(object):
         rotate = 0
         while True:
             #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
-            self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
+            # self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
             # rospy.loginfo("driver speed : %f %f", self.vmsg.angular.z, self.vmsg.linear.x)
             self.control_input_pub_.publish(control_input)
             #print ('current orientation' + str(self.current_orientation_))
@@ -392,6 +390,9 @@ class Controller(object):
                 print ('rotate' + str(rotate))
             if rotate == 1:
                 break
+        
+        # pub force_move and force_unknown_find
+        self.force_move_pub.publish(1)
         self.force_unknown_find_pub.publish(1)
          
 

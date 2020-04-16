@@ -45,14 +45,14 @@ def ForceUnknownFindCB(msg):
     if dat is None:
         return
 
-    filtered_map = np.array(dat).reshape((heigh, wid))
+    filtered_map = np.array(dat).reshape((wid, heigh))
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
     # Format map
-    for i in range(heigh):
-        for j in range(wid):
+    for i in range(wid):
+        for j in range(heigh):
             if filtered_map[i, j] == -1:
                 filtered_map[i, j] = 255
-    point_index = np.zeros(2)
+    point_index = np.zeros(2, dtype=np.int)
     point_index[0] = int((current_position_[0] - xorg) / res)
     point_index[1] = int((current_position_[1] - yorg) / res)
 
@@ -77,25 +77,25 @@ def ForceUnknownFindCB(msg):
 
 def FindUnkownArea(point_index, local_map):
     global filtered_map
-    if int(local_map[point_index[0]][point_index[1]]) == 1:
+    if int(local_map[int(point_index[0])][int(point_index[1])]) == 1:
         return None
     else:
-        local_map[point_index[0]][point_index[1]] = 1
+        local_map[int(point_index[0])][int(point_index[1])] = 1
 
-    if int(filtered_map[point_index[0]][point_index[1]]) == 1:
+    if int(filtered_map[int(point_index[0])][int(point_index[1])]) == 1:
         return None
-    elif int(filtered_map[point_index[0]][point_index[1]] == 255):
+    elif int(filtered_map[int(point_index[0])][int(point_index[1])]) == 255:
         return point_index
 
     res_point = None
     t_point = np.zeros(2)
-    local_map[point_index[0]][point_index[1]] = 1
+    local_map[int(point_index[0])][int(point_index[1])] = 1
     for x_d in range(-1, 2):
         t_point[0] = x_d + point_index[0]
-        if 0 > t_point[0] >= heigh: continue
+        if t_point[0] < 0 or t_point[0] >= wid: continue
         for y_d in range(-1, 2):
             t_point[1] = y_d + point_index[1]
-            if 0 > t_point[1] >= wid or (t_point[0] == point_index[0] and t_point[1] == point_index[1]): continue
+            if t_point[1] < 0 or t_point[1] >= heigh or (t_point[0] == point_index[0] and t_point[1] == point_index[1]): continue
             tmp_res = FindUnkownArea(t_point, local_map.copy())
             if tmp_res is not None:
                 return tmp_res

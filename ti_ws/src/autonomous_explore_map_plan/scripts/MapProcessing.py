@@ -12,15 +12,18 @@ from nav_msgs.msg import Odometry
 from nav_msgs.msg import OccupancyGrid
 from autonomous_explore_map_plan.srv import GotoWaypoint, GotoWaypointRequest, GotoWaypointResponse
 np.set_printoptions(threshold=sys.maxsize)
+from geometry_msgs.msg import PoseStamped
 
 
 class ProcessMap(object):
         def __init__(self):
                 self.odometry_sub_ = rospy.Subscriber("/odom",Odometry, self.OdometryCallback)
                 self.current_position = np.zeros(2)
+                self.tempGoal = PoseStamped()
+
+                self.unknown_sub = rospy.Subscriber("/unknown_goal", PoseStamped, self.PoseStampedCallback)
 
                 # get the map >> call ProcessProjectedMap() 
-                # self.map_sub_ = rospy.Subscriber("/projected_map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
                 self.map_sub_ = rospy.Subscriber("/map", OccupancyGrid, self.OccupancyGridCallback, queue_size = 1)
                 
                 # Use RRT* to go to best point 
@@ -31,6 +34,9 @@ class ProcessMap(object):
                         print "Goto Service call failed: %s"%e
                 return
 
+        def PoseStampedCallback(self, msg):
+                self.tempGoal = msg
+                print(self.tempGoal)
 
         def OccupancyGridCallback(self, msg):                   
                 self.dat = msg.data
@@ -99,7 +105,7 @@ class ProcessMap(object):
                 #max_value = max(N)
                 #max_index = N.index(max_value)  
                         
-                num = 20
+                num = 30
                 if index.shape[0] <  num:
                 	num = index.shape[0]
                 	
@@ -124,6 +130,7 @@ class ProcessMap(object):
                 
                 BestGazeboArray = np.zeros((num,2))*1.0
                 
+                
                 for z in range(DistSorted.shape[0]):
                 	max_index = Nlargest[DistSorted[z]]                                            
                 	#max_value = max(N)
@@ -132,8 +139,17 @@ class ProcessMap(object):
                 	BestGazebo=[[float(index[max_index][0]*self.res+self.xorg),float(index[max_index][1]*self.res+self.yorg)]]
                 	BestGazeboArray[z][0] = BestGazebo[0][0]
                 	BestGazeboArray[z][1] = BestGazebo[0][1]
-                	
                 
+                if DistSorted.shape[0] < 29 and self.tempGoal.pose != None:
+                        BestGazeboArray[DistSorted.shape[0] + 1][0] = self.tempGoal.pose.position.x
+                        BestGazeboArray[DistSorted.shape[0] + 1][1] = self.tempGoal.pose.position.y
+                        print("add unknown point")
+                        print(BestGazeboArray[DistSorted.shape[0] + 1][0], BestGazeboArray[DistSorted.shape[0] + 1][1])
+                elif self.tempGoal.pose != None:
+                        BestGazeboArray[DistSorted.shape[0] - 1][0] = self.tempGoal.pose.position.x
+                        BestGazeboArray[DistSorted.shape[0] - 1][1] = self.tempGoal.pose.position.y
+                        print("add unknown point")
+                        print(BestGazeboArray[DistSorted.shape[0] - 1][0], BestGazeboArray[DistSorted.shape[0] - 1][1])
                 #print('Best point is ' )
                 #print(bestPoint)
                 print('best points in Gazebo is')
