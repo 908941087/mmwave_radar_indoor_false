@@ -6,7 +6,7 @@
   <arg name="enable_exploration" value="true"/>
   <arg name="enable_return" value="true"/>
   <arg name="enable_rviz" value="false"/>
-  <arg name="enable_unknown_point_find" value="false"/>
+  <arg name="enable_unknown_point_find" value="true"/>
   <arg name="enable_py_test" value="true"/>
   <arg name="enable_py_classifier" value="true"/>
   <arg name="enable_force" value="true"/>
