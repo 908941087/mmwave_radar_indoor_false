@@ -30,7 +30,7 @@ class PCL_process:
         self.pc2 = pc2
         # self.adjust_perspective()
         # self.adjust_spherical()
-        self.handle_reflection()
+        # self.handle_reflection()
         self.passthrough_filter()
         # self.stablize_preframe()
         # self.statistical_outlier_removal()
