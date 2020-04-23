@@ -2,6 +2,10 @@
 
 ## 一、两点导航整体流程
 
+整体流程图：
+
+<img src="two_point.png" alt="Test Image" style="width:800px;display:inline">
+
 ### 1 构造函数MoveBase::MoveBase()
 
 move_base.cpp是两点导航的核心，该程序构造函数MoveBase::MoveBase()创建MoveBaseActionServer负责响应路径规划请求，回调函数为MoveBase::executeCb()，当收到目标点消息goal时，执行回调函数。
@@ -150,6 +154,10 @@ findBestTrajectory()定义在simple_scored_sampling_planner.cpp中，分为两�
 ```
 
 ### 5 costmap
+
+costmap初始化：
+
+<img src="all_costmap.png" alt="Test Image" style="width:700px;display:inline">
 
 代价地图由障碍层（obstacle_layer）、静态层（static_layer）、膨胀层（inflation_layer）组合而成，而障碍层（obstacle_layer）需要体素层（voxel_layer）结合使用。
 
