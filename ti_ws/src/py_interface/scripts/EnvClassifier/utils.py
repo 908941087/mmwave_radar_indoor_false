@@ -6,9 +6,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 import random
 from scipy import special
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
+from scipy.spatial import ConvexHull
 
 
 def get_points_from_pcd(path):
@@ -244,12 +242,21 @@ def get_gaussian_weight(n):
     return weights
 
 
-if __name__ == "__main__":
-    # points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/south_one.pcd")
-    # points = filter_points(points, 0, 2, 0, 2)
-    # plt.scatter([p[0] for p in points], [p[1] for p in points], c='r', s=1)
-    # print(get_area(points))
-    # print(get_rectangle_area(points))
+def get_convex_hull(points):
+    points = np.array(points).reshape(-1, 2)
+    hull = ConvexHull(points)
+    return [[points[simplex, 0], points[simplex, 1]] for simplex in hull.simplices]
 
-    # plt.show()
-    print(dist([-1.9900000512599947, 3.380329543417887], [1.6400000274181368, 3.52325060806384]))
+
+if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use('TkAgg')
+    import matplotlib.pyplot as plt
+    points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/south_one.pcd")
+    points = filter_points(points, 0, 2, 0, 2)
+    points = np.array(points).reshape(-1, 2)
+    hull = ConvexHull(points)
+    plt.plot(points[:,0], points[:,1], 'o')
+    plt.plot(points[hull.vertices,0], points[hull.vertices,1], 'r--', lw=2)
+
+    plt.show()
