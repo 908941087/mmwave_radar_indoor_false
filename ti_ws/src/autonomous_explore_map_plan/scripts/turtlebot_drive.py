@@ -296,7 +296,7 @@ class Controller(object):
 
             #self.vmsg = temp_msg
         # UPDATE
-        self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
+        self.vmsg.linear.x = min(0.15, self.vmsg.linear.x)
         # rospy.loginfo("driver speed : %f %f", self.vmsg.angular.z, self.vmsg.linear.x)
         self.control_input_pub_.publish(self.vmsg)
 
@@ -368,7 +368,7 @@ class Controller(object):
     def rotateOnce(self):
         print ('current orientation' + str(self.current_orientation_))
         control_input = Twist()
-        control_input.angular.z = 0.2
+        control_input.angular.z = 0.15
         #rate = rospy.Rate(10) # 10hz
         while np.abs(self.current_orientation_) < 0.5:
             #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
@@ -392,8 +392,8 @@ class Controller(object):
                 break
         
         # pub force_move and force_unknown_find
-        self.force_move_pub.publish(1)
-        self.force_unknown_find_pub.publish(1)
+        # self.force_move_pub.publish(1)
+        # self.force_unknown_find_pub.publish(1)
          
 
 def angle_wrap(angle): #angle_wrap
