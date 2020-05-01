@@ -2,7 +2,7 @@ import Frame
 import sensor_msgs.point_cloud2
 # import open3d as o3d
 import rospy
-# import point_cloud
+import point_cloud
 import numpy as np
 from math import sqrt, floor, pi, sin, cos, tan
 
@@ -11,7 +11,8 @@ class PCL_process:
 
     def __init__(self):
         self.pc2 = None
-        self.delta = 0.10
+        self.delta = 0.05
+        self.dis_rate = 0.5
         self.heat_map = None
         self.min_x = None
         self.max_x = None
@@ -22,17 +23,17 @@ class PCL_process:
         self.delta_angle = pi * (-5) / 180
         self.enable_trace = False
         self.reflect_trace_cnt = 0.0
-        self.min_prob_thre = 5
+        self.min_prob_thre = 3
 
     def process(self, frame_service, stablizer, pc2):
         self.frame_service = frame_service
         self.stablizer = stablizer
         self.pc2 = pc2
         # self.adjust_perspective()
-        self.adjust_spherical()
-        # self.handle_reflection()
+        # self.adjust_spherical()
         self.passthrough_filter()
-        # self.stablize_preframe()
+        self.handle_reflection()
+    # self.stablize_preframe()
         # self.statistical_outlier_removal()
         # self.add_z_info()
 
@@ -57,8 +58,6 @@ class PCL_process:
             x, y, z, i = p[0], p[1], p[2], p[3]
             if direct == "y":
                 x_1 = x * cos(ang) - z * sin(ang)
-                y_1 = y
-                z_1 = x * sin(ang) + z * cos(ang)
             elif direct == "x":
                 x_1 = x
                 y_1 = y * cos(ang) + z * sin(ang)
@@ -70,7 +69,7 @@ class PCL_process:
             res_points.append((x_1, y_1, z_1, i))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
-    def passthrough_filter(self):
+    def passthrough_filter(self, dim=3):
         if self.enable_trace:
             rospy.loginfo("Passthrough ====================")
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
@@ -78,11 +77,11 @@ class PCL_process:
         points_list = [(p[0], p[1], p[2], p[3]) for p in points]
 
         # points_list.sort(key=lambda p: p[3])
-        FiltOutRate = 0
+        FiltOutRate = 0.2
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 4.0 > t_dis > 0.4:
-                if 1.0 > p[2] > 0.2:
+            if 6.0 > t_dis > 0.5:
+                if 1.0 > p[2] > 0.2 or dim == 2:
                     res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
@@ -105,8 +104,8 @@ class PCL_process:
             prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
-            if dis >= 2.0:  # minimum reflect distance is about 0.75m
-                for step in range(1, int(dis / 1.0)):
+            if dis >= 2*self.dis_rate:  # minimum reflect distance is about 0.75m
+                for step in range(1, int(dis / self.dis_rate)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)
                     if near_prob < self.min_prob_thre: near_prob = 0
