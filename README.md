@@ -40,7 +40,7 @@ https://github.com/mgualti/PointCloudsPython
 
 > rviz rosrun rviz rviz -d ~/catkin_ws/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
 
-# auto navigation
+# two_point navigation
 
 ​	1. 启动minimal.launch
 
@@ -52,12 +52,15 @@ https://github.com/mgualti/PointCloudsPython
 
 3. 启动建图相关节点
 
-> roslaunch turtlebot_mmwave_launchers radar_navigation_auto.launch
+> roslaunch turtlebot_mmwave_launchers radar_mapping.launch
 
-4. 启动rviz 
+4. 启动导航相关节点
 
-> rviz rosrun rviz rviz -d ~/catkin_ws/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
+   *roslaunch turtlebot_mmwave_launchers radar_navigation_auto.launch*
 
+5. 启动rviz 
+
+> rviz rosrun rviz rviz -d ~/workspace/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
 
 录制数据：
 rosbag record -a

@@ -6,19 +6,6 @@
 
   <!-- Map server
   <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="map1.bt" /> -->
-  
-
-  <!-- AMCL -->
-  <arg name="custom_amcl_launch_file" default="$(find turtlebot_navigation)/launch/includes/amcl/$(arg 3d_sensor)_amcl.launch.xml"/>
-  <arg name="initial_pose_x" default="0.0"/> 
-  <arg name="initial_pose_y" default="0.0"/> 
-  <arg name="initial_pose_a" default="0.0"/>
-  <include file="$(arg custom_amcl_launch_file)">
-    <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
-    <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
-    <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
-  </include>
-
   <!-- run pointcloud_to_laserscan node -->
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
 
@@ -47,6 +34,19 @@
     </rosparam>
 
   </node>
+
+  <!-- AMCL -->
+  <arg name="custom_amcl_launch_file" default="$(find turtlebot_navigation)/launch/includes/amcl/$(arg 3d_sensor)_amcl.launch.xml"/>
+  <arg name="initial_pose_x" default="0.0"/> 
+  <arg name="initial_pose_y" default="0.0"/> 
+  <arg name="initial_pose_a" default="0.0"/>
+  <include file="$(arg custom_amcl_launch_file)">
+    <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>
+    <arg name="initial_pose_y" value="$(arg initial_pose_y)"/>
+    <arg name="initial_pose_a" value="$(arg initial_pose_a)"/>
+  </include>
+
+
   
 <!--  <node pkg="fake_localization" type="fake_localization" name="fake_localization">-->
 <!--    <param name="use_map_topic" value="true"/>-->
