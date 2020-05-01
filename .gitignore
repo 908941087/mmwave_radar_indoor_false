@@ -13872,3 +13872,8 @@ ti_ws/build/ydlidar_ros/CMakeFiles/ydlidar_node.dir/sdk/src/impl/unix/list_ports
 ti_ws/build/ydlidar_ros/CMakeFiles/ydlidar_node.dir/sdk/src/impl/unix/unix_serial.cpp.o
 ti_ws/build/ydlidar_ros/CMakeFiles/ydlidar_node.dir/sdk/src/impl/unix/unix_timer.cpp.o
 ti_ws/build/ydlidar_ros/CMakeFiles/ydlidar_node.dir/src/ydlidar_node.cpp.o
+ti_ws/devel/lib/pkgconfig/ydlidar_ros.pc
+ti_ws/devel/lib/ydlidar_ros/ydlidar_client
+ti_ws/devel/lib/ydlidar_ros/ydlidar_node
+ti_ws/devel/share/ydlidar_ros/cmake/ydlidar_rosConfig-version.cmake
+ti_ws/devel/share/ydlidar_ros/cmake/ydlidar_rosConfig.cmake
