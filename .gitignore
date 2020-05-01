@@ -13879,3 +13879,8 @@ ti_ws/devel/share/ydlidar_ros/cmake/ydlidar_rosConfig-version.cmake
 ti_ws/devel/share/ydlidar_ros/cmake/ydlidar_rosConfig.cmake
 .vs/
 ti_ws/src/out
+carto_ws/protobuf/cmake/out
+/carto_ws/src/cartographer_ros/cartographer_ros/out/build/x64-Debug
+/carto_ws/src/cartographer_ros/cartographer_ros_msgs/out/build/x64-Debug
+/carto_ws/src/cartographer_ros/docs/out/build/x64-Debug
+/carto_ws/src/cartographer_ros/cartographer_rviz/out/build/x64-Debug
