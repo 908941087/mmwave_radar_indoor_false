@@ -13877,3 +13877,5 @@ ti_ws/devel/lib/ydlidar_ros/ydlidar_client
 ti_ws/devel/lib/ydlidar_ros/ydlidar_node
 ti_ws/devel/share/ydlidar_ros/cmake/ydlidar_rosConfig-version.cmake
 ti_ws/devel/share/ydlidar_ros/cmake/ydlidar_rosConfig.cmake
+.vs/
+ti_ws/src/out
