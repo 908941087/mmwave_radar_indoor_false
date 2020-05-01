@@ -18,14 +18,12 @@ class GroupingTracker:
 
     def pc_group(self, pc2):
         self.clusters = []
-        # pc2 = self.morph.closing(pc2, 3)
         self.pc2 = np.array(pc2)
         self.db = DBSCAN(eps=0.3, min_samples=10).fit(self.pc2)
         labels = self.db.labels_
         self.clusters_num = len(set(labels)) - (1 if -1 in labels else 0)
         for i in range(self.clusters_num):
             one_cluster = self.pc2[labels == i]
-            one_cluster = self.morph.closing(one_cluster, 3)
             self.clusters.append(Cluster(i, one_cluster))
         return self.clusters
 

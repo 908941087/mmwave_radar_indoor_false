@@ -15,7 +15,7 @@ class Entity(object):
     def getNaiveCenter(self):
         pass
 
-    def enhance(self):
+    def enhance(self, cluster):
         pass
 
     def getInfo(self):
@@ -27,29 +27,27 @@ class Entity(object):
 
 class Wall(Entity):
 
-    def __init__(self, id):
+    def __init__(self, id, points):
         self.entity_id = id
         self.enhanced = False
+        self.points = points
         self.width = None
         self.length = None
 
-    def getPoints(self):
-        pass
-
     def getInfo(self):
-        pass
+        return {"id": self.entity_id, "enhanced": self.enhanced, "width": self.width, "length": self.length}
 
     def show(self, plt):
-        pass
+        plt.plot(self.points)
 
-    def enhance(self):
+    def enhance(self, cluster):
         pass
 
     def getWidth(self):
-        pass
+        return self.width
 
     def getLength(self):
-        pass
+        return self.length
 
 
 class Furniture(Entity):
@@ -59,8 +57,8 @@ class Furniture(Entity):
         self.type = None
         self.is_enhanced = False
 
-    def enhance(self):
-        pass
+    def enhance(self, cluster):
+        return self, cluster
 
 
 class Door(Entity):
@@ -83,7 +81,7 @@ class Door(Entity):
     def getCenter(self):
         pass
 
-    def enhance(self):
+    def enhance(self, cluster):
         pass
 
 
@@ -97,13 +95,10 @@ class Noise(Entity):
     def getCenter(self):
         pass
 
-    def enhance(self):
-        pass
-
     def getNaiveCenter(self):
         pass
 
-    def enhance(self):
+    def enhance(self, cluster):
         pass
 
     def getInfo(self):
