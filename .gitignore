@@ -6557,7 +6557,6 @@ env/lib/python2.7/site-packages/scipy/stats/mstats.pyc
 env/lib/python2.7/site-packages/scipy/stats/mvn.so
 env/lib/python2.7/site-packages/scipy/stats/setup.py
 env/lib/python2.7/site-packages/scipy/stats/setup.pyc
-<<<<<<< HEAD
 env/lib/python2.7/site-packages/scipy/stats/statlib.so
 env/lib/python2.7/site-packages/scipy/stats/stats.py
 env/lib/python2.7/site-packages/scipy/stats/stats.pyc
@@ -6811,7 +6810,6 @@ env/lib/python2.7/warnings.py
 env/lib/python2.7/warnings.pyc
 env/lib/python2.7/site-packages/subprocess32.py
 env/lib/python2.7/site-packages/subprocess32.pyc
-=======
 env/lib/python2.7/site-packages/scipy/stats/statlib.so
 env/lib/python2.7/site-packages/scipy/stats/stats.py
 env/lib/python2.7/site-packages/scipy/stats/stats.pyc
@@ -6873,7 +6871,6 @@ env/lib/python2.7/site-packages/scipy-1.2.3.dist-info/top_level.txt
 env/lib/python2.7/site-packages/scipy-1.2.3.dist-info/WHEEL
 env/lib/python2.7/site-packages/sklearn/__init__.py
 env/lib/python2.7/site-packages/sklearn/__init__.pyc
->>>>>>> 4f260b3e09a64aedc2bff04449f3b9358e76bafa
 env/lib/python2.7/site-packages/sklearn/_config.py
 env/lib/python2.7/site-packages/sklearn/_config.pyc
 env/lib/python2.7/site-packages/sklearn/_isotonic.so
@@ -6907,15 +6904,12 @@ env/lib/python2.7/site-packages/sklearn/random_projection.py
 env/lib/python2.7/site-packages/sklearn/random_projection.pyc
 env/lib/python2.7/site-packages/sklearn/setup.py
 env/lib/python2.7/site-packages/sklearn/setup.pyc
-<<<<<<< HEAD
-=======
 env/lib/python2.7/site-packages/sklearn/__check_build/__init__.py
 env/lib/python2.7/site-packages/sklearn/__check_build/__init__.pyc
 env/lib/python2.7/site-packages/sklearn/__check_build/_check_build.so
 env/lib/python2.7/site-packages/sklearn/__check_build/setup.py
 env/lib/python2.7/site-packages/sklearn/__check_build/setup.pyc
 env/lib/python2.7/site-packages/sklearn/_build_utils/__init__.py
->>>>>>> 4f260b3e09a64aedc2bff04449f3b9358e76bafa
 env/lib/python2.7/site-packages/sklearn/_build_utils/__init__.pyc
 env/lib/python2.7/site-packages/sklearn/cluster/__init__.py
 env/lib/python2.7/site-packages/sklearn/cluster/__init__.pyc
@@ -7934,8 +7928,6 @@ env/lib/python2.7/site-packages/sklearn/utils/tests/test_utils.py
 env/lib/python2.7/site-packages/sklearn/utils/tests/test_utils.pyc
 env/lib/python2.7/site-packages/sklearn/utils/tests/test_validation.py
 env/lib/python2.7/site-packages/sklearn/utils/tests/test_validation.pyc
-<<<<<<< HEAD
-=======
 env/lib/python2.7/site-packages/sklearn-0.0.dist-info/INSTALLER
 env/lib/python2.7/site-packages/sklearn-0.0.dist-info/METADATA
 env/lib/python2.7/site-packages/sklearn-0.0.dist-info/RECORD
@@ -7947,14 +7939,12 @@ env/lib/python2.7/site-packages/scikit_learn-0.20.4.dist-info/METADATA
 env/lib/python2.7/site-packages/scikit_learn-0.20.4.dist-info/RECORD
 env/lib/python2.7/site-packages/scikit_learn-0.20.4.dist-info/top_level.txt
 env/lib/python2.7/site-packages/scikit_learn-0.20.4.dist-info/WHEEL
->>>>>>> 4f260b3e09a64aedc2bff04449f3b9358e76bafa
 env/lib/python2.7/site-packages/subprocess32-3.5.4.dist-info/INSTALLER
 env/lib/python2.7/site-packages/subprocess32-3.5.4.dist-info/LICENSE
 env/lib/python2.7/site-packages/subprocess32-3.5.4.dist-info/METADATA
 env/lib/python2.7/site-packages/subprocess32-3.5.4.dist-info/RECORD
 env/lib/python2.7/site-packages/subprocess32-3.5.4.dist-info/top_level.txt
 env/lib/python2.7/site-packages/subprocess32-3.5.4.dist-info/WHEEL
-<<<<<<< HEAD
 env/lib/python2.7/site-packages/wheel/__init__.py
 env/lib/python2.7/site-packages/wheel/__init__.pyc
 env/lib/python2.7/site-packages/wheel/__main__.py
@@ -8001,7 +7991,6 @@ ti_ws/src/py_interface/scripts/EnvClassifier/regression_control.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/utils.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/wall_finder.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/wall_trimmer.pyc
-=======
 env/lib/python2.7/site-packages/six-1.14.0.dist-info/INSTALLER
 env/lib/python2.7/site-packages/six-1.14.0.dist-info/LICENSE
 env/lib/python2.7/site-packages/six-1.14.0.dist-info/METADATA
@@ -9661,8 +9650,6 @@ ti_ws/src/py_interface/scripts/EnvClassifier/ClassMarkerModule.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/wall_finder.pyc
 ti_ws/src/py_interface/scripts/EnvClassifier/points_generator.pyc
 *.pyc
->>>>>>> 4f260b3e09a64aedc2bff04449f3b9358e76bafa
-<<<<<<< HEAD
 ti_ws/build/.built_by
 ti_ws/build/CATKIN_IGNORE
 ti_ws/build/catkin_make.cache
@@ -12392,7 +12379,6 @@ ti_ws/build/ydlidar_ros/catkin_generated/installspace/ydlidar_rosConfig-version.
 ti_ws/build/ydlidar_ros/catkin_generated/installspace/ydlidar_rosConfig.cmake
 ti_ws/build/ydlidar_ros/catkin_generated/stamps/ydlidar_ros/package.xml.stamp
 ti_ws/build/ydlidar_ros/catkin_generated/stamps/ydlidar_ros/pkg.pc.em.stamp
-=======
 env/bin/isympy
 env/lib/python2.7/site-packages/isympy.py
 env/lib/python2.7/site-packages/mpmath/__init__.py
@@ -13853,7 +13839,6 @@ env/lib/python2.7/site-packages/sympy-1.5.1.dist-info/RECORD
 env/lib/python2.7/site-packages/sympy-1.5.1.dist-info/top_level.txt
 env/lib/python2.7/site-packages/sympy-1.5.1.dist-info/WHEEL
 env/share/man/man1/isympy.1
->>>>>>> 38efe89da890d7920fe89b0f806c1892f850f288
 ti_ws/build/ydlidar_ros/cmake_install.cmake
 ti_ws/build/ydlidar_ros/CTestTestfile.cmake
 ti_ws/build/ydlidar_ros/Makefile
