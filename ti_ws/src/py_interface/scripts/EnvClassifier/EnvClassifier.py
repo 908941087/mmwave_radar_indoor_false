@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.neighbors import KDTree
 from Environment import Environment
 from Entity import Wall, Furniture, Door, Noise
+from PointCloudOperator import ClusterFit
 
 class EnvClassifier(object):
     AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
@@ -35,27 +36,18 @@ class EnvClassifier(object):
             if area > 0:
                 density = cluster.getDensity()
             if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
-                    len(cluster) < self.NOISE_POINTS_COUNT_THRESHOLD and density / area < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
+                    cluster.getPointsCount() < self.NOISE_POINTS_COUNT_THRESHOLD and density / area < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
                 env.register(Noise(cluster.getId()), cluster)
                 continue
 
             # try to treat this cluster as wall, see if it fits well
-            # wall_finder = WallFinder()
-            # divided_clusters, walls = wall_finder.find_walls(cluster)
-            # avg_width = np.average([w["width"] for w in walls])
-            # total_length = sum([dist(ends[0], ends[1]) for ends in [w["ends"] for w in walls]])
-            # if avg_width > self.MAX_WALL_WIDTH or total_length < self.MIN_WALL_LENGTH or \
-            #         total_length / avg_width < self.RATIO_THRESHOLD:
-            #     info["mark"] = Mark.OBSTACLE
-            #     self.markers.append(info)
-            #     continue
-            # else:
-            #     info["mark"] = Mark.WALL
-            #     info["length"] = total_length
-            #     info["width"] = avg_width
-            #     info["walls"] = walls
-            #     info["clusters"] = divided_clusters
-            #     self.markers.append(info)
+            wall = ClusterFit.wallFit(cluster)
+            if wall.getWidth() > self.MAX_WALL_WIDTH or wall.getLength() < self.MIN_WALL_LENGTH or \
+                    wall.getLength() / wall.getWidth() < self.RATIO_THRESHOLD:
+                env.register(Furniture(cluster.getId(), cluster.getConvexHull()), cluster)
+                continue
+            else:
+                env.register(wall, cluster)
 
         # build KDTree using cluster centers that don't contain noise
         # clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]

@@ -24,21 +24,26 @@ class Entity(object):
     def isEnhanced(self):
         return self.enhanced
 
+    def getId(self):
+        return self.entity_id
+
 
 class Wall(Entity):
 
-    def __init__(self, id, points):
+    def __init__(self, id, segments, width):
         self.entity_id = id
         self.enhanced = False
-        self.points = points
-        self.width = None
+        self.segments = segments
+        self.width = width
         self.length = None
 
     def getInfo(self):
-        return {"id": self.entity_id, "enhanced": self.enhanced, "width": self.width, "length": self.length}
+        return {"id": self.entity_id, "enhanced": self.enhanced, "segments": self.segments, "width": self.width, "length": self.length}
 
     def show(self, plt):
-        plt.plot(self.points)
+        for segment in self.segments:
+            points = [segment.p1, segment.p2]
+            plt.plot([p[0] for p in points], [p[1] for p in points], 'ro-')
 
     def enhance(self, cluster):
         pass
@@ -47,18 +52,38 @@ class Wall(Entity):
         return self.width
 
     def getLength(self):
+        if self.length is None:
+            self.length = 0
+            for segment in self.segments:
+                self.length += segment.length
         return self.length
+
+    def getCenter(self):
+        pass
+
+    def getNaiveCenter(self):
+        pass
 
 
 class Furniture(Entity):
 
-    def __init__(self, id):
+    def __init__(self, id, polygon):
         self.entity_id = id
+        self.polygon = None
         self.type = None
         self.is_enhanced = False
 
     def enhance(self, cluster):
         return self, cluster
+
+    def getCenter(self):
+        pass
+
+    def getNaiveCenter(self):
+        return self.polygon.centroid
+
+    def show(self, plt):
+        pass
 
 
 class Door(Entity):
@@ -67,19 +92,20 @@ class Door(Entity):
         OPEN = 0
         CLOSED = 1
 
-    def __init__(self, id):
+    def __init__(self, id, ends):
         self.entity_id = id
         self.state = DoorState.CLOSED
         self.is_enhanced = False
+        self.ends = ends
 
     def getState(self):
         return self.state
 
     def getLocation(self):
-        pass
+        return self.getCenter()
 
     def getCenter(self):
-        pass
+        return ends[0].midpoint(ends[1])
 
     def enhance(self, cluster):
         pass
@@ -87,19 +113,23 @@ class Door(Entity):
 
 class Noise(Entity):
 
-    def __init__(self, id):
+    def __init__(self, id, polygon):
         self.entity_id = id
         self.center = None
+        self.polygon = polygon
         self.is_enhanced = False
 
     def getCenter(self):
         pass
 
     def getNaiveCenter(self):
-        pass
+        return self.polygon.centroid
 
     def enhance(self, cluster):
         pass
 
     def getInfo(self):
+        pass
+
+    def show(self, plt):
         pass

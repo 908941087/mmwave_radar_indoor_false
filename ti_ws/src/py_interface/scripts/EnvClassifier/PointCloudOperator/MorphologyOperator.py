@@ -1,4 +1,4 @@
-from utils import get_xy_lim
+from PCBasics import getXYLim
 from math import ceil, floor
 import numpy as np
 
@@ -8,7 +8,7 @@ class MorphologyOperator(object):
 
     def rasterize(self, cluster):
         if cluster is None: raise ValueError("cluster must be specified.")
-        xy_lim = get_xy_lim(cluster)
+        xy_lim = getXYLim(cluster)
 
         def get_cell(point):
             x_offset = point[0] - xy_lim[0]
@@ -114,13 +114,13 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
-    from utils import get_points_from_pcd
+    from PCBasics import getPCFromPCD
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(1, 1, 1)
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
-    points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd")
+    points = getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd")
     
     ax.scatter([p[0] for p in points], [p[1] for p in points], c='r', s=1)
 

@@ -1,6 +1,7 @@
 import numpy as np
-from sympy import Point, Polygon
-from sympy.geometry import convex_hull
+from sympy.geometry import convex_hull, Line, Segment, Point, Polygon
+from sympy.abc import x, y
+from PointCloudOperator import PCBasics
 
 class Cluster(object):
     
@@ -11,6 +12,7 @@ class Cluster(object):
             self.points.append(Point(p[0], p[1]))
         self.convex_hull = None
         self.area = None
+        self.xy_lim = None
 
     def distance(self, other):
         if isinstance(other, Cluster):
@@ -41,7 +43,7 @@ class Cluster(object):
         return self.id
 
     def getCenter(self):
-        return [float(np.average([p[0] for p in self.points])), float(np.average([p[1] for p in self.points]))]
+        return self.getConvexHull().centroid
 
     def getPoints(self):
         return self.points
@@ -51,16 +53,32 @@ class Cluster(object):
 
     def getConvexHull(self):
         if self.convex_hull is None:
-            self.convex_hull = convex_hull(self.points)
+            self.convex_hull = convex_hull(*self.points)
         return self.convex_hull
 
     def getArea(self):
         if self.area is None:
-            self.area = self.getConvexHull().area()
+            self.area = self.getConvexHull().area
         return self.area
+
+    def getPointsCount(self):
+        return len(self.points)
+
+    def getXYLim(self):
+        if self.xy_lim is None:
+            self.xy_lim = PCBasics.getXYLim(self.getPoints())
+        return self.xy_lim
+
+    def getSegment(self, line):
+        if not isinstance(line, Line):
+            raise TypeError("line must be type of Line")
+        xy_lim = self.getXYLim()
+        xs = [xy_lim[0], xy_lim[1], line.intersection(Line(Point(0, xy_lim[2]), slope=0))[0][0], line.intersection(Line(Point(0, xy_lim[3]), slope=0))[0][0]]
+        xs.sort()
+        return Segment(line.intersection(Line(Point(xs[1], 0), Point(xs[1], 1)))[0], line.intersection(Line(Point(xs[2], 0), Point(xs[2], 1)))[0])
 
     def getInfo(self):
         return {"Id": self.id, "Points_count": len(self.points), "Area": self.getArea()}
 
-    def show(self, plt):
-        plt.scatter([p[0] for p in self.points], [p[1] for p in self.points], c='r', s=1)
+    def show(self, plt, c='r'):
+        plt.scatter([p[0] for p in self.points], [p[1] for p in self.points], c=c, s=1)

@@ -1,4 +1,4 @@
-env/.Python
+env/*
 env/bin/activate
 env/bin/activate_this.py
 env/bin/activate.csh

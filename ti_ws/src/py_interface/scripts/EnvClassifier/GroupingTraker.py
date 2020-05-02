@@ -1,6 +1,6 @@
 from sklearn.cluster import DBSCAN
 import numpy as np
-from PointCloudOperator import MorphologyOperator
+from PointCloudOperator import MorphologyOperator, PCBasics
 from Environment import Environment
 from EnvClassifier import EnvClassifier
 from Cluster import Cluster
@@ -28,7 +28,8 @@ class GroupingTracker:
         return self.clusters
 
     def getEnv(self):
-        self.env = self.env_classifier.classify(self.clusters)
+        if self.env is None:
+            self.env = self.env_classifier.classify(self.clusters)
         return self.env
 
     def getEnhancedEnv(self):
@@ -43,4 +44,8 @@ if __name__ == "__main__":
     ax = fig.add_subplot(1, 1, 1)
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
-    plt.show()
+    gp = GroupingTracker()
+    gp.pc_group(PCBasics.getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/south_one.pcd"))
+    gp.getEnv().show(plt)
+
+    # plt.show()
