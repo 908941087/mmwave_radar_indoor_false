@@ -11,6 +11,10 @@
   <arg name="enable_py_classifier" value="true"/>
   <arg name="enable_force" value="true"/>
 
+    <!-- bumper detecting -->
+  <include file="$(find turtlebot_navigation)/launch/includes/velocity_smoother.launch.xml"/>
+  <include file="$(find turtlebot_navigation)/launch/includes/safety_controller.launch.xml"/> 
+
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
 
 	<include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
