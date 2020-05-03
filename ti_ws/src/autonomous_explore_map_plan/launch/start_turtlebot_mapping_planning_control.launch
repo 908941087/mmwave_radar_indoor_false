@@ -7,7 +7,7 @@
   <arg name="enable_return" value="true"/>
   <arg name="enable_rviz" value="false"/>
   <arg name="enable_unknown_point_find" value="false"/>
-  <arg name="enable_py_test" value="true"/>
+  <arg name="enable_py_test" value="false"/>
   <arg name="enable_py_classifier" value="true"/>
   <arg name="enable_force" value="true"/>
 
@@ -17,8 +17,8 @@
 
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
 
-	<include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
-  </include>
+      <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
+  </include> -->
 
 	<!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_navigation_auto.launch">
   </include> -->
