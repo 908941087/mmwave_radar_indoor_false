@@ -4,6 +4,7 @@ from PointCloudOperator import MorphologyOperator, PCBasics
 from Environment import Environment
 from EnvClassifier import EnvClassifier
 from Cluster import Cluster
+from shapely.geometry import MultiPoint
 
 
 class GroupingTracker:
@@ -24,7 +25,7 @@ class GroupingTracker:
         self.clusters_num = len(set(labels)) - (1 if -1 in labels else 0)
         for i in range(self.clusters_num):
             one_cluster = self.pc2[labels == i]
-            self.clusters.append(Cluster(i, one_cluster))
+            self.clusters.append(Cluster(i, MultiPoint(one_cluster)))
         return self.clusters
 
     def getEnv(self):
@@ -45,7 +46,9 @@ if __name__ == "__main__":
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
     gp = GroupingTracker()
-    gp.pc_group(PCBasics.getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/south_one.pcd"))
-    gp.getEnv().show(plt)
+    gp.pc_group(PCBasics.getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd"))
+    env = gp.getEnv()
+    env.show(plt)
+    env.showEntityTags(plt)
 
-    # plt.show()
+    plt.show()

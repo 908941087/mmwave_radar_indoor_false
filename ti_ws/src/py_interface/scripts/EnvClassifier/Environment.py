@@ -65,11 +65,12 @@ class Environment(object):
     def showEntityTags(self, plt):
         for entity in self.getEntities():
             info = entity.getInfo()
+            center = entity.getRepresentativePoint()
             tag = ""
             for key in info.keys():
                 tag += str(key) + ": " + str(info[key]) + "\n"
-            
-
+            tag = tag.rstrip('\n')
+            plt.text(center.x, center.y, tag, style='italic', fontsize=6, bbox={'facecolor': 'white', 'alpha': 0.7, 'pad': 5})
 
     def __repr__(self):
         return str(self)

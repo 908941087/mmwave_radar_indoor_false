@@ -25,7 +25,7 @@ class EnvClassifier(object):
         env = Environment()
         self.distances = {}
 
-        cluster_centers = np.array([c.getCenter() for c in clusters]).reshape(-1, 2)
+        # cluster_centers = np.array([c.getCenter() for c in clusters]).reshape(-1, 2)
         
         # mark clusters for the first round
         for i in range(len(clusters)):
@@ -37,14 +37,14 @@ class EnvClassifier(object):
                 density = cluster.getDensity()
             if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
                     cluster.getPointsCount() < self.NOISE_POINTS_COUNT_THRESHOLD and density / area < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
-                env.register(Noise(cluster.getId()), cluster)
+                env.register(Noise(cluster.getId(), cluster.getConcaveHull()), cluster)
                 continue
 
             # try to treat this cluster as wall, see if it fits well
             wall = ClusterFit.wallFit(cluster)
             if wall.getWidth() > self.MAX_WALL_WIDTH or wall.getLength() < self.MIN_WALL_LENGTH or \
                     wall.getLength() / wall.getWidth() < self.RATIO_THRESHOLD:
-                env.register(Furniture(cluster.getId(), cluster.getConvexHull()), cluster)
+                env.register(Furniture(cluster.getId(), cluster.getConcaveHull()), cluster)
                 continue
             else:
                 env.register(wall, cluster)

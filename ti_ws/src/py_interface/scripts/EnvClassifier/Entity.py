@@ -1,4 +1,5 @@
 from enum import Enum
+from collections import OrderedDict
 
 class Entity(object):
 
@@ -9,10 +10,7 @@ class Entity(object):
     def show(self, plt):
         pass
 
-    def getCenter(self):
-        pass
-
-    def getNaiveCenter(self):
+    def getRepresentativePoint(self):
         pass
 
     def enhance(self, cluster):
@@ -30,19 +28,27 @@ class Entity(object):
 
 class Wall(Entity):
 
-    def __init__(self, id, segments, width):
+    def __init__(self, id, polygon, segments, width):
         self.entity_id = id
         self.enhanced = False
+        self.polygon = polygon
         self.segments = segments
         self.width = width
         self.length = None
 
     def getInfo(self):
-        return {"id": self.entity_id, "enhanced": self.enhanced, "segments": self.segments, "width": self.width, "length": self.length}
+        loc = self.getRepresentativePoint()
+        return OrderedDict([("Id", self.entity_id), 
+                            ("Name", "Wall"), 
+                            ("Location", [round(loc.x, 2), round(loc.y, 2)]),
+                            ("Enhanced", self.enhanced), 
+                            ("SegmentsCount", len(self.segments)), 
+                            ("Width", round(self.getWidth(), 3)), 
+                            ("Length", round(self.getLength(), 3))])
 
     def show(self, plt):
         for segment in self.segments:
-            points = [segment.p1, segment.p2]
+            points = segment.coords
             plt.plot([p[0] for p in points], [p[1] for p in points], 'ro-')
 
     def enhance(self, cluster):
@@ -58,32 +64,34 @@ class Wall(Entity):
                 self.length += segment.length
         return self.length
 
-    def getCenter(self):
-        pass
-
-    def getNaiveCenter(self):
-        pass
+    def getRepresentativePoint(self):
+        return self.polygon.representative_point()
 
 
 class Furniture(Entity):
 
     def __init__(self, id, polygon):
         self.entity_id = id
-        self.polygon = None
+        self.polygon = polygon
         self.type = None
         self.is_enhanced = False
 
     def enhance(self, cluster):
         return self, cluster
 
-    def getCenter(self):
-        pass
-
-    def getNaiveCenter(self):
-        return self.polygon.centroid
+    def getRepresentativePoint(self):
+        return self.polygon.representative_point()
 
     def show(self, plt):
         pass
+
+    def getInfo(self):
+        loc = self.getRepresentativePoint()
+        return OrderedDict([("Id", self.entity_id), 
+                            ("Name", "Furniture"), 
+                            ("Location", [round(loc.x, 2), round(loc.y, 2)]),
+                            ("Enhanced",  self.is_enhanced), 
+                            ("Type", self.type)])
 
 
 class Door(Entity):
@@ -92,11 +100,11 @@ class Door(Entity):
         OPEN = 0
         CLOSED = 1
 
-    def __init__(self, id, ends):
+    def __init__(self, id, segment):
         self.entity_id = id
         self.state = DoorState.CLOSED
         self.is_enhanced = False
-        self.ends = ends
+        self.segment = segment
 
     def getState(self):
         return self.state
@@ -104,11 +112,23 @@ class Door(Entity):
     def getLocation(self):
         return self.getCenter()
 
-    def getCenter(self):
-        return ends[0].midpoint(ends[1])
+    def getRepresentativePoint(self):
+        return self.segment.centroid
 
     def enhance(self, cluster):
         pass
+
+    def show(self, plt):
+        pass
+
+    def getInfo(self):
+        loc = self.getRepresentativePoint()
+        return OrderedDict([("Id", self.entity_id), 
+                            ("Name", "Door"), 
+                            ("Location", [round(loc.x, 2), round(loc.y, 2)]),
+                            ("Enhanced", self.is_enhanced), 
+                            ("Length", round(self.segment.length, 3)), 
+                            ("State", self.state)])
 
 
 class Noise(Entity):
@@ -119,17 +139,19 @@ class Noise(Entity):
         self.polygon = polygon
         self.is_enhanced = False
 
-    def getCenter(self):
-        pass
-
-    def getNaiveCenter(self):
-        return self.polygon.centroid
+    def getRepresentativePoint(self):
+        return self.polygon.representative_point()
 
     def enhance(self, cluster):
         pass
 
     def getInfo(self):
-        pass
+        loc = self.getRepresentativePoint()
+        return OrderedDict([("Id", self.entity_id), 
+                            ("Name", "Noise"), 
+                            ("Location", [round(loc.x, 2), round(loc.y, 2)]),
+                            ("Enhanced", self.is_enhanced), 
+                            ("Area", round(self.polygon.area, 3))])
 
     def show(self, plt):
         pass
