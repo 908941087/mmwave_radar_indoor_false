@@ -56,6 +56,10 @@ def callback(data):
     PCL_Ins.process(frame_service, stablizer, data)
     pub.publish(PCL_Ins.genrate_res())
 
+def bumper_callback(data):
+    PCL_Ins = PCL_process.PCL_process()
+    PCL_Ins.process_bumper(data)
+    pub.publish(PCL_Ins.genrate_res())
 
 def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
@@ -66,6 +70,7 @@ def listener():
     rospy.init_node('listener', anonymous=True)
 
     rospy.Subscriber('mmWaveDataHdl/RScan', PointCloud2, callback)
+    rospy.Subscriber('bumper_pc', PointCloud2, bumper_callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()

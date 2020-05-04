@@ -3,6 +3,7 @@ import sensor_msgs.point_cloud2
 # import open3d as o3d
 import rospy
 import point_cloud
+import sensor_msgs.msg._PointField as PointFiled
 import numpy as np
 from math import sqrt, floor, pi, sin, cos, tan
 
@@ -33,9 +34,21 @@ class PCL_process:
         # self.adjust_spherical()
         self.passthrough_filter()
         self.handle_reflection()
+
     # self.stablize_preframe()
-        # self.statistical_outlier_removal()
-        # self.add_z_info()
+    # self.statistical_outlier_removal()
+    # self.add_z_info()
+
+    def process_bumper(self, pc2):
+        self.pc2 = pc2
+        points = sensor_msgs.point_cloud2.read_points(self.pc2)
+        res_points = []
+        points_list = [(p[0], p[1], p[2]) for p in points]
+        point_filed = PointFiled.PointField("intensity", 16, 7, 1)
+        self.pc2.fields.append(point_filed)
+        for p in points_list:
+            res_points.append((p[0], p[1], 0.0, 40.0))
+        self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
     def adjust_spherical(self):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
@@ -104,7 +117,7 @@ class PCL_process:
             prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
-            if dis >= 2*self.dis_rate:  # minimum reflect distance is about 0.75m
+            if dis >= 2 * self.dis_rate:  # minimum reflect distance is about 0.75m
                 for step in range(1, int(dis / self.dis_rate)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)

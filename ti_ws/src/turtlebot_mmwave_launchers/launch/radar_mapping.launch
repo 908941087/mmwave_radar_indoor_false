@@ -11,9 +11,23 @@
 <!--  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">-->
 <!--  </include>-->
 
+
+  <!-- Start py_interface listener to filter pc -->
+  <node pkg="py_interface" type="listener.py" name="py_interface_filter" respawn="true" output="screen" />
+
+
   <!-- Add nodes to filter/limit Radar data before using it for mapping -->
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
   </include>
+
+
+  <!-- Bumper2pc pkg -->
+  <node pkg="nodelet" type="nodelet" name="bumper2pointcloud" args="load kobuki_bumper2pc/Bumper2PcNodelet mobile_base_nodelet_manager">
+    <param name="pointcloud_radius" value="0.24"/>
+    <remap from="bumper2pointcloud/pointcloud"   to="bumper_pc"/>
+    <remap from="bumper2pointcloud/core_sensors" to="mobile_base/sensors/core"/>
+  </node>
+
 
   <!-- Create "raw" 3D map using first octomap node -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_raw" output="screen">

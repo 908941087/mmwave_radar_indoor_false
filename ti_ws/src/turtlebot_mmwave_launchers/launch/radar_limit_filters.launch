@@ -11,7 +11,7 @@
       <remap from="~output" to="x_filt_out" />
       <rosparam>
          filter_field_name: x
-         filter_limit_min: 0.1
+         filter_limit_min: 0.0
          filter_limit_max: 8
          filter_limit_negative: False
       </rosparam>
