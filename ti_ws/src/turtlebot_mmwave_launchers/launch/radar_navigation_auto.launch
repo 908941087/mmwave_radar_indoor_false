@@ -11,8 +11,8 @@
 
   <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch" /> -->
 
-  <!-- Map server -->
-  <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/oy19.bt projected_map:=map" />
+  <!-- Map server 
+  <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/oy19.bt projected_map:=map" /> -->
 
   <!-- <include file="$(find autonomous_explore_map_plan)/launch/view_robot.launch"/>  -->
 
