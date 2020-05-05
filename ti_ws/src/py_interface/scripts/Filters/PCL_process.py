@@ -40,12 +40,17 @@ class PCL_process:
     # self.add_z_info()
 
     def process_bumper(self, pc2):
-        self.pc2 = pc2
-        points = sensor_msgs.point_cloud2.read_points(self.pc2)
-        res_points = []
+        points = sensor_msgs.point_cloud2.read_points(pc2)
         points_list = [(p[0], p[1], p[2]) for p in points]
+
+        if self.pc2 is not None:
+            points = sensor_msgs.point_cloud2.read_points(self.pc2)
+            points_list.extend([(p[0], p[1], p[2]) for p in points])
+        # Add intensity info
         point_filed = PointFiled.PointField("intensity", 16, 7, 1)
         self.pc2.fields.append(point_filed)
+        # Generate pointcloud2
+        res_points = []
         for p in points_list:
             res_points.append((p[0], p[1], 0.0, 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
@@ -93,7 +98,7 @@ class PCL_process:
         FiltOutRate = 0.2
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 6.0 > t_dis > 0.5:
+            if 6.0 > t_dis > 0.7:
                 if 1.0 > p[2] > 0.2 or dim == 2:
                     res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
@@ -183,6 +188,9 @@ class PCL_process:
             for i in range(step):
                 res_points.append((p[0], p[1], p[2] + (i * height / step), 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
+    def pc_clean(self):
+        self.pc2 = None
 
     def genrate_res(self):
         return self.pc2

@@ -52,14 +52,14 @@ stablizer = frame_service.get_multi_frame_stablizer(width=8, height=4, resolutio
 
 def callback(data):
     global frame_service, stablizer
-    PCL_Ins = PCL_process.PCL_process()
+
     PCL_Ins.process(frame_service, stablizer, data)
     pub.publish(PCL_Ins.genrate_res())
 
 def bumper_callback(data):
-    PCL_Ins = PCL_process.PCL_process()
     PCL_Ins.process_bumper(data)
     pub.publish(PCL_Ins.genrate_res())
+    PCL_Ins.pc_clean()
 
 def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
@@ -77,5 +77,6 @@ def listener():
 
 
 if __name__ == '__main__':
+    PCL_Ins = PCL_process.PCL_process()
     pub = rospy.Publisher('/py_test', PointCloud2, queue_size=10)
     listener()
