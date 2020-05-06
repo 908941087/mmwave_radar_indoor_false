@@ -31,7 +31,7 @@ class Cluster(object):
         return self.concave_hull
 
     def getArea(self):
-        return self.getConcaveHull().area
+        return abs(self.getConcaveHull().area)
 
     def getPointsCount(self):
         return len(self.points)

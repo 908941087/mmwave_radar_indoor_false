@@ -5,7 +5,6 @@ class Entity(object):
 
     def __init__(self, id):
         self.entity_id = id
-        self.enhanced = False
 
     def show(self, plt):
         pass
@@ -13,14 +12,8 @@ class Entity(object):
     def getRepresentativePoint(self):
         pass
 
-    def enhance(self, cluster):
-        pass
-
     def getInfo(self):
         pass
-
-    def isEnhanced(self):
-        return self.enhanced
 
     def getId(self):
         return self.entity_id
@@ -108,9 +101,6 @@ class Door(Entity):
 
     def getState(self):
         return self.state
-
-    def getLocation(self):
-        return self.getCenter()
 
     def getRepresentativePoint(self):
         return self.segment.centroid

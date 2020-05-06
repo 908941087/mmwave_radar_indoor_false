@@ -16,8 +16,17 @@ class Environment(object):
 
     def getClusters(self):
         return [i[1] for i in self.entity_cluster_map.values()]
+
+    def getEntity(self, id):
+        return self.entity_cluster_map[id][0]
+
+    def getCluster(self, id):
+        return self.entity_cluster_map[id][1]
         
     def enhance(self):
+        """
+        Returns an enhanced version of this Environment.
+        """
         if self.is_enhanced: raise Exception("Environment is already enhanced.")
         env = Environment()
         env.is_enhanced = True

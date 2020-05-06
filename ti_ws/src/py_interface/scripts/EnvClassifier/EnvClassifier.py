@@ -48,6 +48,7 @@ class EnvClassifier(object):
                 continue
             else:
                 env.register(wall, cluster)
+            # env.register(wall, cluster)
 
         # build KDTree using cluster centers that don't contain noise
         # clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]

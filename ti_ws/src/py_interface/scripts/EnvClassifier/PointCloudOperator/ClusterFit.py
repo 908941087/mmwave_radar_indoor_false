@@ -1,6 +1,7 @@
 import numpy as np
 import math
 from shapely.geometry import LineString, Point, box, MultiPoint
+from centerline.geometry import Centerline
 from PCBasics import filterWithRect, alphaShape
 from Entity import Wall
 
@@ -78,3 +79,9 @@ def wallFit(cluster):
     wallFitCore(cluster.getPoints())
     return Wall(cluster.getId(), cluster.getConcaveHull(), segments, 2 * total_dists[0] / float(cluster.getPointsCount()))
 
+
+# TODO: test
+def boneFit(cluster):
+    centerline = Centerline(cluster.getConcaveHull())
+    total_dists = centerline.geoms
+    return Wall(cluster.getId(), cluster.getConcaveHull(), centerline.geoms, 4)
