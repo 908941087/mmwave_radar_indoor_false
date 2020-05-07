@@ -17,8 +17,8 @@
 
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
 
-      <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
-  </include> -->
+       <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch">
+  </include> 
 
 	<!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_navigation_auto.launch">
   </include> -->
