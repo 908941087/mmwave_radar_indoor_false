@@ -44,6 +44,7 @@ from Filters import PCL_process
 # import PointCloudFilter
 import time
 from std_msgs.msg import String
+import threading
 
 pub = None
 
@@ -52,14 +53,17 @@ stablizer = frame_service.get_multi_frame_stablizer(width=8, height=4, resolutio
 
 def callback(data):
     global frame_service, stablizer
-
+    listener_lock.acquire()
     PCL_Ins.process(frame_service, stablizer, data)
     pub.publish(PCL_Ins.genrate_res())
+    listener_lock.release()
 
 def bumper_callback(data):
+    listener_lock.acquire()
     PCL_Ins.process_bumper(data)
     pub.publish(PCL_Ins.genrate_res())
     PCL_Ins.pc_clean()
+    listener_lock.release()
 
 def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
@@ -78,5 +82,6 @@ def listener():
 
 if __name__ == '__main__':
     PCL_Ins = PCL_process.PCL_process()
+    listener_lock = threading.Lock()
     pub = rospy.Publisher('/py_test', PointCloud2, queue_size=10)
     listener()

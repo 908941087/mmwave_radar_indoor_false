@@ -26,6 +26,11 @@ class PCL_process:
         self.reflect_trace_cnt = 0.0
         self.min_prob_thre = 3
 
+        # For add bumper points
+        self.bumper_len = 0.24
+        self.bumper_step = 20
+        self.enable_bumper = True
+
     def process(self, frame_service, stablizer, pc2):
         self.frame_service = frame_service
         self.stablizer = stablizer
@@ -42,18 +47,47 @@ class PCL_process:
     def process_bumper(self, pc2):
         points = sensor_msgs.point_cloud2.read_points(pc2)
         points_list = [(p[0], p[1], p[2]) for p in points]
+        # Add bumper points
+        tmp_points = [(p[0], p[1], p[2]) for p in points_list]
+        for p in tmp_points:
+            delta = None
+            if p[0]*p[0] + p[1]*p[1] < 1:
+                if abs(p[1]) <= 0.1:# Center
+                    delta = 0.0
+                elif p[1] < -0.1:
+                    delta = -70*pi/180
+                else:#p[1] > 0.1
+                    delta = 70*pi/180
+                points_list.extend(self.generate_bumper_points(delta, self.enable_bumper))
 
         if self.pc2 is not None:
             points = sensor_msgs.point_cloud2.read_points(self.pc2)
             points_list.extend([(p[0], p[1], p[2]) for p in points])
         # Add intensity info
         point_filed = PointFiled.PointField("intensity", 16, 7, 1)
+        self.pc2 = pc2
         self.pc2.fields.append(point_filed)
         # Generate pointcloud2
         res_points = []
         for p in points_list:
             res_points.append((p[0], p[1], 0.0, 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
+    def generate_bumper_points(self, delta = 0, enable=True):
+        res_points = []
+        if enable == False:
+            return res_points
+        tmp_len = self.bumper_len / self.bumper_step
+        tmp_x = tmp_len*sin(delta)
+        tmp_y = -tmp_len*cos(delta)
+        for j in range(10):
+            location_len = self.bumper_len+j*0.01
+            for i in range(-self.bumper_step+1, self.bumper_step):
+                x = i * tmp_x + location_len*cos(delta)
+                y = i * tmp_y + location_len*sin(delta)
+                res_points.append((x, y, 0.0, 40.0))
+            return res_points
+
 
     def adjust_spherical(self):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
