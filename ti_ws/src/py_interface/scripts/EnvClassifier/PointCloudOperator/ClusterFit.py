@@ -3,7 +3,7 @@ import math
 from shapely.geometry import LineString, Point, box, MultiPoint
 from centerline.geometry import Centerline
 from PCBasics import filterWithRect, alphaShape
-from Entity import Wall
+from ..Entity import Wall
 
 def lineFit(points):
     count = len(points)

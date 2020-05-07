@@ -3,7 +3,7 @@
 import rospy
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2
-from EnvClassifier import GroupingTrakerModule
+from EnvClassifier import GroupingTraker
 import threading
 
 from visualization_msgs.msg import MarkerArray, Marker
@@ -18,7 +18,7 @@ class SubThread(threading.Thread):
         self.pc2_pub_event = pc2_pub_event
         self.marker_array_pub_thread = marker_array_pub_thread
         self.marker_array_pub_event = marker_array_pub_event
-        self.group_tracker = GroupingTrakerModule.GroupingTracker()
+        self.group_tracker = GroupingTraker.GroupingTracker()
         self.duration = 30.0
 
     def run(self):
@@ -29,12 +29,12 @@ class SubThread(threading.Thread):
             points = [[i[0], i[1]] for i in point_cloud2]
             # Generate points and marks
             if points is not None and len(points) > 0:
-                classified_points = self.group_tracker.generate_points_per_cluster(points)
-                classified_marks = self.group_tracker.generate_makers()
+                classified_points = self.group_tracker.getEnv().getPoints()
+                classified_marks = self.group_tracker.getEnv().generate_makers()
             else:
                 rospy.sleep(self.duration)
                 continue
-            # self.group_tracker.show_clusters()
+            # self.group_tracker.showClusters()
 
             # Transform classified points to rosmsg
             if classified_points is None or classified_marks is None:
