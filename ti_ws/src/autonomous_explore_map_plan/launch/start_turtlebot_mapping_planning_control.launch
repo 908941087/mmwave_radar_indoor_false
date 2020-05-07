@@ -8,7 +8,7 @@
   <arg name="enable_rviz" value="false"/>
   <arg name="enable_unknown_point_find" value="false"/>
   <arg name="enable_py_test" value="false"/>
-  <arg name="enable_py_classifier" value="true"/>
+  <arg name="enable_py_classifier" value="false"/>
   <arg name="enable_force" value="true"/>
 
     <!-- bumper detecting -->
