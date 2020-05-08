@@ -70,3 +70,25 @@ rosnode info /
 rostopic list
 rostopic info /节点名
 rostopic echo / 节点名
+
+### auto navigation with two_point
+
+​	1. 启动minimal.launch
+
+> roslaunch turtlebot_bringup minimal.launch
+
+​    2.启动建图相关节点
+
+> roslaunch turtlebot_mmwave_launchers radar_mapping.launch
+
+  3.启动ForceUnknownFind.py
+
+rosrun py_interface ForceUnknownFind.py
+
+4. 启动导航相关节点
+
+   *roslaunch turtlebot_mmwave_launchers radar_navigation_auto.launch*
+
+5. 启动rviz 
+
+> rviz rosrun rviz rviz -d ~/workspace/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
