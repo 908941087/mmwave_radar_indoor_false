@@ -73,6 +73,8 @@ def ForceUnknownFindCB(msg):
             target_pose.pose.position.y = yorg + res_point[0] * res
             rospy.loginfo("Publish neareast unknown point")
             goal_pub.publish(target_pose)
+    else:
+        goal_pub.publish(target_pose)
 
 
 def FindUnkownArea(point_index, local_map):
