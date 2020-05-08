@@ -75,6 +75,8 @@ def ForceUnknownFindCB(msg):
             goal_pub.publish(target_pose)
     else:
         goal_pub.publish(target_pose)
+        rospy.loginfo("Returning!")
+        rospy.on_shutdown(myhook)
 
 
 def FindUnkownArea(point_index, local_map):
@@ -141,6 +143,12 @@ def wrapAngle(ang):
     elif isinstance(ang, np.ndarray):
         ang[ang > np.pi] -= 2 * np.pi
     return ang
+
+
+def myhook():
+    print "shutdown force_unknown_find_handler!"
+
+
 
 
 if __name__ == '__main__':
