@@ -92,6 +92,7 @@ namespace move_base {
 
     ros::NodeHandle action_nh("move_base");
     action_goal_pub_ = action_nh.advertise<move_base_msgs::MoveBaseActionGoal>("goal", 1);
+    
 
     //we'll provide a mechanism for some people to send goals as PoseStamped messages over a topic
     //they won't get any useful information back about its status, but this is useful for tools
@@ -166,6 +167,11 @@ namespace move_base {
 
     //we're all set up now so we can start the action server
     as_->start();
+    //publish force_unknown_find_pub 
+    ros::NodeHandle unknown_pub_nh;
+    force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("/force_unknown_find",1);
+    force_unknown_find_pub.Publish(1);
+    //
 
     dsrv_ = new dynamic_reconfigure::Server<move_base::MoveBaseConfig>(ros::NodeHandle("~"));
     dynamic_reconfigure::Server<move_base::MoveBaseConfig>::CallbackType cb = boost::bind(&MoveBase::reconfigureCB, this, _1, _2);
@@ -884,6 +890,7 @@ namespace move_base {
           lock.unlock();
 
           as_->setSucceeded(move_base_msgs::MoveBaseResult(), "Goal reached.");
+          force_unknown_find_pub.Publish(1);
           return true;
         }
 
@@ -944,6 +951,7 @@ namespace move_base {
         if(recovery_behavior_enabled_ && recovery_index_ < recovery_behaviors_.size()){
           ROS_DEBUG_NAMED("move_base_recovery","Executing behavior %u of %zu", recovery_index_, recovery_behaviors_.size());
           recovery_behaviors_[recovery_index_]->runBehavior();
+          force_unknown_find_pub.Publish(1);
 
           //we at least want to give the robot some time to stop oscillating after executing the behavior
           last_oscillation_reset_ = ros::Time::now();
