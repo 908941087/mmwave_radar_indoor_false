@@ -169,8 +169,10 @@ namespace move_base {
     as_->start();
     //publish force_unknown_find_pub 
     ros::NodeHandle unknown_pub_nh;
-    force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("/force_unknown_find",1);
-    force_unknown_find_pub.Publish(1);
+    force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("force_unknown_find", 1);
+    std_msgs::Int8 temp ;
+    temp.data = 1;
+    force_unknown_find_pub.publish(temp);
     //
 
     dsrv_ = new dynamic_reconfigure::Server<move_base::MoveBaseConfig>(ros::NodeHandle("~"));
@@ -890,7 +892,9 @@ namespace move_base {
           lock.unlock();
 
           as_->setSucceeded(move_base_msgs::MoveBaseResult(), "Goal reached.");
-          force_unknown_find_pub.Publish(1);
+          std_msgs::Int8 temp ;
+          temp.data = 1;
+          force_unknown_find_pub.publish(temp);
           return true;
         }
 
@@ -951,7 +955,9 @@ namespace move_base {
         if(recovery_behavior_enabled_ && recovery_index_ < recovery_behaviors_.size()){
           ROS_DEBUG_NAMED("move_base_recovery","Executing behavior %u of %zu", recovery_index_, recovery_behaviors_.size());
           recovery_behaviors_[recovery_index_]->runBehavior();
-          force_unknown_find_pub.Publish(1);
+          std_msgs::Int8 temp ;
+          temp.data = 1;
+          force_unknown_find_pub.publish(temp);
 
           //we at least want to give the robot some time to stop oscillating after executing the behavior
           last_oscillation_reset_ = ros::Time::now();

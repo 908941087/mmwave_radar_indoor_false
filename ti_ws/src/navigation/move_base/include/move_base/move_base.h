@@ -55,6 +55,7 @@
 
 #include <pluginlib/class_loader.h>
 #include <std_srvs/Empty.h>
+#include <std_msgs/Int8.h>
 
 #include <dynamic_reconfigure/server.h>
 #include "move_base/MoveBaseConfig.h"
