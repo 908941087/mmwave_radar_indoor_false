@@ -8,7 +8,7 @@ class Environment(object):
     def __init__(self):
         self.is_enhanced = False
         self.entity_cluster_map = {}
-        self._show_noise = False
+        self._show_noise = True
         self.pub_markers = []
 
     def register(self, entity, cluster):
@@ -113,7 +113,7 @@ class Environment(object):
             t_marker.type = Marker.TEXT_VIEW_FACING
             loc = entity.getRepresentativePoint()
             t_marker.text = entity.getInfo()["Name"] + "\n" + "x: " + str(round(loc.x, 3)) + "\n" + "y: " + str(
-                round(loc.y), 3)
+                round(loc.y, 3))
             # Size
             t_marker.scale.x = 0.3
             t_marker.scale.y = 0.3

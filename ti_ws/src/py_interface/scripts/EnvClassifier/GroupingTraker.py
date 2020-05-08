@@ -28,12 +28,15 @@ class GroupingTracker:
             self.clusters.append(Cluster(i, MultiPoint(one_cluster)))
         return self.clusters
 
-    def getEnv(self):
+    def getEnv(self, pc2):
         if self.env is None:
+            self.pc_group(pc2)
             self.env = self.env_classifier.classify(self.clusters)
         return self.env
 
-    def getEnhancedEnv(self):
+    def getEnhancedEnv(self, pc2):
+        if self.enhanced_env is None:
+            self.enhanced_env = self.getEnv(pc2).enhance()
         return self.enhanced_env
 
 
@@ -46,8 +49,7 @@ if __name__ == "__main__":
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
     gp = GroupingTracker()
-    gp.pc_group(PCBasics.getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd"))
-    env = gp.getEnv()
+    env = gp.getEnv(PCBasics.getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd"))
     env.show(plt)
     env.showEntityTags(plt)
 

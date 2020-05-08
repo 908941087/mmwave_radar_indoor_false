@@ -1,6 +1,7 @@
 import numpy as np
 from shapely.geometry import LineString, Point, box
 from PointCloudOperator import PCBasics
+from alphashape import alphashape
 
 class Cluster(object):
     
@@ -27,7 +28,7 @@ class Cluster(object):
 
     def getConcaveHull(self):
         if self.concave_hull is None:
-            self.concave_hull, self.concave_hull_points = PCBasics.alphaShape(self.points, 10)
+            self.concave_hull = alphashape(self.getPoints(), 0.5)
         return self.concave_hull
 
     def getArea(self):
@@ -37,7 +38,7 @@ class Cluster(object):
         return len(self.points)
 
     def getBounds(self):
-        return self.points.bounds # (minx, miny, maxx, maxy)
+        return self.points.bounds  # (minx, miny, maxx, maxy)
 
     def getSegment(self, line):
         bounds = self.getBounds()

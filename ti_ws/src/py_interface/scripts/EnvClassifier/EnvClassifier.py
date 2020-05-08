@@ -33,8 +33,7 @@ class EnvClassifier(object):
 
             # use aera and density to recognize noise
             area = cluster.getArea()
-            if area > 0:
-                density = cluster.getDensity()
+            density = cluster.getDensity()
             if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
                     cluster.getPointsCount() < self.NOISE_POINTS_COUNT_THRESHOLD and density / area < self.DENSITY_PER_SQUARE_METER_THRESHOLD:
                 env.register(Noise(cluster.getId(), cluster.getConcaveHull()), cluster)
@@ -49,6 +48,7 @@ class EnvClassifier(object):
             else:
                 env.register(wall, cluster)
             # env.register(wall, cluster)
+            # env.register(Noise(cluster.getId(), cluster.getConcaveHull()), cluster)
 
         # build KDTree using cluster centers that don't contain noise
         # clusters_without_noise = [clusters[i] for i in range(len(clusters)) if self.markers[i]["mark"] is not Mark.NOISE]
