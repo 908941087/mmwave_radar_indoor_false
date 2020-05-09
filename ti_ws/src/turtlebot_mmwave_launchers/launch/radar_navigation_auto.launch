@@ -3,11 +3,11 @@
   <!-- 3D sensor -->
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
 
-  <arg name="auto_navi" value="true" />
+  <arg name="auto_navi" value="false" />
 
   <!-- Add nodes to filter/limit Radar data before using it for navigation -->
   <group if="$(arg auto_navi)">
-  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch" />
+  <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch" /> -->
 
   <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch" /> -->
 
