@@ -76,9 +76,9 @@ def ForceUnknownFindCB(msg):
     else:
 	    target_pose.pose.position.x = 0.0
 	    target_pose.pose.position.y = 0.0
-        goal_pub.publish(target_pose)
-        rospy.loginfo("Returning!")
-        rospy.on_shutdown(myhook)
+            goal_pub.publish(target_pose)
+            rospy.loginfo("Returning!")
+            rospy.on_shutdown(myhook)
 
 
 def FindUnkownArea(point_index, local_map):
