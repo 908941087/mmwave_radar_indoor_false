@@ -100,6 +100,11 @@ namespace move_base {
     ros::NodeHandle simple_nh("move_base_simple");
     goal_sub_ = simple_nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
 
+        //publish force_unknown_find_pub 
+    ros::NodeHandle unknown_pub_nh;
+    force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("force_unknown_find", 1);
+    //
+
     //we'll assume the radius of the robot to be consistent with what's specified for the costmaps
     private_nh.param("local_costmap/inscribed_radius", inscribed_radius_, 0.325);
     private_nh.param("local_costmap/circumscribed_radius", circumscribed_radius_, 0.46);
@@ -164,16 +169,13 @@ namespace move_base {
 
     //we'll start executing recovery behaviors at the beginning of our list
     recovery_index_ = 0;
-
-    //we're all set up now so we can start the action server
-    as_->start();
-    //publish force_unknown_find_pub 
-    ros::NodeHandle unknown_pub_nh;
-    force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("force_unknown_find", 1);
+    //
     std_msgs::Int8 temp ;
     temp.data = 1;
     force_unknown_find_pub.publish(temp);
     //
+    //we're all set up now so we can start the action server
+    as_->start();
 
     dsrv_ = new dynamic_reconfigure::Server<move_base::MoveBaseConfig>(ros::NodeHandle("~"));
     dynamic_reconfigure::Server<move_base::MoveBaseConfig>::CallbackType cb = boost::bind(&MoveBase::reconfigureCB, this, _1, _2);
@@ -1152,3 +1154,4 @@ namespace move_base {
     }
   }
 };
+
