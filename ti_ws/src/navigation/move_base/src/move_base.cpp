@@ -169,11 +169,6 @@ namespace move_base {
 
     //we'll start executing recovery behaviors at the beginning of our list
     recovery_index_ = 0;
-    //
-    std_msgs::Int8 temp ;
-    temp.data = 1;
-    force_unknown_find_pub.publish(temp);
-    //
     //we're all set up now so we can start the action server
     as_->start();
 
@@ -957,9 +952,6 @@ namespace move_base {
         if(recovery_behavior_enabled_ && recovery_index_ < recovery_behaviors_.size()){
           ROS_DEBUG_NAMED("move_base_recovery","Executing behavior %u of %zu", recovery_index_, recovery_behaviors_.size());
           recovery_behaviors_[recovery_index_]->runBehavior();
-          std_msgs::Int8 temp ;
-          temp.data = 1;
-          force_unknown_find_pub.publish(temp);
 
           //we at least want to give the robot some time to stop oscillating after executing the behavior
           last_oscillation_reset_ = ros::Time::now();
