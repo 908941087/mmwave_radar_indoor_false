@@ -74,8 +74,8 @@ def ForceUnknownFindCB(msg):
             rospy.loginfo("Publish neareast unknown point")
             goal_pub.publish(target_pose)
     else:
-	target_pose.pose.position.x = 0.0;
-	target_pose.pose.position.y = 0.0;
+	    target_pose.pose.position.x = 0.0
+	    target_pose.pose.position.y = 0.0
         goal_pub.publish(target_pose)
         rospy.loginfo("Returning!")
         rospy.on_shutdown(myhook)
