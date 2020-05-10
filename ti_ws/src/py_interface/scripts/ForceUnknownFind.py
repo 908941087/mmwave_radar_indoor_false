@@ -7,6 +7,8 @@
 import rospy
 import tf
 import math
+import sys
+sys.setrecursionlimit(5000)
 
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Int8
@@ -38,25 +40,7 @@ output: start_point, goal_point
 """
 
 
-def ForceUnknownFindCB(msg):
-    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, res
-    rospy.loginfo("Calculate goal in nearest unknown part.")
-    # If no map input, return
-    if dat is None:
-        return
-
-    filtered_map = np.array(dat).reshape((wid, heigh))
-    RevMap = np.zeros(filtered_map.shape, dtype=np.int)
-    # Format map
-    for i in range(wid):
-        for j in range(heigh):
-            if filtered_map[i, j] == -1:
-                filtered_map[i, j] = 255
-    point_index = np.zeros(2, dtype=np.int)
-    point_index[0] = int((current_position_[0] - xorg) / res)
-    point_index[1] = int((current_position_[1] - yorg) / res)
-
-    res_point = FindUnkownArea(point_index, RevMap.copy())
+def visual_pub(tx, ty):
     target_pose = PoseStamped()
 
     # Transform res_point to goal_point
@@ -67,41 +51,113 @@ def ForceUnknownFindCB(msg):
     target_pose.pose.orientation.x = 0.0
     target_pose.pose.orientation.y = 0.0
     target_pose.pose.orientation.w = 1.0
+
+    target_pose.pose.position.x = xorg + tx * res
+    target_pose.pose.position.y = yorg + ty * res
+    goal_pub.publish(target_pose)
+
+
+def ForceUnknownFindCB(msg):
+    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, res
+    rospy.loginfo("Calculate goal in nearest unknown part.")
+    # If no map input, return
+    if dat is None:
+        return
+
+    m_xorg = xorg
+    m_yorg = yorg
+    m_wid = wid
+    m_heigh = heigh
+
+    filtered_map = np.array(dat).reshape((m_wid, m_heigh))
+    rospy.loginfo("Map: %s, %s, %d, %d, %d, %d", m_xorg, m_yorg, m_wid, m_heigh, filtered_map.shape[0],
+                  filtered_map.shape[1])
+
+    RevMap = np.zeros(filtered_map.shape, dtype=np.int)
+    # Format map
+    for i in range(m_wid):
+        for j in range(m_heigh):
+            if filtered_map[i, j] == -1:
+                filtered_map[i, j] = 255
+    point_index = np.zeros(2, dtype=np.int)
+    point_index[0] = int((current_position_[0] - m_xorg) / res)
+    point_index[1] = int((current_position_[1] - m_yorg) / res)
+
+    target_pose = PoseStamped()
+
+    # Transform res_point to goal_point
+    target_pose.header.seq = 0
+    target_pose.header.stamp = rospy.get_rostime()
+    target_pose.header.frame_id = "map"
+    target_pose.pose.position.z = 0.0
+    target_pose.pose.orientation.x = 0.0
+    target_pose.pose.orientation.y = 0.0
+    target_pose.pose.orientation.w = 1.0
+
+    res_point = FindUnkownArea(point_index, RevMap.copy())
     if res_point is not None:
         if res_point[0] != point_index[0] or res_point[1] != point_index[1]:
-            target_pose.pose.position.x = xorg + res_point[0] * res
-            target_pose.pose.position.y = yorg + res_point[0] * res
-            rospy.loginfo("Publish neareast unknown point")
+            target_pose.pose.position.x = m_xorg + res_point[0] * res
+            target_pose.pose.position.y = m_yorg + res_point[1] * res
+            rospy.loginfo("Publish neareast unknown point value" + str(
+                filtered_map[int(res_point[0])][int(res_point[1])]))
             goal_pub.publish(target_pose)
+
+            p_point = np.zeros(2, int)
+            for x_d in range(-1, 2):
+                p_point[0] = x_d + res_point[0]
+                if p_point[0] < 0 or p_point[0] >= m_wid: continue
+                for y_d in range(-1, 2):
+                    p_point[1] = y_d + res_point[1]
+                    if p_point[1] < 0 or p_point[1] >= m_heigh: continue
+                    rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
+
     else:
-	    target_pose.pose.position.x = 0.0
-	    target_pose.pose.position.y = 0.0
-            goal_pub.publish(target_pose)
-            rospy.loginfo("Returning!")
-            rospy.on_shutdown(myhook)
+        target_pose.pose.position.x = 0.0
+        target_pose.pose.position.y = 0.0
+        goal_pub.publish(target_pose)
+        rospy.loginfo("Returning!")
+        rospy.on_shutdown(myhook)
 
 
 def FindUnkownArea(point_index, local_map):
+    # visual_pub(point_index[0], point_index[1])
+
     global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
     if int(local_map[int(point_index[0])][int(point_index[1])]) == 1:
         return None
     else:
         local_map[int(point_index[0])][int(point_index[1])] = 1
 
-    if int(filtered_map[int(point_index[0])][int(point_index[1])]) == 1:
+    if int(filtered_map[int(point_index[0])][int(point_index[1])]) == 100:
         return None
     elif int(filtered_map[int(point_index[0])][int(point_index[1])]) == 255:
-        return point_index
+        all_unkown_flag = True
+        p_point = np.zeros(2, int)
+        for x_d in range(-3, 4)[::-1]:
+            p_point[0] = x_d + point_index[0]
+            if p_point[0] < 0 or p_point[0] >= m_wid: continue
+            for y_d in range(-3, 4)[::-1]:
+                p_point[1] = y_d + point_index[1]
+                if p_point[1] < 0 or p_point[1] >= m_heigh: continue
+                if filtered_map[int(p_point[0])][int(p_point[1])] != 255:
+                    all_unkown_flag = False
+                    break
+        if all_unkown_flag:
+            return point_index
 
     res_point = None
     t_point = np.zeros(2)
     local_map[int(point_index[0])][int(point_index[1])] = 1
     for x_d in range(-1, 2):
         t_point[0] = x_d + point_index[0]
-        if t_point[0] < 0 or t_point[0] >= wid: continue
+        if t_point[0] < 0 or t_point[0] >= m_wid: continue
         for y_d in range(-1, 2):
             t_point[1] = y_d + point_index[1]
-            if t_point[1] < 0 or t_point[1] >= heigh or (t_point[0] == point_index[0] and t_point[1] == point_index[1]): continue
+            if t_point[1] < 0 or t_point[1] >= m_heigh or (
+                    t_point[0] == point_index[0] and t_point[1] == point_index[1]): continue
             tmp_res = FindUnkownArea(t_point, local_map.copy())
             if tmp_res is not None:
                 return tmp_res
@@ -149,8 +205,6 @@ def wrapAngle(ang):
 
 def myhook():
     print "shutdown force_unknown_find_handler!"
-
-
 
 
 if __name__ == '__main__':
