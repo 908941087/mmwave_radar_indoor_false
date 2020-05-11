@@ -4,6 +4,7 @@ from sklearn.neighbors import KDTree
 from Environment import Environment
 from Entity import Wall, Furniture, Door, Noise
 from PointCloudOperator import ClusterFit
+from centerline.exceptions import TooFewRidgesError
 
 class EnvClassifier(object):
     AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
@@ -31,7 +32,7 @@ class EnvClassifier(object):
         for i in range(len(clusters)):
             cluster = clusters[i]
 
-            # use aera and density to recognize noise
+            # use area and density to recognize noise
             area = cluster.getArea()
             density = cluster.getDensity()
             if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
@@ -40,14 +41,18 @@ class EnvClassifier(object):
                 continue
 
             # try to treat this cluster as wall, see if it fits well
-            wall = ClusterFit.wallFit(cluster)
-            if wall.getWidth() > self.MAX_WALL_WIDTH or wall.getLength() < self.MIN_WALL_LENGTH or \
-                    wall.getLength() / wall.getWidth() < self.RATIO_THRESHOLD:
-                env.register(Furniture(cluster.getId(), cluster.getConcaveHull()), cluster)
-                continue
-            else:
+            try:
+                wall = ClusterFit.boneFit(cluster)
                 env.register(wall, cluster)
-            # env.register(wall, cluster)
+            except TooFewRidgesError:
+                continue
+
+            # if wall.getWidth() > self.MAX_WALL_WIDTH or wall.getLength() < self.MIN_WALL_LENGTH or \
+            #         wall.getLength() / wall.getWidth() < self.RATIO_THRESHOLD:
+            #     env.register(Furniture(cluster.getId(), cluster.getConcaveHull()), cluster)
+            #     continue
+            # else:
+            #     env.register(wall, cluster)
             # env.register(Noise(cluster.getId(), cluster.getConcaveHull()), cluster)
 
         # build KDTree using cluster centers that don't contain noise

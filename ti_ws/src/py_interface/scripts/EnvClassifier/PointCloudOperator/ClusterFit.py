@@ -2,7 +2,10 @@ import numpy as np
 import math
 from shapely.geometry import LineString, Point, box, MultiPoint
 from centerline.geometry import Centerline
-from ..Entity import Wall
+from centerline.exceptions import TooFewRidgesError
+import sys
+sys.path.append("..")
+from Entity import Wall
 
 def lineFit(points):
     count = len(points)
@@ -82,5 +85,4 @@ def wallFit(cluster):
 # TODO: test
 def boneFit(cluster):
     centerline = Centerline(cluster.getConcaveHull())
-    total_dists = centerline.geoms
-    return Wall(cluster.getId(), cluster.getConcaveHull(), centerline.geoms, 4)
+    return Wall(cluster.getId(), cluster.getConcaveHull(), centerline.geoms, centerline.length)

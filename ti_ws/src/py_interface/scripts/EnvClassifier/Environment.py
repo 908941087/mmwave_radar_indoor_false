@@ -1,6 +1,6 @@
 from Entity import Wall, Furniture, Door, Noise
-import rospy
-from visualization_msgs.msg import Marker
+# import rospy
+# from visualization_msgs.msg import Marker
 
 
 class Environment(object):
@@ -73,6 +73,10 @@ class Environment(object):
     def showClusters(self, plt):
         for cluster in self.getClusters():
             cluster.show(plt)
+
+    def showEntityShapes(self, plt):
+        for entity in self.getEntities():
+            entity.showShape(plt)
 
     def showWalls(self, plt):
         for entity in self.getEntities():

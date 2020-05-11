@@ -5,8 +5,8 @@ from alphashape import alphashape
 
 class Cluster(object):
     
-    def __init__(self, id, points):
-        self.id = id
+    def __init__(self, eid, points):
+        self.id = eid
         self.points = points
         self.concave_hull = None
         self.concave_hull_points = None
@@ -28,7 +28,7 @@ class Cluster(object):
 
     def getConcaveHull(self):
         if self.concave_hull is None:
-            self.concave_hull = alphashape(self.getPoints(), 0.5)
+            self.concave_hull = alphashape(self.getPoints(), 2)
         return self.concave_hull
 
     def getArea(self):

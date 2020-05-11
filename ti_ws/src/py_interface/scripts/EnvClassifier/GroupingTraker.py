@@ -49,8 +49,9 @@ if __name__ == "__main__":
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
     gp = GroupingTracker()
-    env = gp.getEnv(PCBasics.getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/3d_pc_map.pcd"))
+    env = gp.getEnv(PCBasics.getPCFromPCD("pcds/3d_pc_map.pcd"))
     env.show(plt)
-    env.showEntityTags(plt)
+    env.showEntityShapes(plt)
+    # env.showEntityTags(plt)
 
     plt.show()
