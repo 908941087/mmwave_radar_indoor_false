@@ -185,6 +185,51 @@ def FindUnkownArea(point_index, local_map):
                 return tmp_res
     return None
 
+def judge_neighbor(point_index, neighbor_field = 0):
+    global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
+
+    all_unknown_flag = True
+    delta = neighbor_field
+    t_point = np.zeros(2, int)
+    for x_d in range(-delta, delta+1):
+        t_point[0] = x_d + point_index[0]
+        if t_point[0] < 0 or t_point[0] >= m_wid: continue
+        for y_d in range(-delta, delta+1):
+            t_point[1] = y_d + point_index[1]
+            if t_point[1] < 0 or t_point[1] >= m_heigh: continue
+            if filtered_map[int(t_point[0])][int(t_point[1])] != 255:
+                all_unknown_flag = False
+                break
+    return all_unknown_flag
+
+
+# BFS version
+def FindUnkownAreaBFS(point_index, local_map):
+    global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
+
+    p_stack = [point_index]
+    while len(p_stack) > 0:
+        cur_point = p_stack.pop(0)
+        local_map[cur_point[0]][cur_point[1]] = int(1)
+        if judge_neighbor(cur_point):
+            return cur_point
+
+        t_point = np.zeros(2, int)
+        for x_d in range(-1, 2):
+            t_point[0] = x_d + point_index[0]
+            if t_point[0] < 0 or t_point[0] >= m_wid: continue
+            for y_d in range(-1, 2):
+                t_point[1] = y_d + point_index[1]
+                if t_point[1] < 0 or t_point[1] >= m_heigh: continue
+                if local_map[t_point[0]][t_point[1]] == 1: continue
+                if filtered_map[t_point[0]][t_point[1]] == 100:continue
+                if x_d == 0 and y_d == 0:continue
+                p_stack.append(t_point.copy())
+    return None
 
 def judge_neighbor(point_index, neighbor_field = 6):
     global filtered_map
