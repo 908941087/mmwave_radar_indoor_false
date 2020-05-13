@@ -70,7 +70,7 @@ class PCL_process:
             res_points.append((x_1, y_1, z_1, i))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
 
-    def passthrough_filter(self, dim=2):
+    def passthrough_filter(self, dim=3):
         if self.enable_trace:
             rospy.loginfo("Passthrough ====================")
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
