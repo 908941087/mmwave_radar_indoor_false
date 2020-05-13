@@ -62,6 +62,9 @@ class Wall(Entity):
                 self.length += segment.length
         return self.length
 
+    def getPolygon(self):
+        return self.polygon
+
     def getRepresentativePoint(self):
         return self.polygon.representative_point()
 
@@ -114,14 +117,17 @@ class Door(Entity):
     def getRepresentativePoint(self):
         return self.segment.centroid
 
+    def getLength(self):
+        return self.segment.length
+
     def enhance(self, cluster):
         pass
 
     def show(self, plt):
-        pass
+        self.showShape(plt)
 
     def showShape(self, plt):
-        pass
+        showLineString(self.segment, plt)
 
     def getInfo(self):
         loc = self.getRepresentativePoint()

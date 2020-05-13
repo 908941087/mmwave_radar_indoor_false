@@ -1,6 +1,6 @@
 from Entity import Wall, Furniture, Door, Noise
-# import rospy
-# from visualization_msgs.msg import Marker
+import rospy
+from visualization_msgs.msg import Marker
 
 
 class Environment(object):
@@ -12,9 +12,12 @@ class Environment(object):
         self.pub_markers = []
 
     def register(self, entity, cluster):
-        if entity.getId() != cluster.getId():
-            raise Exception("Entity and cluster must have the same id.")
-        self.entity_cluster_map[cluster.getId()] = [entity, cluster]
+        if cluster is None:
+            self.entity_cluster_map[entity.getId()] = [entity, None]
+        else:
+            if entity.getId() != cluster.getId():
+                raise Exception("Entity and cluster must have the same id.")
+            self.entity_cluster_map[cluster.getId()] = [entity, cluster]
 
     def getEntities(self):
         return [i[0] for i in self.entity_cluster_map.values()]
@@ -22,22 +25,26 @@ class Environment(object):
     def getClusters(self):
         return [i[1] for i in self.entity_cluster_map.values()]
 
-    def getEntity(self, id):
-        return self.entity_cluster_map[id][0]
+    def getEntity(self, eid):
+        return self.entity_cluster_map[eid][0]
 
-    def getCluster(self, id):
-        return self.entity_cluster_map[id][1]
+    def getCluster(self, eid):
+        return self.entity_cluster_map[eid][1]
 
     def enhance(self):
         """
         Returns an enhanced version of this Environment.
         """
-        if self.is_enhanced: raise Exception("Environment is already enhanced.")
+        if self.is_enhanced:
+            raise Exception("Environment is already enhanced.")
         env = Environment()
+        for pair in self.entity_cluster_map.values():
+            new_entity, new_cluster = pair[0].enhance(pair[1])
+            try:
+                env.register(new_entity, new_cluster)
+            except AttributeError:
+                pass
         env.is_enhanced = True
-        for entry in self.entity_cluster_map.values():
-            new_entity, new_cluster = entry[0].enhance(entry[1])
-            env.register(new_entity, new_cluster)
         return env
 
     def getPoints(self):
@@ -91,7 +98,7 @@ class Environment(object):
             for key in info.keys():
                 tag += str(key) + ": " + str(info[key]) + "\n"
             tag = tag.rstrip('\n')
-            plt.text(center.x, center.y, tag, style='italic', fontsize=6,
+            plt.text(center.x, center.y, tag, style='italic', fontsize=14,
                      bbox={'facecolor': 'white', 'alpha': 0.7, 'pad': 5})
 
     def __repr__(self):

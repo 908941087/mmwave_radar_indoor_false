@@ -84,7 +84,7 @@ def show_robot_loc_callback(data):
 
     # Pose
     t_marker.pose.position.x = 5
-    t_marker.pose.position.y = 0
+    t_marker.pose.position.y = 5
     t_marker.pose.position.z = 0.2
     t_marker.pose.orientation.x = 0.0
     t_marker.pose.orientation.y = 0.0
@@ -92,9 +92,9 @@ def show_robot_loc_callback(data):
     t_marker.pose.orientation.w = 1.0
 
     # Color
-    t_marker.color.r = 0.0
-    t_marker.color.g = 1.0
-    t_marker.color.b = 0.5
+    t_marker.color.r = 1.0
+    t_marker.color.g = 0.0
+    t_marker.color.b = 0.0
     t_marker.color.a = 1.0
 
     t_marker.lifetime = rospy.Duration(0.1)

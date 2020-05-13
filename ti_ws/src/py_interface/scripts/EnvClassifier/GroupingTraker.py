@@ -52,6 +52,6 @@ if __name__ == "__main__":
     env = gp.getEnv(PCBasics.getPCFromPCD("pcds/3d_pc_map.pcd"))
     env.show(plt)
     env.showEntityShapes(plt)
-    # env.showEntityTags(plt)
+    env.showEntityTags(plt)
 
     plt.show()
