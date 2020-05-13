@@ -5,38 +5,26 @@
 <launch>
 
   <!-- Publish static transform from map to odom for mapping using only odometry info -->
-  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_odom" args="0 0 0 0 0 0 map odom 100"/>
+<!--  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_odom" args="0 0 0 0 0 0 map odom 100"/>-->
 
   <!-- Using AMCL pose -->
-<!--  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">-->
-<!--  </include>-->
-
-
-  <!-- Start py_interface listener to filter pc -->
-  <node pkg="py_interface" type="listener.py" name="py_interface_filter" respawn="true" output="screen" />
-
+  <!--
+  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">
+  </include>
+  -->
 
   <!-- Add nodes to filter/limit Radar data before using it for mapping -->
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
   </include>
 
-
-  <!-- Bumper2pc pkg -->
-  <node pkg="nodelet" type="nodelet" name="bumper2pointcloud" args="load kobuki_bumper2pc/Bumper2PcNodelet mobile_base_nodelet_manager">
-    <param name="pointcloud_radius" value="0.24"/>
-    <remap from="bumper2pointcloud/pointcloud"   to="bumper_pc"/>
-    <remap from="bumper2pointcloud/core_sensors" to="mobile_base/sensors/core"/>
-  </node>
-
-
   <!-- Create "raw" 3D map using first octomap node -->
   <node pkg="octomap_server" type="octomap_server_node" name="octomap_raw" output="screen">
     <param name="enable_reflection" value="true" />
-    <param name="dis_rate" value="0.5"/>
-    <param name="min_reflect_thre" value="10.0"/>
-    <param name="neighbor_delta" value="0.03" />
+    <param name="dis_rate" value="1.0"/>
+    <param name="min_reflect_thre" value="5.0"/>
+    <param name="neighbor_delta" value="0.02" />
     <param name="resolution" value="0.05"/>
-    <param name="sensor_model/hit" value ="0.99"/>
+    <param name="sensor_model/hit" value ="1.0"/>
     <param name="sensor_model/miss" value ="0.49"/>
     <remap from="octomap_point_cloud_centers" to="raw_point_cloud_centers" />
     <remap from="projected_map" to="raw_map" />
@@ -64,7 +52,7 @@
     <param name="enable_reflection" value="false" />
     <param name="origin_point" value="true" />
     <param name="resolution" value="0.05"/>
-    <param name="sensor_model/hit" value ="0.99"/>
+    <param name="sensor_model/hit" value ="1.0"/>
     <param name="sensor_model/miss" value ="0.45"/>
     <remap from="octomap_point_cloud_centers" to="filtered_point_cloud_centers" />
     <remap from="projected_map" to="map" />

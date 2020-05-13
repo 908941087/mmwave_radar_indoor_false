@@ -3,7 +3,7 @@
 import rospy
 from sensor_msgs.msg import PointCloud2
 import sensor_msgs.point_cloud2
-from EnvClassifier import GroupingTrakerModule
+from EnvClassifier import GroupingTraker
 import threading
 
 from visualization_msgs.msg import MarkerArray, Marker
@@ -18,8 +18,8 @@ class SubThread(threading.Thread):
         self.pc2_pub_event = pc2_pub_event
         self.marker_array_pub_thread = marker_array_pub_thread
         self.marker_array_pub_event = marker_array_pub_event
-        self.group_tracker = GroupingTrakerModule.GroupingTracker()
-        self.duration = 30.0
+        self.group_tracker = GroupingTraker.GroupingTracker()
+        self.duration = 15.0
 
     def run(self):
         rospy.loginfo("Start sub thread: " + self.thread_name)
@@ -29,12 +29,13 @@ class SubThread(threading.Thread):
             points = [[i[0], i[1]] for i in point_cloud2]
             # Generate points and marks
             if points is not None and len(points) > 0:
-                classified_points = self.group_tracker.generate_points_per_cluster(points)
-                classified_marks = self.group_tracker.generate_makers()
+                env = self.group_tracker.getEnv(points)
+                classified_points = env.getPoints()
+                classified_marks = env.generate_markers()
             else:
                 rospy.sleep(self.duration)
                 continue
-            # self.group_tracker.show_clusters()
+            # self.group_tracker.showClusters()
 
             # Transform classified points to rosmsg
             if classified_points is None or classified_marks is None:
@@ -44,7 +45,7 @@ class SubThread(threading.Thread):
             # Just store generated points TODO: dilation
             res_points = []
             for p in classified_points:
-                res_points.append((p[0], p[1], 0.0))
+                res_points.append((p.x, p.y, 0.0))
             pub_points = sensor_msgs.point_cloud2.create_cloud(data.header, data.fields, res_points)
 
             # Publish points and markers(result of classification)

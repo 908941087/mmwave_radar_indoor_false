@@ -7,10 +7,12 @@ from sklearn.model_selection import train_test_split
 import random
 from scipy import special
 from scipy.spatial import ConvexHull
+from PCBasics import *
 
-
-def get_points_from_pcd(path):
-    return [[i['x'], i['y']] for i in pypcd.PointCloud.from_path(path).pc_data]
+"""
+TODO:
+1. implement geometry use sympy
+"""
 
 
 def get_intersection(line1, line2):
@@ -59,19 +61,8 @@ def variance(points, lines, segements):
     return result
 
 
-def filter_points(points, x_low=float('-inf'), x_high=float('inf'), y_low=float('-inf'), y_high=float('inf')):
-    result = [i for i in points if x_low <= i[0] < x_high and y_low <= i[1] < y_high]
-    return result
-
-
-def get_xy_lim(points):
-    x = [i[0] for i in points]
-    y = [i[1] for i in points]
-    return [min(x), max(x), min(y), max(y)]
-
-
 def get_rectangle(points):
-    xy_lim = get_xy_lim(points)
+    xy_lim = getXYLim(points)
     four_points = [[xy_lim[0], xy_lim[2]], [xy_lim[1], xy_lim[2]], [xy_lim[1], xy_lim[3]], [xy_lim[0], xy_lim[3]]]
     edges = [[four_points[i], four_points[(i + 1) % 4]] for i in range(4)]
     return edges
@@ -92,21 +83,21 @@ def get_area_core(cluster, rectangle_area):
 
 
 def get_rectangle_area(cluster):
-    xy_lim = get_xy_lim(cluster)
+    xy_lim = getXYLim(cluster)
     return (xy_lim[1] - xy_lim[0]) * (xy_lim[3] - xy_lim[2])
 
 
 def branch(cluster):
-        xy_lim = get_xy_lim(cluster)
+        xy_lim = getXYLim(cluster)
         x_mid = (xy_lim[0] + xy_lim[1]) / 2.0
         y_mid = (xy_lim[2] + xy_lim[3]) / 2.0
         # plt.plot([x_mid, x_mid], [xy_lim[2], xy_lim[3]], c='r', linewidth=1, linestyle='dotted')
         # plt.plot([xy_lim[0], xy_lim[1]], [y_mid, y_mid], c='r', linewidth=1, linestyle='dotted')
         result = []
-        result.append(filter_points(cluster, xy_lim[0], x_mid, xy_lim[2], y_mid))
-        result.append(filter_points(cluster, x_mid, xy_lim[1], xy_lim[2], y_mid))
-        result.append(filter_points(cluster, xy_lim[0], x_mid, y_mid, xy_lim[3]))
-        result.append(filter_points(cluster, x_mid, xy_lim[1], y_mid, xy_lim[3]))
+        result.append(filterWithRect(cluster, xy_lim[0], x_mid, xy_lim[2], y_mid))
+        result.append(filterWithRect(cluster, x_mid, xy_lim[1], xy_lim[2], y_mid))
+        result.append(filterWithRect(cluster, xy_lim[0], x_mid, y_mid, xy_lim[3]))
+        result.append(filterWithRect(cluster, x_mid, xy_lim[1], y_mid, xy_lim[3]))
         return result
 
 
@@ -179,16 +170,6 @@ def slope2k(slope):
     return np.sin(angle) / np.cos(angle)
 
 
-def get_k_b(points):
-    a, b, c = line_fit(points)
-    if b != 0:
-        return - a / b, - c / b
-    elif a != 0:
-        return float('inf'), - c / a
-    else:
-        return float('inf'), float('inf')
-
-
 def dist(p1, p2):
     return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
@@ -205,31 +186,6 @@ def safe_divide(a, b):
         a *= 10
         b *= 10
     return a / b
-
-
-def line_fit(points):
-    """
-    并非一元线性回归，详见
-    https://blog.csdn.net/liyuanbhu/article/details/50866802?depth_1-utm_source=distribute.pc_relevant.none-task&utm_source=distribute.pc_relevant.none-task
-    """
-    count = len(points)
-    if (count < 2): return 0, 0, 0
-    x_mean = sum([p[0] for p in points]) / float(count)
-    y_mean = sum([p[1] for p in points]) / float(count)
-
-    Dxx = Dxy = Dyy = 0.0
-    for i in range(count):
-        Dxx += pow((points[i][0] - x_mean), 2)
-        Dxy += (points[i][0] - x_mean) * (points[i][1] - y_mean)
-        Dyy += pow((points[i][1] - y_mean), 2)
-
-    Lambda = ((Dxx + Dyy) - np.sqrt((Dxx - Dyy) * (Dxx - Dyy) + 4 * Dxy * Dxy)) / 2.0
-    den = np.sqrt(Dxy * Dxy + (Lambda - Dxx) * (Lambda - Dxx))
-
-    a = Dxy / den
-    b = (Lambda - Dxx) / den
-    c = - a * x_mean - b * y_mean
-    return a, b, c
 
 
 def get_gaussian_weight(n):
@@ -252,8 +208,8 @@ if __name__ == "__main__":
     import matplotlib
     matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
-    points = get_points_from_pcd("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/south_one.pcd")
-    points = filter_points(points, 0, 2, 0, 2)
+    points = getPCFromPCD("ti_ws/src/py_interface/scripts/EnvClassifier/pcds/south_one.pcd")
+    points = filterWithRect(points, 0, 2, 0, 2)
     points = np.array(points).reshape(-1, 2)
     hull = ConvexHull(points)
     plt.plot(points[:,0], points[:,1], 'o')
