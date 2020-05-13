@@ -100,6 +100,13 @@ namespace move_base {
     ros::NodeHandle simple_nh("move_base_simple");
     goal_sub_ = simple_nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
 
+
+    ros::NodeHandle simple_nh2;
+    goal_sub_2 = simple_nh2.subscribe<geometry_msgs::PoseStamped>("unknown_goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
+
+    ros::NodeHandle simple_nh3;
+    invalid_path_pub = simple_nh3.advertise<std_msgs::Int8>("invalid_path", 1);
+
         //publish force_unknown_find_pub 
     ros::NodeHandle unknown_pub_nh;
     force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("force_unknown_find", 1);
@@ -980,6 +987,9 @@ namespace move_base {
           }
           else if(recovery_trigger_ == PLANNING_R){
             ROS_ERROR("Aborting because a valid plan could not be found. Even after executing all recovery behaviors");
+            std_msgs::Int8 temp ;
+            temp.data = 1;
+            invalid_path_pub.publish(temp);
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Failed to find a valid plan. Even after executing recovery behaviors.");
           }
           else if(recovery_trigger_ == OSCILLATION_R){

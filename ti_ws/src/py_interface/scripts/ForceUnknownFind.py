@@ -8,6 +8,9 @@ import rospy
 import tf
 import math
 
+#matshow
+import matplotlib.pyplot as plt
+
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Int8
 from nav_msgs.msg import OccupancyGrid
@@ -38,25 +41,7 @@ output: start_point, goal_point
 """
 
 
-def ForceUnknownFindCB(msg):
-    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, res
-    rospy.loginfo("Calculate goal in nearest unknown part.")
-    # If no map input, return
-    if dat is None:
-        return
-
-    filtered_map = np.array(dat).reshape((wid, heigh))
-    RevMap = np.zeros(filtered_map.shape, dtype=np.int)
-    # Format map
-    for i in range(wid):
-        for j in range(heigh):
-            if filtered_map[i, j] == -1:
-                filtered_map[i, j] = 255
-    point_index = np.zeros(2, dtype=np.int)
-    point_index[0] = int((current_position_[0] - xorg) / res)
-    point_index[1] = int((current_position_[1] - yorg) / res)
-
-    res_point = FindUnkownArea(point_index, RevMap.copy())
+def visual_pub(tx, ty):
     target_pose = PoseStamped()
 
     # Transform res_point to goal_point
@@ -67,44 +52,220 @@ def ForceUnknownFindCB(msg):
     target_pose.pose.orientation.x = 0.0
     target_pose.pose.orientation.y = 0.0
     target_pose.pose.orientation.w = 1.0
+
+    target_pose.pose.position.x = xorg + tx * res
+    target_pose.pose.position.y = yorg + ty * res
+    goal_pub.publish(target_pose)
+
+
+def log_neighbor(point_index, neighbor_field = 4):
+    global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
+
+    #rospy.loginfo("Neibor of point: %d, %d", point_index[0], point_index[1])
+    res_point = point_index
+    p_point = np.zeros(2, int)
+    for x_d in range(-neighbor_field, neighbor_field + 1):
+        p_point[0] = x_d + res_point[0]
+        if p_point[0] < 0 or p_point[0] >= m_wid: continue
+        for y_d in range(-neighbor_field, neighbor_field + 1):
+            p_point[1] = y_d + res_point[1]
+            if p_point[1] < 0 or p_point[1] >= m_heigh: continue
+            rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
+
+
+def ForceUnknownFindCB(msg):
+    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg
+    rospy.loginfo("Calculate goal in nearest unknown part.")
+    # If no map input, return
+    if dat is None:
+        return
+
+    m_xorg = xorg
+    m_yorg = yorg
+    m_wid = wid
+    m_heigh = heigh
+    m_res = res
+
+    filtered_map = np.array(dat).reshape((m_wid, m_heigh))
+    rospy.loginfo("Map: %s, %s, %d, %d, %d, %d, %s", m_xorg, m_yorg, m_wid, m_heigh, filtered_map.shape[0],
+                  filtered_map.shape[1], m_res)
+
+    RevMap = np.zeros(filtered_map.shape, dtype=np.int)
+    # Format map
+    for i in range(m_wid):
+        for j in range(m_heigh):
+            if filtered_map[i, j] == -1:
+                filtered_map[i, j] = 255
+    # show the map
+    # plt.matshow(filtered_map)
+    # plt.show()
+    point_index = np.zeros(2, dtype=np.int)
+    point_index[1] = int((current_position_[0] - m_xorg) / res)
+    point_index[0] = int((current_position_[1] - m_yorg) / res)
+    rospy.loginfo("location:  %d, %d", point_index[0], point_index[1])
+    #clear the start point
+    t_point = np.zeros(2, int)
+    robot_size = 4
+    # for i in range(-robot_size, robot_size + 1):
+    #     t_point[0] = i + point_index[0]
+    #     for j in range(-robot_size, robot_size + 1):
+    #         t_point[1] = j + point_index[1]
+    #         filtered_map[t_point[0]][t_point[1]] = int(0)
+    #log_neighbor(point_index)
+    target_pose = PoseStamped()
+
+    # Transform res_point to goal_point
+    target_pose.header.seq = 0
+    target_pose.header.stamp = rospy.get_rostime()
+    target_pose.header.frame_id = "map"
+    target_pose.pose.position.z = 0.0
+    target_pose.pose.orientation.x = 0.0
+    target_pose.pose.orientation.y = 0.0
+    target_pose.pose.orientation.w = 1.0
+
+    res_point = FindUnkownAreaBFS(point_index, RevMap.copy())
     if res_point is not None:
         if res_point[0] != point_index[0] or res_point[1] != point_index[1]:
-            target_pose.pose.position.x = xorg + res_point[0] * res
-            target_pose.pose.position.y = yorg + res_point[0] * res
-            rospy.loginfo("Publish neareast unknown point")
+            target_pose.pose.position.x = m_xorg + res_point[1] * res
+            target_pose.pose.position.y = m_yorg + res_point[0] * res
+            rospy.loginfo("Publish neareast unknown point value" + str(
+                filtered_map[int(res_point[0])][int(res_point[1])]))
+            goal_pub.publish(target_pose)
+            p_point = np.zeros(2, int)
+            log_neighbor(res_point)
+            # for x_d in range(-1, 2):
+            #     p_point[0] = x_d + res_point[0]
+            #     if p_point[0] < 0 or p_point[0] >= m_wid: continue
+            #     for y_d in range(-1, 2):
+            #         p_point[1] = y_d + res_point[1]
+            #         if p_point[1] < 0 or p_point[1] >= m_heigh: continue
+            #         rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
+        else:
+            target_pose.pose.position.x = m_xorg + (3+res_point[0]) * res
+            target_pose.pose.position.y = m_yorg + (3+res_point[1]) * res
             goal_pub.publish(target_pose)
     else:
-	    target_pose.pose.position.x = 0.0
-	    target_pose.pose.position.y = 0.0
-            goal_pub.publish(target_pose)
-            rospy.loginfo("Returning!")
-            rospy.on_shutdown(myhook)
+        target_pose.pose.position.x = 0.0
+        target_pose.pose.position.y = 0.0
+        goal_pub.publish(target_pose)
+        rospy.loginfo("Returning!")
+        rospy.on_shutdown(myhook)
 
 
+# DFS version
 def FindUnkownArea(point_index, local_map):
+    # visual_pub(point_index[0], point_index[1])
+
     global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
     if int(local_map[int(point_index[0])][int(point_index[1])]) == 1:
         return None
     else:
         local_map[int(point_index[0])][int(point_index[1])] = 1
 
-    if int(filtered_map[int(point_index[0])][int(point_index[1])]) == 1:
+    if int(filtered_map[int(point_index[0])][int(point_index[1])]) == 100:
         return None
     elif int(filtered_map[int(point_index[0])][int(point_index[1])]) == 255:
-        return point_index
+        if judge_neighbor(point_index):
+            return point_index
 
-    res_point = None
     t_point = np.zeros(2)
     local_map[int(point_index[0])][int(point_index[1])] = 1
-    for x_d in range(-1, 2):
+    for x_d in range(-1, 2)[::-1]:
         t_point[0] = x_d + point_index[0]
-        if t_point[0] < 0 or t_point[0] >= wid: continue
-        for y_d in range(-1, 2):
+        if t_point[0] < 0 or t_point[0] >= m_wid: continue
+        for y_d in range(-1, 2)[::-1]:
             t_point[1] = y_d + point_index[1]
-            if t_point[1] < 0 or t_point[1] >= heigh or (t_point[0] == point_index[0] and t_point[1] == point_index[1]): continue
+            if t_point[1] < 0 or t_point[1] >= m_heigh: continue
             tmp_res = FindUnkownArea(t_point, local_map.copy())
             if tmp_res is not None:
                 return tmp_res
+    return None
+
+
+def judge_neighbor(point_index, neighbor_field = 6):
+    global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
+    m_allcount = 0
+    m_allcount = (neighbor_field * 2 + 1) * (neighbor_field * 2 + 1)
+    m_count = 0
+    m_ratio = 0.0
+
+    all_unknown_flag = True
+    delta = neighbor_field
+    t_point = np.zeros(2, int)
+    for x_d in range(-delta, delta + 1):
+        t_point[0] = x_d + point_index[0]
+        if t_point[0] < 0 or t_point[0] >= m_wid: continue
+        for y_d in range(-delta, delta + 1):
+            t_point[1] = y_d + point_index[1]
+            if t_point[1] < 0 or t_point[1] >= m_heigh: continue
+            m_count += 1
+            if filtered_map[int(t_point[0])][int(t_point[1])] != 255:
+                all_unknown_flag = False
+                break
+    m_ratio = float(m_count) / m_allcount
+    #rospy.loginfo("ratio, %s, %d, %d", m_ratio, m_count, m_allcount)
+    return m_ratio
+
+#ensure the goal is legal
+def judge_obstacle_neighbor(point_index, neighbor_field = 6):
+    global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
+
+    all_unknown_flag = True
+    delta = neighbor_field
+    t_point = np.zeros(2, int)
+    for x_d in range(-delta, delta + 1):
+        t_point[0] = x_d + point_index[0]
+        if t_point[0] < 0 or t_point[0] >= m_wid: continue
+        for y_d in range(-delta, delta + 1):
+            t_point[1] = y_d + point_index[1]
+            if t_point[1] < 0 or t_point[1] >= m_heigh: continue
+            if filtered_map[int(t_point[0])][int(t_point[1])] == 100:
+                all_unknown_flag = False
+                rospy.loginfo("this goal near the obstacle! ignore this choice!")
+                break
+    return all_unknown_flag
+
+
+# BFS version
+def FindUnkownAreaBFS(point_index, local_map):
+    global filtered_map
+    m_wid = filtered_map.shape[0]
+    m_heigh = filtered_map.shape[1]
+
+    p_stack = [point_index]
+    local_map[point_index[0]][point_index[1]] = int(1)
+
+    while len(p_stack) > 0:
+        rospy.loginfo("stack size: %d", len(p_stack))
+        if len(p_stack) == 1:
+            cur_point = p_stack.pop(0)
+            log_neighbor(cur_point)
+            rospy.loginfo("p_stack size = 1")
+            p_stack.append(cur_point.copy())
+        cur_point = p_stack.pop(0)
+        if judge_neighbor(cur_point) > 0.8 and judge_obstacle_neighbor(cur_point) and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
+            return cur_point
+
+        t_point = np.zeros(2, int)
+        for x_d in range(-1, 2):
+            t_point[0] = x_d + cur_point[0]
+            if t_point[0] < 0 or t_point[0] >= m_wid: continue
+            for y_d in range(-1, 2):
+                t_point[1] = y_d + cur_point[1]
+                if t_point[1] < 0 or t_point[1] >= m_heigh: continue
+                if int(local_map[t_point[0]][t_point[1]]) == 1: continue
+                if filtered_map[t_point[0]][t_point[1]] == 100: continue
+                if x_d == 0 and y_d == 0: continue
+                local_map[t_point[0]][t_point[1]] = int(1)
+                p_stack.append(t_point.copy())
     return None
 
 
@@ -128,8 +289,8 @@ def odomCallback(odometry_msg):
 def OccupancyGridCallback(msg):
     global dat, wid, heigh, res, xorg, yorg
     dat = msg.data
-    wid = msg.info.width
-    heigh = msg.info.height
+    heigh = msg.info.width
+    wid = msg.info.height
     res = msg.info.resolution
     xorg = msg.info.origin.position.x
     yorg = msg.info.origin.position.y
@@ -151,6 +312,20 @@ def myhook():
     print "shutdown force_unknown_find_handler!"
 
 
+def test():
+    global filtered_map
+    print("Start test")
+    test_map = np.array([100, 100, 100, 255,
+                         255, 100, 0, 255,
+                         255, 100, 0, 255,
+                         255, 100, 100, 255]).reshape((4, 4))
+    revMap = np.zeros(test_map.shape, int)
+    point_index = np.zeros(2, int)
+    point_index[0], point_index[1] = 2, 2
+    filtered_map = test_map
+    res = FindUnkownArea(point_index, revMap)
+    print res
+    print("Test success")
 
 
 if __name__ == '__main__':
@@ -160,4 +335,5 @@ if __name__ == '__main__':
     odom_sub = rospy.Subscriber("/odom", Odometry, odomCallback, queue_size=1)
     map_sub_ = rospy.Subscriber("/map", OccupancyGrid, OccupancyGridCallback, queue_size=1)
     goal_pub = rospy.Publisher("/unknown_goal", PoseStamped, queue_size=1)
+    test()
     rospy.spin()

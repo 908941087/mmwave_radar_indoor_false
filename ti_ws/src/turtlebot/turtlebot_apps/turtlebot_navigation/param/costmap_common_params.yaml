@@ -15,7 +15,7 @@ obstacle_layer:
   unknown_threshold:    15  # The number of unknown cells allowed in a column considered to be "known" 
   mark_threshold:       2  # The maximum number of marked cells allowed in a column considered to be "free". 
   combination_method:   1 # It takes the maximum of what is supplied in the obstacle_layer or the incoming data.
-  track_unknown_space:  true    #true needed for disabling global path planning through unknown space
+  track_unknown_space:  false    #true needed for disabling global path planning through unknown space
   obstacle_range: 1.0  # The default maximum distance from the robot at which an obstacle will be inserted into the cost map in meters. This can be over-ridden on a per-sensor basis. 
   raytrace_range: 3.0 # The default range in meters at which to raytrace out obstacles from the map using sensor data. This can be over-ridden on a per-sensor basis
   publish_voxel_map: true
