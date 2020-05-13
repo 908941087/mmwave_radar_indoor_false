@@ -8,10 +8,8 @@
 <!--  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_odom" args="0 0 0 0 0 0 map odom 100"/>-->
 
   <!-- Using AMCL pose -->
-  <!--
   <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">
   </include>
-  -->
 
   <!-- Add nodes to filter/limit Radar data before using it for mapping -->
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
