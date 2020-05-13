@@ -29,14 +29,12 @@ class GroupingTracker:
         return self.clusters
 
     def getEnv(self, pc2):
-        if self.env is None:
-            self.pc_group(pc2)
-            self.env = self.env_classifier.classify(self.clusters)
+        self.pc_group(pc2)
+        self.env = self.env_classifier.classify(self.clusters)
         return self.env
 
     def getEnhancedEnv(self, pc2):
-        if self.enhanced_env is None:
-            self.enhanced_env = self.getEnv(pc2).enhance()
+        self.enhanced_env = self.getEnv(pc2).enhance()
         return self.enhanced_env
 
 
