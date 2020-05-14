@@ -4,6 +4,8 @@ from shapely.geometry import LineString, Point, box, MultiPoint
 from shapely.ops import nearest_points
 from centerline.geometry import Centerline
 from centerline.exceptions import TooFewRidgesError
+# import sys
+# sys.path.append("..")
 from ..Entity import Wall, Door
 from deprecated import deprecated
 
@@ -39,7 +41,7 @@ def circleFit(points):
     pass
 
 
-@deprecated(reason="This function is deprecated, you should use boneFit instead.")
+@deprecated(reason="This function is deprecated, use boneFit instead.")
 def wallFit(cluster):
     WALL_VARIANCE_THRESHOLD = 0.05
     LEAST_POINTS_COUNT_TO_FIND_WALL = 20
@@ -80,19 +82,25 @@ def wallFit(cluster):
         return var < WALL_VARIANCE_THRESHOLD, sum(distances)
 
     wallFitCore(cluster.getPoints())
-    return Wall(cluster.getId(), cluster.getConcaveHull(), segments, 2 * total_dists[0] / float(cluster.getPointsCount()))
+    return Wall(cluster.getId(),
+                cluster.getConcaveHull(),
+                segments,
+                2 * total_dists[0] / float(cluster.getPointsCount()))
 
 
 def boneFit(cluster):
-    centerline = Centerline(cluster.getConcaveHull())
+    centerline = Centerline(cluster.getConcaveHull().simplify(tolerance=0.2, preserve_topology=False))
     total_dist = 0
     for p in cluster.getPoints():
         total_dist += centerline.distance(p)
-    return Wall(cluster.getId(), cluster.getConcaveHull(), centerline.geoms, 2 * total_dist / float(cluster.getPointsCount()))
+    return Wall(cluster.getId(),
+                cluster.getConcaveHull(),  # .simplify(tolerance=0.2, preserve_topology=False)
+                centerline.geoms,
+                2 * total_dist / float(cluster.getPointsCount()))
 
 
 def doorFit(w1, w2):
     if not isinstance(w1, Wall) or not isinstance(w2, Wall):
-        raise TypeError("doorFit parameters must be of type Wall.")
+        raise TypeError("Parameters must be of type Wall.")
     ls = LineString(nearest_points(w1.getPolygon(), w2.getPolygon()))
     return Door(0, ls)

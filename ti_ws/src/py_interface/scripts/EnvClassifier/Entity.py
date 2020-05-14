@@ -1,6 +1,6 @@
 from enum import Enum
 from collections import OrderedDict
-from ShowShapes import *
+from ShapeOperator.ShapeViewer import *
 
 
 class Entity(object):
@@ -127,7 +127,7 @@ class Door(Entity):
         self.showShape(plt)
 
     def showShape(self, plt):
-        showLineString(self.segment, plt)
+        showLineString(self.segment, plt, 'go-')
 
     def getInfo(self):
         loc = self.getRepresentativePoint()

@@ -3,6 +3,7 @@ import sensor_msgs.point_cloud2
 # import open3d as o3d
 import rospy
 # import point_cloud
+import sensor_msgs.msg._PointField as PointFiled
 import numpy as np
 from math import sqrt, floor, pi, sin, cos, tan
 
@@ -11,7 +12,8 @@ class PCL_process:
 
     def __init__(self):
         self.pc2 = None
-        self.delta = 0.10
+        self.delta = 0.05
+        self.dis_rate = 0.5
         self.heat_map = None
         self.min_x = None
         self.max_x = None
@@ -22,19 +24,70 @@ class PCL_process:
         self.delta_angle = pi * (-5) / 180
         self.enable_trace = False
         self.reflect_trace_cnt = 0.0
-        self.min_prob_thre = 5
+        self.min_prob_thre = 3
+
+        # For add bumper points
+        self.bumper_len = 0.24
+        self.bumper_step = 20
+        self.enable_bumper = True
 
     def process(self, frame_service, stablizer, pc2):
         self.frame_service = frame_service
         self.stablizer = stablizer
         self.pc2 = pc2
         # self.adjust_perspective()
-        self.adjust_spherical()
-        # self.handle_reflection()
+        # self.adjust_spherical()
         self.passthrough_filter()
-        # self.stablize_preframe()
-        # self.statistical_outlier_removal()
-        # self.add_z_info()
+        self.handle_reflection()
+
+    # self.stablize_preframe()
+    # self.statistical_outlier_removal()
+    # self.add_z_info()
+
+    def process_bumper(self, pc2):
+        points = sensor_msgs.point_cloud2.read_points(pc2)
+        points_list = [(p[0], p[1], p[2]) for p in points]
+        # Add bumper points
+        tmp_points = [(p[0], p[1], p[2]) for p in points_list]
+        for p in tmp_points:
+            delta = None
+            if p[0]*p[0] + p[1]*p[1] < 1:
+                if abs(p[1]) <= 0.1:# Center
+                    delta = 0.0
+                elif p[1] < -0.1:
+                    delta = -70*pi/180
+                else:#p[1] > 0.1
+                    delta = 70*pi/180
+                points_list.extend(self.generate_bumper_points(delta, self.enable_bumper))
+
+        if self.pc2 is not None:
+            points = sensor_msgs.point_cloud2.read_points(self.pc2)
+            points_list.extend([(p[0], p[1], p[2]) for p in points])
+        # Add intensity info
+        point_filed = PointFiled.PointField("intensity", 16, 7, 1)
+        self.pc2 = pc2
+        self.pc2.fields.append(point_filed)
+        # Generate pointcloud2
+        res_points = []
+        for p in points_list:
+            res_points.append((p[0], p[1], 0.0, 40.0))
+        self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
+    def generate_bumper_points(self, delta = 0, enable=True):
+        res_points = []
+        if enable == False:
+            return res_points
+        tmp_len = self.bumper_len / self.bumper_step
+        tmp_x = tmp_len*sin(delta)
+        tmp_y = -tmp_len*cos(delta)
+        for j in range(10):
+            location_len = self.bumper_len+j*0.01
+            for i in range(-self.bumper_step+1, self.bumper_step):
+                x = i * tmp_x + location_len*cos(delta)
+                y = i * tmp_y + location_len*sin(delta)
+                res_points.append((x, y, 0.0, 40.0))
+            return res_points
+
 
     def adjust_spherical(self):
         points = sensor_msgs.point_cloud2.read_points(self.pc2)
@@ -57,8 +110,6 @@ class PCL_process:
             x, y, z, i = p[0], p[1], p[2], p[3]
             if direct == "y":
                 x_1 = x * cos(ang) - z * sin(ang)
-                y_1 = y
-                z_1 = x * sin(ang) + z * cos(ang)
             elif direct == "x":
                 x_1 = x
                 y_1 = y * cos(ang) + z * sin(ang)
@@ -81,7 +132,7 @@ class PCL_process:
         FiltOutRate = 0.2
         for p in points_list[int(FiltOutRate * len(points_list)):]:
             t_dis = sqrt(p[0] * p[0] + p[1] * p[1])
-            if 6.0 > t_dis > 0.5:
+            if 6.0 > t_dis > 0.7:
                 if 1.0 > p[2] > 0.2 or dim == 2:
                     res_points.append((p[0], p[1], 0.0, p[3]))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
@@ -105,8 +156,8 @@ class PCL_process:
             prob = 0.0
             res_p = None
             dis = sqrt(p[0] ** 2 + p[1] ** 2)
-            if dis >= 2.0:  # minimum reflect distance is about 0.75m
-                for step in range(1, int(dis / 1.0)):
+            if dis >= 2 * self.dis_rate:  # minimum reflect distance is about 0.75m
+                for step in range(1, int(dis / self.dis_rate)):
                     tp = [p[i] / step for i in range(2)]
                     near_prob = self.cal_neighbor_count(tp, step)
                     if near_prob < self.min_prob_thre: near_prob = 0
@@ -171,6 +222,9 @@ class PCL_process:
             for i in range(step):
                 res_points.append((p[0], p[1], p[2] + (i * height / step), 40.0))
         self.pc2 = sensor_msgs.point_cloud2.create_cloud(self.pc2.header, self.pc2.fields, res_points)
+
+    def pc_clean(self):
+        self.pc2 = None
 
     def genrate_res(self):
         return self.pc2
