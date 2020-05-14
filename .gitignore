@@ -13886,3 +13886,5 @@ carto_ws/protobuf/cmake/out
 /carto_ws/src/cartographer_ros/cartographer_rviz/out/build/x64-Debug
 /ti_ws/src/ydlidar_ros/out/build/x64-Debug
 /ti_ws/src/autonomous_explore_map_plan
+ti_ws/build
+ti_ws/devel

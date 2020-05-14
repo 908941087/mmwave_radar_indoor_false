@@ -1,0 +1,20 @@
+<launch>
+  <node  name="rslidar_node" pkg="rslidar_driver" type="rslidar_node" output="screen" >
+    <param name="model" value="RS16"/>
+    <!--param name="pcap" value="path_to_pcap"/-->
+    <param name="device_ip" value="192.168.0.12"/>
+    <!-- Set the Lidar data port on the PC side, default is 6699 -->
+    <param name="port" value="6699"/>
+    <param name="frame_id" value="laser"/>
+  </node>
+
+  <node  name="cloud_node" pkg="rslidar_pointcloud" type="cloud_node" output="screen" >
+    <param name="model" value="RS16"/>
+    <param name="curves_path" value="$(find rslidar_pointcloud)/data/rs_lidar_16/curves.csv" />
+    <param name="angle_path" value="$(find rslidar_pointcloud)/data/rs_lidar_16/angle.csv" />
+    <param name="channel_path" value="$(find rslidar_pointcloud)/data/rs_lidar_16/ChannelNum.csv" />
+  </node>
+
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_laser" args="0.0 0.0 0.18 0 0.0 0.0 base_link laser 100"/>
+</launch>
