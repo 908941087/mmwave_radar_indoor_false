@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    
+      <!-- Define laser type-->
+      <arg name="laser_type" default="rslidar_16" />
+    
+      <!-- laser driver -->
+      <include file="$(find turtlebot_navigation)/laser/driver/$(arg laser_type)_laser.launch" />
+   
+</launch>
