@@ -285,7 +285,7 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
             rospy.loginfo("p_stack size = 1")
             p_stack.append(cur_point.copy())
         cur_point = p_stack.pop(0)        
-        if judge_neighbor(cur_point) > 0.8 and judge_obstacle_neighbor(cur_point) and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
+        if judge_neighbor(cur_point) > 0.8 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
             if judge_oldgoal(cur_point, m_xorg, m_yorg):
                 return cur_point
             else:
