@@ -74,6 +74,26 @@ def log_neighbor(point_index, neighbor_field = 4):
             if p_point[1] < 0 or p_point[1] >= m_heigh: continue
             rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
 
+def ObstacleInflation(filtered_map, neighbor_field = 5):
+    RevMap = np.zeros(filtered_map.shape, dtype=np.int)
+    # Format map
+    for i in range(filtered_map.shape[0]):
+        for j in range(filtered_map.shape[1]):
+            if filtered_map[i, j] == 100:
+                RevMap[i, j] = 1
+    for i in range(filtered_map.shape[0]):
+        for j in range(filtered_map.shape[1]):
+            if RevMap[i, j] == 1:
+                t_point = np.zeros(2, int)
+                for x_d in range(-neighbor_field, neighbor_field + 1):
+                    t_point[0] = x_d + i
+                    if t_point[0] < 0 or t_point[0] >= filtered_map.shape[0]: continue
+                    for y_d in range(-neighbor_field, neighbor_field + 1):
+                        t_point[1] = y_d + j
+                        if t_point[1] < 0 or t_point[1] >= filtered_map.shape[1]: continue
+                        filtered_map[t_point[0]][t_point[1]] = int(100)
+    return filtered_map                  
+
 
 def ForceUnknownFindCB(msg):
     global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg
@@ -101,6 +121,11 @@ def ForceUnknownFindCB(msg):
     # show the map
     # plt.matshow(filtered_map)
     # plt.show()
+
+    #inflation the obstacle of filtered_map
+    filtered_map =  ObstacleInflation(filtered_map)
+
+
     point_index = np.zeros(2, dtype=np.int)
     point_index[1] = int((current_position_[0] - m_xorg) / res)
     point_index[0] = int((current_position_[1] - m_yorg) / res)
@@ -386,4 +411,5 @@ if __name__ == '__main__':
     goal_pub = rospy.Publisher("/unknown_goal", PoseStamped, queue_size=1)
     test()
     rospy.spin()
+
 
