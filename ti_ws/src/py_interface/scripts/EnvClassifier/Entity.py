@@ -1,6 +1,9 @@
 from enum import Enum
 from collections import OrderedDict
 from ShapeOperator.ShapeViewer import *
+from ShapeOperator.PointsGenerator import generateForPolygon
+from centerline.geometry import Centerline
+from Cluster import Cluster
 
 
 class Entity(object):
@@ -50,7 +53,14 @@ class Wall(Entity):
         showPolygon(self.polygon, plt)
 
     def enhance(self, cluster):
-        pass
+        poly = self.getPolygon().simplify(tolerance=0.2, preserve_topology=False)
+        points = generateForPolygon(poly)
+        c = Cluster(self.getId(), points)
+        line = Centerline(poly)
+        total_dist = 0
+        for p in points:
+            total_dist += line.distance(p)
+        return Wall(self.getId(), poly, line.geoms, 2 * total_dist / c.getPointsCount()), c
 
     def getWidth(self):
         return self.width

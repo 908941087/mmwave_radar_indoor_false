@@ -47,7 +47,7 @@ if __name__ == "__main__":
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
     gp = GroupingTracker()
-    env = gp.getEnv(PCBasics.getPCFromPCD("pcds/south_one.pcd"))
+    env = gp.getEnhancedEnv(PCBasics.getPCFromPCD("pcds/south_one.pcd"))
     env.show(plt)
     env.showEntityShapes(plt)
     # env.showEntityTags(plt)

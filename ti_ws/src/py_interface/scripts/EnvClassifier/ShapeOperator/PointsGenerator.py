@@ -9,7 +9,7 @@ def triSample(triangle):
     sample point uniformly in the triangle
     """
     coords = triangle.exterior.coords
-    if not isinstance(triangle, Polygon) or len(coords) != 3:
+    if not isinstance(triangle, Polygon) or len(coords) != 4:
         raise TypeError("Input must be a triangle!")
     A = coords[0]
     B = coords[1]
@@ -27,13 +27,18 @@ def triSample(triangle):
 
 
 def generateForTriangle(triangle, intensity):
-    points_count = triangle.area * intensity
+    points_count = int(triangle.area * intensity)
     return [triSample(triangle) for _ in range(points_count)]
 
 
-def generateForPolygon(poly, intensity=100):
-    triangles = [t for t in triangulate(poly) if poly.contains(t)]
+def generateForPolygon(poly, x_offset=0.05, y_offset=0.05):
+    min_x, min_y, max_x, max_y = poly.bounds
+    col = int(math.ceil((max_x - min_x) / x_offset))
+    row = int(math.ceil((max_y - min_y) / y_offset))
     res_points = []
-    for t in triangles:
-        res_points.extend(generateForTriangle(t, intensity))
+    for i in range(col):
+        for j in range(row):
+            p = Point(x_offset * i + min_x, y_offset * j + min_y)
+            if poly.contains(p):
+                res_points.append(p)
     return res_points

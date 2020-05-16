@@ -3,7 +3,6 @@ import math
 from shapely.geometry import LineString, Point, box, MultiPoint
 from shapely.ops import nearest_points
 from centerline.geometry import Centerline
-from centerline.exceptions import TooFewRidgesError
 # import sys
 # sys.path.append("..")
 from ..Entity import Wall, Door
@@ -89,13 +88,13 @@ def wallFit(cluster):
 
 
 def boneFit(cluster):
-    centerline = Centerline(cluster.getConcaveHull().simplify(tolerance=0.2, preserve_topology=False))
+    line = Centerline(cluster.getConcaveHull())
     total_dist = 0
     for p in cluster.getPoints():
-        total_dist += centerline.distance(p)
+        total_dist += line.distance(p)
     return Wall(cluster.getId(),
                 cluster.getConcaveHull(),  # .simplify(tolerance=0.2, preserve_topology=False)
-                centerline.geoms,
+                line.geoms,
                 2 * total_dist / float(cluster.getPointsCount()))
 
 
