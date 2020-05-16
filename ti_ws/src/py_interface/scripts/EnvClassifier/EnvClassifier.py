@@ -49,7 +49,6 @@ class EnvClassifier(object):
                 else:
                     env.register(wall, cluster)
             except:
-                print("Cluster {0} encounters TooFewRidgesError.".format(cluster.getId()))
                 env.register(Furniture(cluster.getId(), cluster.getConcaveHull()), cluster)
 
         # create entities that is determined by the relationship of other entities, eg: Door

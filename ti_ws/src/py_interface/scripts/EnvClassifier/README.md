@@ -2,16 +2,16 @@
 
 ### Easy install with `pip`
 ```bash
-pip install numpy
-pip install scipy
-pip install pypcd
-pip install shapely
-pip install sklearn
-pip install deprecated
-pip install alphashape
-pip install centerline
+pip install --user numpy
+pip install --user scipy
+pip install --user pypcd
+pip install --user shapely
+pip install --user sklearn
+pip install --user deprecated
+pip install --user alphashape
+pip install --user centerline
 
 sudo apt-get -y install libspatialindex-dev
-pip install Rtree
+pip install --user Rtree
 ```
 

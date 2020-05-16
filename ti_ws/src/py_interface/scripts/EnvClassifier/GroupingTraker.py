@@ -26,13 +26,11 @@ class GroupingTracker:
         for i in range(self.clusters_num):
             one_cluster = self.pc2[labels == i]
             self.clusters.append(Cluster(i, MultiPoint(one_cluster)))
-        print("Grouping Tracker, cluster count: ", self.clusters_num)
         return self.clusters
 
     def getEnv(self, pc2):
         self.pc_group(pc2)
         self.env = self.env_classifier.classify(self.clusters)
-        print("Grouping Tracker, cluster count in env: ", len(self.env.entity_cluster_map))
         return self.env
 
     def getEnhancedEnv(self, pc2):
@@ -49,9 +47,9 @@ if __name__ == "__main__":
     ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
 
     gp = GroupingTracker()
-    env = gp.getEnv(PCBasics.getPCFromPCD("pcds/four_walls.pcd"))
+    env = gp.getEnv(PCBasics.getPCFromPCD("pcds/south_one.pcd"))
     env.show(plt)
     env.showEntityShapes(plt)
-    env.showEntityTags(plt)
+    # env.showEntityTags(plt)
 
     plt.show()
