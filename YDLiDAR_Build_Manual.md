@@ -1,5 +1,7 @@
 # YDLiDAR Build Manual
 
+[官方代码仓库](https://github.com/YDLIDAR/ydlidar_ros)
+
 1. 运行以下命令，将下面的项目下载到ti_ws的src目录下
 
    ```bash

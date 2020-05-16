@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" output="screen">
+  
+        <!-- Starts up faster, but timestamps will be inaccurate. --> 
+        <param name="calibrate_time" type="bool" value="false"/> 
+    
+        <!-- Set the port to connect to here -->
+        <param name="port" type="string" value="/dev/hokuyo"/> 
+        <param name="frame_id"  type="string" value="laser"/>
+        <param name="intensity" type="bool" value="false"/>
+    </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_laser" args="0.0 0.0 0.18 0 0.0 0.0 base_link laser 100"/>
+</launch>
