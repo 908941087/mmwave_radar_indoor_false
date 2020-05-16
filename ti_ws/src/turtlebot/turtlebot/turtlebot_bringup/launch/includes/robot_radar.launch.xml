@@ -1,0 +1,64 @@
+<!--
+  Collection of robot-centric definitions and nodes for the turtlebot. 
+ -->
+<launch>
+  <arg name="base"/>
+  <arg name="stacks"/>
+  <arg name="3d_sensor"/>
+  
+  <include file="$(find turtlebot_bringup)/launch/includes/description.launch.xml">
+    <arg name="base" value="$(arg base)" />
+    <arg name="stacks" value="$(arg stacks)" />
+    <arg name="3d_sensor" value="$(arg 3d_sensor)" />
+  </include>
+
+  <!-- important generally, but specifically utilised by the current app manager -->  
+  <param name="robot/name" value="$(optenv ROBOT turtlebot)"/>
+  <param name="robot/type" value="turtlebot"/>
+  
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="5.0" />
+  </node>
+  <node pkg="diagnostic_aggregator" type="aggregator_node" name="diagnostic_aggregator" >
+    <rosparam command="load" file="$(find turtlebot_bringup)/param/$(arg base)/diagnostics.yaml" />
+  </node>
+  
+  <!-- Call mmWave sensor launch file -->
+  <include file="$(find ti_mmwave_rospkg)/launch/ti_mmwave_sensor.launch">
+    <arg name="device" value="6843ISK" doc="TI mmWave sensor device type [1443, 1642,6843]"/>
+    <arg name="config" value="3d_custom" doc="TI mmWave sensor device configuration [3d (not supported by 1642 EVM), 2d]"/>
+    <arg name="max_allowed_elevation_angle_deg" value="90" doc="Maximum allowed elevation angle in degrees for detected object data [0 > value >= 90]}"/>
+    <arg name="max_allowed_azimuth_angle_deg" value="90" doc="Maximum allowed azimuth angle in degrees for detected object data [0 > value >= 90]}"/>
+  </include>
+
+  <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="hector_trajectory_server" />
+
+  <node pkg="tf" type="static_transform_publisher" name="tf_base_link_to_base_footprint" args="0 0 0 0 0 0  base_footprint base_link 100"/>
+
+ 
+  <node pkg="tf" type="static_transform_publisher" name="static_transorm_publisher_map" args="0 0 0 0 0 0 map odom 100"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_laser_frame" args="0 0 0 0 0 0 base_link laser_frame 100"/>
+
+ <!--
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="Radar_to_Laser">
+    <param name="min_range" value="0"/>
+    <param name="angle_min" value="-3.14"/>
+    <param name="angle_max" value="3.14"/>
+  </node>
+
+  <node pkg="nodelet" type="nodelet" name="passthru_manager" args="manager" />
+
+    Run a passthrough filter to clean NaNs 
+  <node pkg="nodelet" type="nodelet" name="i_filter" args="load pcl/PassThrough passthru_manager" output="screen">
+    <remap from="~input" to="/mmWaveDataHdl/RScan" />
+    <remap from="~output" to="/cloud_in" />
+    <rosparam>
+      filter_field_name: intensity
+      filter_limit_min: 30
+      filter_limit_max: 100
+      filter_limit_negative: False
+    </rosparam>
+  </node>-->
+
+</launch>
