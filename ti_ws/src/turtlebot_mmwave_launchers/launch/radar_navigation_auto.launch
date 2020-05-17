@@ -18,6 +18,10 @@
 
   </group>
 
+  <!-- Add nodes to filter/limit Radar data before using it for avoid obstacle -->
+  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
+  </include>
+
   <!-- Fake localization node allows directly setting initial pose and goal -->
   <node pkg="fake_localization" type="fake_localization" name="fake_localization">
     <param name="use_map_topic" value="true"/>

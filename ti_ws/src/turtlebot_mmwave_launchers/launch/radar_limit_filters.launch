@@ -7,7 +7,7 @@
 
 
    <node pkg="nodelet" type="nodelet" name="x_filt" args="load pcl/PassThrough pcl_manager" output="screen">
-      <remap from="~input" to="/py_test" />
+      <remap from="~input" to="/mmWaveDataHdl/RScan" />
       <remap from="~output" to="x_filt_out" />
       <rosparam>
          filter_field_name: x
