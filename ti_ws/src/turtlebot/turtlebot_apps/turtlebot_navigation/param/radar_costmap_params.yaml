@@ -1,7 +1,7 @@
 local_costmap:
   obstacle_layer:
     scan:
-      topic: xyzi_filt_out    #xyzi_filt_out before
+      topic: xyzi_filt_out_obstacle    #xyzi_filt_out before
 
 global_costmap:
   obstacle_layer:
