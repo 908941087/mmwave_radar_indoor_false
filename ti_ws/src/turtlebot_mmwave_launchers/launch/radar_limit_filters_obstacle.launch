@@ -3,10 +3,10 @@
  -->
 <launch>
 
-   <node pkg="nodelet" type="nodelet" name="pcl_manager_obstacle" args="manager" output="screen"/>
+   <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen"/>
 
 
-   <node pkg="nodelet" type="nodelet" name="x_filt_obstacle" args="load pcl/PassThrough pcl_manager" output="screen">
+   <node pkg="nodelet" type="nodelet" name="x_filt" args="load pcl/PassThrough pcl_manager" output="screen">
       <remap from="~input" to="/mmWaveDataHdl/RScan" />
       <remap from="~output" to="x_filt_out_obstacle" />
       <rosparam>
@@ -17,7 +17,7 @@
       </rosparam>
    </node>
    
-   <node pkg="nodelet" type="nodelet" name="y_filt_obstacle" args="load pcl/PassThrough pcl_manager" output="screen">
+   <node pkg="nodelet" type="nodelet" name="y_filt" args="load pcl/PassThrough pcl_manager" output="screen">
       <remap from="~input" to="x_filt_out_obstacle" />
       <remap from="~output" to="xy_filt_out_obstacle" />
       <rosparam>
@@ -28,7 +28,7 @@
       </rosparam>
    </node>
    
-   <node pkg="nodelet" type="nodelet" name="z_filt_obstacle" args="load pcl/PassThrough pcl_manager" output="screen">
+   <node pkg="nodelet" type="nodelet" name="z_filt" args="load pcl/PassThrough pcl_manager" output="screen">
       <remap from="~input" to="xy_filt_out_obstacle" />
       <remap from="~output" to="xyz_filt_out_obstacle" />
       <rosparam>
@@ -39,7 +39,7 @@
       </rosparam>
    </node>
    
-   <node pkg="nodelet" type="nodelet" name="i_filt_obstacle" args="load pcl/PassThrough pcl_manager" output="screen">
+   <node pkg="nodelet" type="nodelet" name="i_filt" args="load pcl/PassThrough pcl_manager" output="screen">
       <remap from="~input" to="xyz_filt_out_obstacle" />
       <remap from="~output" to="xyzi_filt_out_obstacle" />
       <rosparam>
