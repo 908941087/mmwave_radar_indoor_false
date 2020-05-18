@@ -983,6 +983,9 @@ namespace move_base {
 
           if(recovery_trigger_ == CONTROLLING_R){
             ROS_ERROR("Aborting because a valid control could not be found. Even after executing all recovery behaviors");
+            std_msgs::Int8 temp ;
+            temp.data = 1;
+            invalid_path_pub.publish(temp);
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Failed to find a valid control. Even after executing recovery behaviors.");
           }
           else if(recovery_trigger_ == PLANNING_R){
@@ -994,6 +997,9 @@ namespace move_base {
           }
           else if(recovery_trigger_ == OSCILLATION_R){
             ROS_ERROR("Aborting because the robot appears to be oscillating over and over. Even after executing all recovery behaviors");
+            std_msgs::Int8 temp ;
+            temp.data = 1;
+            invalid_path_pub.publish(temp);
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Robot is oscillating. Even after executing recovery behaviors.");
           }
           resetState();
