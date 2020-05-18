@@ -1,7 +1,10 @@
 <launch>
-
   <!-- 3D sensor -->
   <arg name="3d_sensor" default="radar"/>  <!-- r200, kinect, asus_xtion_pro -->
+
+    <!-- Add nodes to filter/limit Radar data before using it for avoid obstacle -->
+  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters_obstacle.launch">
+  </include>
 
   <arg name="auto_navi" value="false" />
 
@@ -17,10 +20,6 @@
   <!-- <include file="$(find autonomous_explore_map_plan)/launch/view_robot.launch"/>  -->
 
   </group>
-
-  <!-- Add nodes to filter/limit Radar data before using it for avoid obstacle -->
-  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters_obstacle.launch">
-  </include>
 
   <!-- Fake localization node allows directly setting initial pose and goal -->
   <node pkg="fake_localization" type="fake_localization" name="fake_localization">
