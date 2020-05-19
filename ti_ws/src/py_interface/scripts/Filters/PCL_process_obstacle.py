@@ -7,7 +7,7 @@ import numpy as np
 from math import sqrt, floor, pi, sin, cos, tan
 
 
-class PCL_process:
+class PCL_process_obstacle:
 
     def __init__(self):
         self.pc2 = None
