@@ -23,6 +23,7 @@
     <param name="latch"            	 value="False" />
     <!-- <remap from="/cloud_in"          to="/scan" /> -->
     <remap from="/cloud_in" to="/pc_from_scan" />
+    <remap from="projected_map" to="map" />
     <!--remap from="/cloud_in" to="/camera/depth_registered/points" /--> <!-- real turtlebot -->
   </node>
 
