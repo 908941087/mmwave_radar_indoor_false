@@ -56,58 +56,8 @@ stablizer = frame_service.get_multi_frame_stablizer(width=8, height=4, resolutio
 
 def callback(data):
     global frame_service, stablizer
-    listener_lock.acquire()
     PCL_Ins.process(frame_service, stablizer, data)
     pub.publish(PCL_Ins.genrate_res())
-    listener_lock.release()
-
-def bumper_callback(data):
-    listener_lock.acquire()
-    PCL_Ins.process_bumper(data)
-    pub.publish(PCL_Ins.genrate_res())
-    PCL_Ins.pc_clean()
-    listener_lock.release()
-
-def show_robot_loc_callback(data):
-    x = data.pose.pose.position.x
-    y = data.pose.pose.position.y
-    t_marker = Marker()
-    t_marker.header.frame_id = "/map"
-    t_marker.header.stamp = rospy.Time.now()
-    t_marker.ns = "robot_loc"
-
-    t_marker.id = 0
-
-    # Type
-    t_marker.type = Marker.TEXT_VIEW_FACING
-    t_marker.text = "RobotLoc: " + "\n" + "x: " + str(round(x, 3)) + "\n" + "y: " + str(
-        round(y, 3))
-    # Size
-    t_marker.scale.x = 0.3
-    t_marker.scale.y = 0.3
-    t_marker.scale.z = 0.3
-
-    # ADD/DELETE
-    t_marker.action = Marker.MODIFY
-
-    # Pose
-    t_marker.pose.position.x = 5
-    t_marker.pose.position.y = 5
-    t_marker.pose.position.z = 0.2
-    t_marker.pose.orientation.x = 0.0
-    t_marker.pose.orientation.y = 0.0
-    t_marker.pose.orientation.z = 0.0
-    t_marker.pose.orientation.w = 1.0
-
-    # Color
-    t_marker.color.r = 1.0
-    t_marker.color.g = 0.0
-    t_marker.color.b = 0.0
-    t_marker.color.a = 1.0
-
-    t_marker.lifetime = rospy.Duration(0.1)
-
-    robot_loc_pub.publish(t_marker)
 
 
 def listener():
@@ -119,17 +69,10 @@ def listener():
     rospy.init_node('filterforobstacle', anonymous=True)
 
     rospy.Subscriber('mmWaveDataHdl/RScan', PointCloud2, callback)
-    #rospy.Subscriber('bumper_pc', PointCloud2, bumper_callback)
-
-    #rospy.Subscriber('/odom', Odometry, show_robot_loc_callback)
-
-    # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()
 
 
 if __name__ == '__main__':
     PCL_Ins = PCL_process_obstacle.PCL_process_obstacle()
-    listener_lock = threading.Lock()
     pub = rospy.Publisher('/py_test_obstacle', PointCloud2, queue_size=10)
-    #robot_loc_pub = rospy.Publisher('/robot_loc', Marker, queue_size=10)
     listener()
