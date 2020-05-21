@@ -35,8 +35,8 @@
 
   <node pkg="tf" type="static_transform_publisher" name="tf_base_link_to_base_footprint" args="0 0 0 0 0 0  base_footprint base_link 100"/>
 
- 
-  <node pkg="tf" type="static_transform_publisher" name="static_transorm_publisher_map" args="0 0 0 0 0 0 map odom 100"/>
+<!-- -->
+<!--  <node pkg="tf" type="static_transform_publisher" name="static_transorm_publisher_map" args="0 0 0 0 0 0 map odom 100"/>-->
 
   <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_laser_frame" args="0 0 0 0 0 0 base_link laser_frame 100"/>
 
