@@ -6,7 +6,7 @@
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters_obstacle.launch">
   </include>
 
-  <arg name="auto_navi" value="false" />
+  <arg name="auto_navi" value="true" />
 
   <!-- Add nodes to filter/limit Radar data before using it for navigation -->
   <group if="$(arg auto_navi)">
