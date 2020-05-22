@@ -194,7 +194,9 @@ namespace move_base {
       uint32_t planning_retries_;
       double conservative_reset_dist_, clearing_radius_;
       ros::Publisher current_goal_pub_, vel_pub_, action_goal_pub_, force_unknown_find_pub, invalid_path_pub, path_check_pub;
+      ros::Publisher auto_goal_pub_;
       ros::Subscriber goal_sub_, goal_sub_2;
+      ros::Subscriber auto_sub_;
       ros::ServiceServer make_plan_srv_, clear_costmaps_srv_;
       bool shutdown_costmaps_, clearing_rotation_allowed_, recovery_behavior_enabled_;
       double oscillation_timeout_, oscillation_distance_;
