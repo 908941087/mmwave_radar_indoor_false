@@ -6,13 +6,13 @@
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters_obstacle.launch">
   </include>
 
-  <arg name="auto_navi" value="false" />
+  <arg name="auto_navi" value="true" />
 
   <!-- Add nodes to filter/limit Radar data before using it for navigation -->
   <group if="$(arg auto_navi)">
   <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch" /> -->
 
-  <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch" />
+  <!-- <include file="$(find turtlebot_mmwave_launchers)/launch/radar_mapping.launch" /> -->
 
   <!-- Map server 
   <node name="octomap_server" pkg="octomap_server" type="octomap_server_node" args="$(find turtlebot_mmwave_launchers)/launch/oy19.bt projected_map:=map" /> -->
@@ -28,6 +28,9 @@
     <remap from="base_pose_ground_truth" to="odom"/>
   </node>
   -->
+
+  <node name="potential_map" pkg="autonomous_nav" type="potential_map" output="screen"/>
+  <node name="mission_handler" pkg="autonomous_nav" type="mission_node_copy.py" output="screen"/>
 
   <!-- Move base -->
   <arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>
