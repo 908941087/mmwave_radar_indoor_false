@@ -22,10 +22,12 @@
   </group>
 
   <!-- Fake localization node allows directly setting initial pose and goal -->
+  <!--
   <node pkg="fake_localization" type="fake_localization" name="fake_localization">
     <param name="use_map_topic" value="true"/>
     <remap from="base_pose_ground_truth" to="odom"/>
   </node>
+  -->
 
   <!-- Move base -->
   <arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>

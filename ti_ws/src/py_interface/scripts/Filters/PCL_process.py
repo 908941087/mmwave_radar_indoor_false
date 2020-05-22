@@ -107,6 +107,8 @@ class PCL_process:
             x, y, z, i = p[0], p[1], p[2], p[3]
             if direct == "y":
                 x_1 = x * cos(ang) - z * sin(ang)
+                y_1 = y
+                z_1 = x * sin(ang) + z * cos(ang)
             elif direct == "x":
                 x_1 = x
                 y_1 = y * cos(ang) + z * sin(ang)

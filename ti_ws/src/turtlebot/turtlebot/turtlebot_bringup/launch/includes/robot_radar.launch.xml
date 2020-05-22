@@ -38,8 +38,8 @@
 <!-- -->
 <!--  <node pkg="tf" type="static_transform_publisher" name="static_transorm_publisher_map" args="0 0 0 0 0 0 map odom 100"/>-->
 
-  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_laser_frame" args="0 0 0 0 0 0 base_link laser_frame 100"/>
 
+  <node pkg="tf" type="static_transform_publisher" name="static_tf_map_to_radar_frame" args="0.2 0 0.3 0 0 0 base_link base_radar_link 100"/>
  <!--
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="Radar_to_Laser">
     <param name="min_range" value="0"/>
