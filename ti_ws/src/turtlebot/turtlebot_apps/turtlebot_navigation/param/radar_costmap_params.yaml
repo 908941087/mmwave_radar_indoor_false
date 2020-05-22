@@ -1,12 +1,12 @@
 local_costmap:
   obstacle_layer:
     scan:
-      topic: /mmWaveDataHdl/RScan    #xyzi_filt_out before
+      topic: py_test    #xyzi_filt_out before
 
 global_costmap:
   obstacle_layer:
     scan:
-      topic: /mmWaveDataHdl/RScan    #xyzi_filt_out before
+      topic: py_test    #xyzi_filt_out before
   inflation_layer:
     cost_scaling_factor:  9.8  # exponential rate at which the obstacle cost drops off (default: 10)
     inflation_radius:     0.37  # max. distance from an obstacle at which costs are incurred for planning paths.

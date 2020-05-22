@@ -11,6 +11,8 @@
 <!--  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">-->
 <!--  </include>-->
 
+  <node pkg="py_interface" type="listener.py" name="filter_py_test" respawn="true" output="screen" />
+
   <!-- Add nodes to filter/limit Radar data before using it for mapping -->
   <include file="$(find turtlebot_mmwave_launchers)/launch/radar_limit_filters.launch">
   </include>
