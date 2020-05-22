@@ -100,6 +100,9 @@ namespace move_base {
     ros::NodeHandle simple_nh("move_base_simple");
     goal_sub_ = simple_nh.subscribe<geometry_msgs::PoseStamped>("goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
 
+    auto_sub_ = simple_nh.subscribe<geometry_msgs::PoseStamped>("auto_goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
+    auto_goal_pub_ = simple_nh.advertise<std_msgs::Int8>("auto_goal_find", 1);
+
 
     ros::NodeHandle simple_nh2;
     goal_sub_2 = simple_nh2.subscribe<geometry_msgs::PoseStamped>("unknown_goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
@@ -107,7 +110,7 @@ namespace move_base {
     ros::NodeHandle simple_nh3;
     invalid_path_pub = simple_nh3.advertise<std_msgs::Int8>("invalid_path", 1);
 
-        //publish force_unknown_find_pub 
+    //publish force_unknown_find_pub 
     ros::NodeHandle unknown_pub_nh;
     force_unknown_find_pub = unknown_pub_nh.advertise<std_msgs::Int8>("force_unknown_find", 1);
     //
@@ -899,6 +902,8 @@ namespace move_base {
           std_msgs::Int8 temp ;
           temp.data = 1;
           force_unknown_find_pub.publish(temp);
+          auto_goal_pub_.publish(temp);
+
           return true;
         }
 
