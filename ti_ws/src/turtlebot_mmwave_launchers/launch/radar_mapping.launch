@@ -55,7 +55,7 @@
     <param name="sensor_model/hit" value ="1.0"/>
     <param name="sensor_model/miss" value ="0.45"/>
     <remap from="octomap_point_cloud_centers" to="filtered_point_cloud_centers" />
-    <remap from="projected_map" to="map" />
+    <remap from="projected_map" to="radar_map" />
     <remap from="cloud_in" to="sor_out" />
   </node>
 
