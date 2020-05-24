@@ -10,17 +10,38 @@ import threading
 from visualization_msgs.msg import MarkerArray, Marker
 
 
-class SubThread(threading.Thread):
-    def __init__(self, thread_name, pc2_pub_thread, pc2_pub_event, marker_array_pub_thread, marker_array_pub_event):
-        super(SubThread, self).__init__(name=thread_name)
+class PubBlock:
+    def __init__(self, thread_handle, event_handle, sub_func, callback_func=None):
+        self.thread_handle = thread_handle
+        self.event_handle = event_handle
+        self.sub_func = sub_func
+        self.callback_func = callback_func
         self.data = None
+
+    def acquire_data(self):
+        self.data = self.sub_func()
+        if self.data is None:
+            return False
+        return True
+
+    def update_data(self):
+        self.event_handle.clear()
+        if self.callback_func is not None:
+            self.data = self.callback_func(self.data)
+        self.thread_handle.data = self.data
+        self.event_handle.set()
+        rospy.loginfo("Pub " + self.thread_handle.thread_name)
+
+
+class SubThread(threading.Thread):
+    def __init__(self, thread_name="SubThread", duration=10.0):
+        super(SubThread, self).__init__(name=thread_name)
         self.thread_name = thread_name
-        self.pc2_pub_thread = pc2_pub_thread
-        self.pc2_pub_event = pc2_pub_event
-        self.marker_array_pub_thread = marker_array_pub_thread
-        self.marker_array_pub_event = marker_array_pub_event
-        self.group_tracker = GroupingTraker.GroupingTracker()
-        self.duration = 15.0
+        self.duration = duration
+        self._pub_blocks = {}
+
+    def register_thread_CB(self, pub_block):
+        self._pub_blocks[pub_block.thread_handle.thread_name] = pub_block
 
     def run(self):
         rospy.loginfo("Start sub thread: " + self.thread_name)
@@ -93,25 +114,37 @@ class PubThread(threading.Thread):
                     rospy.sleep(0.2)
                 else:
                     rospy.loginfo("Nothing to Pub " + self.thread_name)
-            rospy.sleep(2.0)
+
+
+def pc2_grid_sub_func():
+    # Get point data
+    group_tracker = GroupingTraker.GroupingTracker()
+    data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
+    point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
+    points = [[i[0], i[1]] for i in point_cloud2]
+    # Generate points and marks
+    if points is not None and len(points) > 0:
+        env = group_tracker.getEnv(points)
+        classified_marks = env.generate_markers()
+    else:
+        rospy.loginfo("No enough points for classification")
+        return None
+    # Generate markers
+    return classified_marks
 
 
 if __name__ == '__main__':
     # Pub components
-    pc2_pub = rospy.Publisher('/classified_point_cloud', PointCloud2, queue_size=1)
     marker_array_pub = rospy.Publisher("/class_marker", MarkerArray, queue_size=1)
-    pc2_pub_event = threading.Event()
     marker_array_pub_event = threading.Event()
-
-    pc2_pub_thread = PubThread("PubPC2", pc2_pub, pc2_pub_event)
     marker_array_pub_thread = PubThread("PubMarkerArray", marker_array_pub, marker_array_pub_event)
-    pc2_sub_thread = SubThread("SubPC2", pc2_pub_thread, pc2_pub_event, marker_array_pub_thread, marker_array_pub_event)
+    marker_pub_block = PubBlock(marker_array_pub_thread, marker_array_pub_event, pc2_grid_sub_func)
 
+    pc2_sub_thread = SubThread("SubPC2", duration=2.0)
+    pc2_sub_thread.register_thread_CB(marker_pub_block)
     try:
         rospy.init_node('map_classifier', anonymous=True)
         pc2_sub_thread.start()
-        pc2_pub_thread.start()
-        marker_array_pub_thread.start()
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()
     except rospy.ROSInterruptException:
