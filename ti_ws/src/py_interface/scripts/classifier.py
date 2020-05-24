@@ -2,6 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import PointCloud2
+from nav_msgs.msg import OccupancyGrid
 import sensor_msgs.point_cloud2
 from EnvClassifier import GroupingTraker
 import threading
@@ -25,13 +26,14 @@ class SubThread(threading.Thread):
         rospy.loginfo("Start sub thread: " + self.thread_name)
         while not rospy.is_shutdown():
             data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
+            laser_grid = rospy.wait_for_message('/map', OccupancyGrid, timeout=None)
             point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
             points = [[i[0], i[1]] for i in point_cloud2]
             # Generate points and marks
             if points is not None and len(points) > 0:
-                env = self.group_tracker.getEnv(points)
+                env = self.group_tracker.getEnv(points, laser_grid)
                 classified_points = env.getPoints()
-                classified_marks = env.generate_markers()
+                classified_marks = env.generateInfoMarkers()
             else:
                 rospy.sleep(self.duration)
                 continue

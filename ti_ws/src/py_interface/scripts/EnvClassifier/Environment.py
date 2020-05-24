@@ -1,6 +1,4 @@
 from Entity import Wall, Furniture, Door, Noise
-import rospy
-from visualization_msgs.msg import Marker
 
 
 class Environment(object):
@@ -8,8 +6,7 @@ class Environment(object):
     def __init__(self):
         self.is_enhanced = False
         self.entity_cluster_map = {}
-        self._show_noise = True
-        self.pub_markers = []
+        self._show_noise = False
 
     def register(self, entity, cluster):
         if cluster is None:
@@ -23,7 +20,7 @@ class Environment(object):
         return [i[0] for i in self.entity_cluster_map.values()]
 
     def getClusters(self):
-        return [i[1] for i in self.entity_cluster_map.values()]
+        return [i[1] for i in self.entity_cluster_map.values() if i[1] is not None]
 
     def getEntity(self, eid):
         return self.entity_cluster_map[eid][0]
@@ -107,47 +104,26 @@ class Environment(object):
     def __str__(self):
         return str(len(self.entity_cluster_map)) + " entities and clusters."
 
-    def generate_markers(self, duration=5.0):
+    def generateInfoMarkers(self, duration=5.0):
         mark_index = 0
-        self.pub_markers = []
+        pub_markers = []
         for entity in self.getEntities():
             if not self._show_noise and isinstance(entity, Noise):
                 continue
-            t_marker = Marker()
-            t_marker.header.frame_id = "/map"
-            t_marker.header.stamp = rospy.Time.now()
-            t_marker.ns = "cluster_class"
+            marker = entity.getInfoMarker(mark_index, duration)
+            if marker is not None:
+                pub_markers.append(marker)
+                mark_index += 1
+        return pub_markers
 
-            t_marker.id = mark_index
-            mark_index += 1
-            # Type
-            t_marker.type = Marker.TEXT_VIEW_FACING
-            loc = entity.getRepresentativePoint()
-            t_marker.text = entity.getInfo()["Name"] + "\n" + "x: " + str(round(loc.x, 3)) + "\n" + "y: " + str(
-                round(loc.y, 3))
-            # Size
-            t_marker.scale.x = 0.3
-            t_marker.scale.y = 0.3
-            t_marker.scale.z = 0.3
-
-            # ADD/DELETE
-            t_marker.action = Marker.MODIFY
-
-            # Pose
-            t_marker.pose.position.x = loc.x
-            t_marker.pose.position.y = loc.y
-            t_marker.pose.position.z = 0.2
-            t_marker.pose.orientation.x = 0.0
-            t_marker.pose.orientation.y = 0.0
-            t_marker.pose.orientation.z = 0.0
-            t_marker.pose.orientation.w = 1.0
-
-            # Color
-            t_marker.color.r = 0.0
-            t_marker.color.g = 1.0
-            t_marker.color.b = 0.5
-            t_marker.color.a = 1.0
-
-            t_marker.lifetime = rospy.Duration(duration)
-            self.pub_markers.append(t_marker)
-        return self.pub_markers
+    def generateShapeMarkers(self, duration=5.0):
+        mark_index = 0
+        pub_markers = []
+        for entity in self.getEntities():
+            if not self._show_noise and isinstance(entity, Noise):
+                continue
+            marker = entity.getShapeMarker(mark_index, duration)
+            if marker is not None:
+                pub_markers.append(marker)
+                mark_index += 1
+        return pub_markers
