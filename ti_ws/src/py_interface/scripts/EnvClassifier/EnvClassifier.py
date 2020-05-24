@@ -1,4 +1,5 @@
 from Environment import Environment
+from shapely.geometry import Polygon
 from Entity import Wall, Furniture, Door, Noise
 from PointCloudOperator import ClusterFit
 from centerline.exceptions import TooFewRidgesError
@@ -31,7 +32,8 @@ class EnvClassifier(object):
         for i in range(len(clusters)):
             cluster = clusters[i]
 
-            # use area and density to recognize noise
+            # env.register(Noise(cluster.getId(), Polygon([[0, 0], [0, 1], [1, 0]])), cluster)
+            # # use area and density to recognize noise
             area = cluster.getArea()
             density = cluster.getDensity()
             if (area < self.AREA_THRESHOLD or density < self.DENSITY_THRESHOLD) and \
