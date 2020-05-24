@@ -140,9 +140,11 @@ class MissionHandler:
         self.needs_new_frontier = True
         self.next_frontier_random = True
 
+        print("start find")
         self.proposeWaypoints()
 
         if self.found_waypoint:
+            print("found goal")
             target_goal = PoseStamped()
             target_goal.header.seq = 0
             target_goal.header.stamp = rospy.get_rostime()
@@ -159,6 +161,9 @@ class MissionHandler:
             self.auto_goal_pub.publish(target_goal)
 
             self.updateCurrentWaypoint()
+
+        else:
+            print("same goal found, break")
 
     def replanCallback(self, msg):
         self.mutex.acquire()
@@ -392,6 +397,7 @@ class MissionHandler:
                 self.found_waypoint = True
             
             else:
+                print("same goal, break")
                 break
 
             # # Make waypoint proposition to Controller
