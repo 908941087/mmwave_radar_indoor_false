@@ -29,6 +29,7 @@ class SubThread(threading.Thread):
             points = [[i[0], i[1]] for i in point_cloud2]
             # Generate points and marks
             if points is not None and len(points) > 0:
+                # TODO: Add grid for map-merging
                 env = self.group_tracker.getEnv(points)
                 classified_points = env.getPoints()
                 classified_marks = env.generate_markers()
