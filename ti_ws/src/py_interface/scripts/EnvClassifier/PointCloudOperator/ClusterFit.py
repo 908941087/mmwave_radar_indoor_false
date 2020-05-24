@@ -2,9 +2,6 @@ import numpy as np
 import math
 from shapely.geometry import LineString, Point, box, MultiPoint
 from shapely.ops import nearest_points
-from centerline.geometry import Centerline
-# import sys
-# sys.path.append("..")
 from ..Entity import Wall, Door
 from deprecated import deprecated
 
@@ -88,14 +85,17 @@ def wallFit(cluster):
 
 
 def boneFit(cluster):
-    line = Centerline(cluster.getConcaveHull())
-    total_dist = 0
-    for p in cluster.getPoints():
-        total_dist += line.distance(p)
+    poly = cluster.getConcaveHull()
+    perimeter = poly.length
+    area = poly.area
+    delta = perimeter ** 2 / 4.0 - 4.0 * area
+    if delta < 0:
+        raise ValueError("delta must be bigger than zero.")
+    length = perimeter / 4.0 + np.sqrt(delta) / 2.0
     return Wall(cluster.getId(),
-                cluster.getConcaveHull(),  # .simplify(tolerance=0.2, preserve_topology=False)
-                line.geoms,
-                2 * total_dist / float(cluster.getPointsCount()))
+                poly,  # .simplify(tolerance=0.2, preserve_topology=False)
+                length,  # length
+                poly.area / length)  # width
 
 
 def doorFit(w1, w2):
