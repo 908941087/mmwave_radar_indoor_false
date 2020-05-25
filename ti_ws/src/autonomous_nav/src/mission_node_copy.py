@@ -184,6 +184,8 @@ class MissionHandler:
             target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
             target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
 
+            print(target_goal.pose.position.x, target_goal.pose.position.y)
+
             self.auto_goal_pub.publish(target_goal)
 
         else:
@@ -204,6 +206,8 @@ class MissionHandler:
             print(target_goal.pose.position.x, target_goal.pose.position.y)
 
             self.auto_goal_pub.publish(target_goal)
+
+        self.mutex.release()
 
 
     def autoGoalFindCallback(self, msg):
