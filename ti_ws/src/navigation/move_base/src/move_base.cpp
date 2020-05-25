@@ -902,8 +902,9 @@ namespace move_base {
           as_->setSucceeded(move_base_msgs::MoveBaseResult(), "Goal reached.");
           std_msgs::Int8 temp ;
           temp.data = 1;
-          force_unknown_find_pub.publish(temp);
           auto_goal_pub_.publish(temp);
+
+          force_unknown_find_pub.publish(temp);
 
           return true;
         }
@@ -966,6 +967,11 @@ namespace move_base {
       //we'll try to clear out space with any user-provided recovery behaviors
       case CLEARING:
         ROS_DEBUG_NAMED("move_base","In clearing/recovery state");
+
+        std_msgs::Int8 temp ;
+        temp.data = 1;
+        invalid_path_pub.publish(temp);
+        
         //we'll invoke whatever recovery behavior we're currently on if they're enabled
         if(recovery_behavior_enabled_ && recovery_index_ < recovery_behaviors_.size()){
           ROS_DEBUG_NAMED("move_base_recovery","Executing behavior %u of %zu", recovery_index_, recovery_behaviors_.size());
@@ -984,10 +990,6 @@ namespace move_base {
           recovery_index_++;
         }
         else{
-
-          std_msgs::Int8 temp ;
-          temp.data = 1;
-          invalid_path_pub.publish(temp);
 
           ROS_DEBUG_NAMED("move_base_recovery","All recovery behaviors have failed, locking the planner and disabling it.");
           //disable the planner thread

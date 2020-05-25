@@ -217,6 +217,7 @@ class MissionHandler:
         self.next_frontier_random = True
 
         print("start find")
+        print(self.frontiers)
         self.proposeWaypoints()
 
         if self.found_waypoint:
