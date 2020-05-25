@@ -31,6 +31,7 @@
 
   <node name="potential_map" pkg="autonomous_nav" type="potential_map" output="screen"/>
   <node name="mission_handler" pkg="autonomous_nav" type="mission_node_copy.py" output="screen"/>
+  <node name="dynamic_config" pkg="autonomous_nav" type="dynamic.py" output="screen"/>
 
   <!-- Move base -->
   <arg name="custom_param_file" default="$(find turtlebot_navigation)/param/$(arg 3d_sensor)_costmap_params.yaml"/>

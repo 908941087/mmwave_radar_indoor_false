@@ -930,6 +930,11 @@ namespace move_base {
             recovery_index_ = 0;
         }
         else {
+
+          std_msgs::Int8 temp ;
+          temp.data = 1;
+          invalid_path_pub.publish(temp);
+          
           ROS_DEBUG_NAMED("move_base", "The local planner could not find a valid plan.");
           ros::Time attempt_end = last_valid_control_ + ros::Duration(controller_patience_);
 
