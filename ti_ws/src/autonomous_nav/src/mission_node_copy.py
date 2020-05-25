@@ -23,6 +23,7 @@ from threading import Thread, Lock
 
 from std_msgs.msg import Int8
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Twist
 
 def angle_wrap(ang):
     """
@@ -126,7 +127,10 @@ class MissionHandler:
         # rospy.Subscriber("/mission_replan", Bool, self.replanCallback)
         # UPDATE
         rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
+        rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
+        self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
+        self.hist_count = 1
 
         # Path planning service proxy (object connecting to service)
         # rospy.wait_for_service('/autonomous_nav/WaypointProposition')
@@ -135,12 +139,85 @@ class MissionHandler:
         # except rospy.ServiceException, e:
         #     print("Service call failed: " + str(e))
 
+    def rotateOnce(self):
+        print ('current orientation' + str(self.robot_theta))
+        control_input = Twist()
+        control_input.angular.z = 0.6
+        #rate = rospy.Rate(10) # 10hz
+        while (np.abs(self.robot_theta) < 0.5).any():
+            #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
+            # self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
+            # rospy.loginfo("driver speed : %f %f", self.vmsg.angular.z, self.vmsg.linear.x)
+            self.control_input_pub_.publish(control_input)
+
+        #rospy.sleep(1.0)
+        rotate = 0
+        while True:
+            #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
+            # self.vmsg.linear.x = min(0.2, self.vmsg.linear.x)
+            # rospy.loginfo("driver speed : %f %f", self.vmsg.angular.z, self.vmsg.linear.x)
+            self.control_input_pub_.publish(control_input)
+            #print ('current orientation' + str(self.current_orientation_))
+            #rospy.sleep(0.1)
+            if (np.abs(self.robot_theta) < 0.1).any():
+                rotate += 1
+                print ('rotate' + str(rotate))
+            if rotate == 1:
+                break
+
+    def invalidPathCallback(self, msg):
+        self.mutex.acquire()
+        self.hist_count += 1
+        print("invalid, use past")
+        print(self.waypoint_filter.wp_history)
+        if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+            target_goal = PoseStamped()
+            target_goal.header.seq = 0
+            target_goal.header.stamp = rospy.get_rostime()
+            target_goal.header.frame_id = "map"
+            target_goal.pose.position.z = 0.0
+            target_goal.pose.orientation.x = 0.0
+            target_goal.pose.orientation.y = 0.0
+            target_goal.pose.orientation.z = 0.0
+            target_goal.pose.orientation.w = 1.0
+
+            target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
+            target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
+
+            print(target_goal.pose.position.x, target_goal.pose.position.y)
+
+            self.auto_goal_pub.publish(target_goal)
+
+        else:
+            print("invalid, use random")
+            target_goal = PoseStamped()
+            target_goal.header.seq = 0
+            target_goal.header.stamp = rospy.get_rostime()
+            target_goal.header.frame_id = "map"
+            target_goal.pose.position.z = 0.0
+            target_goal.pose.orientation.x = 0.0
+            target_goal.pose.orientation.y = 0.0
+            target_goal.pose.orientation.z = 0.0
+            target_goal.pose.orientation.w = 1.0
+
+            target_goal.pose.position.x = self.robot_x + np.random.random_sample() - 0.5
+            target_goal.pose.position.y = self.robot_y + np.random.random_sample() - 0.5
+
+            print(target_goal.pose.position.x, target_goal.pose.position.y)
+
+            self.auto_goal_pub.publish(target_goal)
+
+        self.mutex.release()
+
+
     def autoGoalFindCallback(self, msg):
 
+        self.rotateOnce()
         self.needs_new_frontier = True
         self.next_frontier_random = True
 
         print("start find")
+        print(self.frontiers)
         self.proposeWaypoints()
 
         if self.found_waypoint:
@@ -162,8 +239,26 @@ class MissionHandler:
 
             self.updateCurrentWaypoint()
 
+            self.hist_count = 1
         else:
-            print("same goal found, break")
+            print("use past goal")
+            self.hist_count += 1
+            print(self.waypoint_filter.wp_history)
+            if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+                target_goal = PoseStamped()
+                target_goal.header.seq = 0
+                target_goal.header.stamp = rospy.get_rostime()
+                target_goal.header.frame_id = "map"
+                target_goal.pose.position.z = 0.0
+                target_goal.pose.orientation.x = 0.0
+                target_goal.pose.orientation.y = 0.0
+                target_goal.pose.orientation.z = 0.0
+                target_goal.pose.orientation.w = 1.0
+
+                target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
+                target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
+
+                self.auto_goal_pub.publish(target_goal)
 
     def replanCallback(self, msg):
         self.mutex.acquire()
@@ -192,7 +287,7 @@ class MissionHandler:
         self.robot_theta = angle_wrap(self.robot_theta[2])
 
         self.mutex.release()
-   
+
     # Calling callback
     def frontierCallback(self, msg):
         self.mutex.acquire()
@@ -240,25 +335,27 @@ class MissionHandler:
     def updateCurrentWaypoint(self):
         self.mutex.acquire()
 
-        if self.frontiers is None or self.current_wp is None:
-            self.mutex.release()
-            return
+        # if self.frontiers is None or self.current_wp is None:
+        #     self.mutex.release()
+        #     return
 
-        # Check if last waypoint still exists
-        for i in range(self.frontiers.shape[0]):
-            if np.abs(self.current_wp.x - self.frontiers[i, 0]) < 0.04 and \
-                    np.abs(self.current_wp.y - self.frontiers[i, 1]) < 0.04:
-                # Locked Waypoint found, checking if reached
+        # # Check if last waypoint still exists
+        # for i in range(self.frontiers.shape[0]):
+        #     if np.abs(self.current_wp.x - self.frontiers[i, 0]) < 0.04 and \
+        #             np.abs(self.current_wp.y - self.frontiers[i, 1]) < 0.04:
+        #         # Locked Waypoint found, checking if reached
 
-                if np.sqrt(np.power(self.current_wp.x - self.robot_x, 2) + \
-                        np.power(self.current_wp.y - self.robot_y, 2)) < 0.2:
-                    self.waypoint_filter.addWaypointToHistory(self.current_wp)
-                    self.pub_rviz.publish(self.waypoint_filter.getRvizMarkers())
-                    rospy.loginfo('Current waypoint reached, adding to history...')
-                    break
-                else:
-                    self.mutex.release()
-                    return
+        #         if np.sqrt(np.power(self.current_wp.x - self.robot_x, 2) + \
+        #                 np.power(self.current_wp.y - self.robot_y, 2)) < 0.2:
+        #             self.waypoint_filter.addWaypointToHistory(self.current_wp)
+        #             self.pub_rviz.publish(self.waypoint_filter.getRvizMarkers())
+        #             rospy.loginfo('Current waypoint reached, adding to history...')
+        #             break
+        #         else:
+        #             self.mutex.release()
+        #             return
+        if self.current_wp is not None:
+            self.waypoint_filter.addWaypointToHistory(self.current_wp)
 
         # Waypoint reached or dissapeared -> Put flags for recomputing
         self.fresh_frontiers = False
