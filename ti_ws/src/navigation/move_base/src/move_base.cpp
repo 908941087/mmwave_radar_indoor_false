@@ -900,11 +900,11 @@ namespace move_base {
           lock.unlock();
 
           as_->setSucceeded(move_base_msgs::MoveBaseResult(), "Goal reached.");
-          std_msgs::Int8 temp ;
-          temp.data = 1;
-          auto_goal_pub_.publish(temp);
+          std_msgs::Int8 auto_find_mess ;
+          auto_find_mess.data = 1;
+          auto_goal_pub_.publish(auto_find_mess);
 
-          force_unknown_find_pub.publish(temp);
+          force_unknown_find_pub.publish(auto_find_mess);
 
           return true;
         }
@@ -932,9 +932,9 @@ namespace move_base {
         }
         else {
 
-          std_msgs::Int8 temp ;
-          temp.data = 1;
-          invalid_path_pub.publish(temp);
+          std_msgs::Int8 invalid_mess ;
+          invalid_mess.data = 1;
+          invalid_path_pub.publish(invalid_mess);
           
           ROS_DEBUG_NAMED("move_base", "The local planner could not find a valid plan.");
           ros::Time attempt_end = last_valid_control_ + ros::Duration(controller_patience_);
@@ -968,12 +968,13 @@ namespace move_base {
       case CLEARING:
         ROS_DEBUG_NAMED("move_base","In clearing/recovery state");
 
-        std_msgs::Int8 temp ;
-        temp.data = 1;
-        invalid_path_pub.publish(temp);
-        
         //we'll invoke whatever recovery behavior we're currently on if they're enabled
         if(recovery_behavior_enabled_ && recovery_index_ < recovery_behaviors_.size()){
+
+          std_msgs::Int8 recovery_mess;
+          recovery_mess.data = 1;
+          invalid_path_pub.publish(recovery_mess);
+
           ROS_DEBUG_NAMED("move_base_recovery","Executing behavior %u of %zu", recovery_index_, recovery_behaviors_.size());
           recovery_behaviors_[recovery_index_]->runBehavior();
 
@@ -990,6 +991,10 @@ namespace move_base {
           recovery_index_++;
         }
         else{
+
+          std_msgs::Int8 recovery_mess;
+          recovery_mess.data = 1;
+          invalid_path_pub.publish(recovery_mess);
 
           ROS_DEBUG_NAMED("move_base_recovery","All recovery behaviors have failed, locking the planner and disabling it.");
           //disable the planner thread
