@@ -2,11 +2,11 @@ from enum import Enum
 from collections import OrderedDict
 from ShapeOperator.ShapeViewer import *
 from ShapeOperator.PointsGenerator import generateForPolygon
-from centerline.geometry import Centerline
-from Cluster import Cluster
+from Cluster import Cluster, ClusterType
 import rospy
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Polygon, Point
+from numpy import sqrt
 
 
 
@@ -38,9 +38,9 @@ class Entity(object):
         t_marker.text = self.getInfo()["Name"] + "\n" + "x: " + str(round(loc.x, 3)) + "\n" + "y: " + str(
             round(loc.y, 3))
         # Size
-        t_marker.scale.x = 0.3
-        t_marker.scale.y = 0.3
-        t_marker.scale.z = 0.3
+        t_marker.scale.x = 0.2
+        t_marker.scale.y = 0.2
+        t_marker.scale.z = 0.2
 
         # ADD/DELETE
         t_marker.action = Marker.MODIFY
@@ -72,28 +72,24 @@ class Entity(object):
 
 class Wall(Entity):
 
-    def __init__(self, eid, polygon, segments, width):
+    def __init__(self, eid, polygon, length, width):
         super(Wall, self).__init__(eid)
         self.enhanced = False
         self.polygon = polygon
-        self.segments = segments
+        self.length = length
         self.width = width
-        self.length = None
 
     def getInfo(self):
         loc = self.getRepresentativePoint()
         return OrderedDict([("Id", self.entity_id),
-                            ("Name", "Wall"),
+                            ("Name", "W"),
                             ("Location", [round(loc.x, 2), round(loc.y, 2)]),
                             ("Enhanced", self.enhanced),
-                            ("SegmentsCount", len(self.segments)),
                             ("Width", round(self.getWidth(), 3)),
                             ("Length", round(self.getLength(), 3))])
 
     def show(self, plt):
-        for segment in self.segments:
-            points = segment.coords
-            plt.plot([p[0] for p in points], [p[1] for p in points], 'ro-')
+        self.showShape(plt)
 
     def showShape(self, plt):
         showPolygon(self.polygon, plt)
@@ -101,21 +97,16 @@ class Wall(Entity):
     def enhance(self, cluster):
         poly = self.getPolygon().simplify(tolerance=0.2, preserve_topology=False)
         points = generateForPolygon(poly)
-        c = Cluster(self.getId(), points)
-        line = Centerline(poly)
-        total_dist = 0
-        for p in points:
-            total_dist += line.distance(p)
-        return Wall(self.getId(), poly, line.geoms, 2 * total_dist / c.getPointsCount()), c
+        c = Cluster(self.getId(), ClusterType.LASER, 2, points)
+        perimeter = poly.length
+        area = poly.area
+        length = perimeter / 4.0 + sqrt(perimeter ** 2 / 4.0 - 4 * area) / 2.0
+        return Wall(self.getId(), poly, length, area / length), c
 
     def getWidth(self):
         return self.width
 
     def getLength(self):
-        if self.length is None:
-            self.length = 0
-            for segment in self.segments:
-                self.length += segment.length
         return self.length
 
     def getPolygon(self):
@@ -158,7 +149,7 @@ class Furniture(Entity):
     def getInfo(self):
         loc = self.getRepresentativePoint()
         return OrderedDict([("Id", self.entity_id),
-                            ("Name", "Furniture"),
+                            ("Name", "F"),
                             ("Location", [round(loc.x, 2), round(loc.y, 2)]),
                             ("Enhanced", self.is_enhanced),
                             ("Type", self.type)])
@@ -198,7 +189,7 @@ class Door(Entity):
     def getInfo(self):
         loc = self.getRepresentativePoint()
         return OrderedDict([("Id", self.entity_id),
-                            ("Name", "Door"),
+                            ("Name", "GD"),
                             ("Location", [round(loc.x, 2), round(loc.y, 2)]),
                             ("Enhanced", self.is_enhanced),
                             ("Length", round(self.segment.length, 3)),
@@ -222,7 +213,7 @@ class Noise(Entity):
     def getInfo(self):
         loc = self.getRepresentativePoint()
         return OrderedDict([("Id", self.entity_id),
-                            ("Name", "Noise"),
+                            ("Name", "N"),
                             ("Location", [round(loc.x, 2), round(loc.y, 2)]),
                             ("Enhanced", self.is_enhanced),
                             ("Area", round(self.polygon.area, 3))])

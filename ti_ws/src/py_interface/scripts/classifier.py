@@ -6,6 +6,7 @@ from nav_msgs.msg import OccupancyGrid
 import sensor_msgs.point_cloud2
 from EnvClassifier import GroupingTraker
 import threading
+from datetime import datetime
 
 from visualization_msgs.msg import MarkerArray, Marker
 
@@ -84,10 +85,13 @@ def pc2_grid_sub_func():
     data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
     laser_grid = rospy.wait_for_message('/map', OccupancyGrid, timeout=None)
     point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
-    points = [[i[0], i[1]] for i in point_cloud2]
+    points = [[i[0], i[1], i[2]] for i in point_cloud2]
     # Generate points and marks
     if points is not None and len(points) > 0:
+        start = datetime.now()
         env = group_tracker.getEnv(points, laser_grid)
+        delta = datetime.now() - start
+        rospy.loginfo("Classification finished in {0} seconds.".format(delta.total_seconds()))
         classified_marks = env.generateInfoMarkers()
     else:
         rospy.loginfo("No enough points for classification")

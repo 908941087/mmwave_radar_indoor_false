@@ -7,14 +7,12 @@ class Environment(object):
         self.is_enhanced = False
         self.entity_cluster_map = {}
         self._show_noise = False
+        self.entity_count = 0
 
     def register(self, entity, cluster):
-        if cluster is None:
-            self.entity_cluster_map[entity.getId()] = [entity, None]
-        else:
-            if entity.getId() != cluster.getId():
-                raise Exception("Entity and cluster must have the same id.")
-            self.entity_cluster_map[cluster.getId()] = [entity, cluster]
+        entity.id = self.entity_count
+        self.entity_count += 1
+        self.entity_cluster_map[entity.getId()] = [entity, cluster]
 
     def getEntities(self):
         return [i[0] for i in self.entity_cluster_map.values()]
