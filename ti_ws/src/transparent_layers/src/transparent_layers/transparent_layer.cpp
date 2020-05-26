@@ -37,12 +37,6 @@ namespace transparent_layer_namespace
             ROS_INFO("Requesting the transparent obstacles...");
             obstacle_sub_ = g_nh.subscribe(obstacle_topic, 1, &TransparentLayer::handlePolygon, this);
             obstacle_received_ = false;
-
-            ros::Rate r(10);
-            while (!obstacle_received_ && g_nh.ok()) {
-                ros::spinOnce();
-                r.sleep();
-            }
         }
     }
 

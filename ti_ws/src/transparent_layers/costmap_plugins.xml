@@ -1,4 +1,4 @@
-<library path="lib/libtransparent_layer">
+<library path="lib/libtransparent_layers">
     <class type="transparent_layer_namespace::TransparentLayer" base_class_type="costmap_2d::Layer">
         <description>Layer that adds transparent obstacle on the map</description>
     </class>
