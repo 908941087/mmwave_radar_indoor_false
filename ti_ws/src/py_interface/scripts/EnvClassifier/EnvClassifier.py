@@ -2,12 +2,13 @@ from Environment import Environment
 from shapely.geometry import Polygon
 from Cluster import Cluster, ClusterType
 from shapely.ops import transform
-from Entity import Wall, Furniture, Door, Noise
+from Entity import Wall, Furniture, Door, UnfinishedEntity
 from PointCloudOperator import ClusterFit
 from centerline.exceptions import TooFewRidgesError
 from rtree import index
 from sklearn.neighbors import KDTree
 import numpy as np
+from timer import timer
 from PointCloudOperator.ClusterFit import boneFit
 
 
@@ -36,6 +37,7 @@ class EnvClassifier(object):
         self.classifySingleMCs(single_mcs, env)
         return env
 
+    @timer
     def match(self, laser_clusters, mmwave_clusters):
         """
         Match laser clusters(2D) with mmwave clusters(3D), some may have a match, some may not.
@@ -65,7 +67,7 @@ class EnvClassifier(object):
             lc_poly = lc.getConcaveHull()
             for mc_id in neighbor_mc_ids:
                 mc = mc_2d[mc_id]
-                if lc_poly.contains(mc.getCenter()):
+                if lc_poly.buffer(0.3).contains(mc.getCenter()):
                     matched_mcs.append(mc)
                     matched_mc_ids.append(mc_id)
                     continue
@@ -73,21 +75,20 @@ class EnvClassifier(object):
                 if intersection_area / mc.getArea() > 0.8:
                     matched_mcs.append(mc)
                     matched_mc_ids.append(mc_id)
-                    continue
             if len(matched_mcs) != 0:
                 lc_mc_matches.append((lc, matched_mcs))
             else:
                 single_lcs.append(lc)
-        
+
         single_mcs = [mc for mc in mc_2d.values() if mc.getId() not in matched_mc_ids]
         return single_lcs, lc_mc_matches, single_mcs
 
     def classifyOneLC(self, lc):
-        # env.register(Noise(lc.getId(), Polygon([[0, 0], [0, 1], [1, 0]])), lc)
+        # env.register(UnfinishedEntity(lc.getId(), Polygon([[0, 0], [0, 1], [1, 0]])), lc)
         # use area and points count to recognize noise
         area = lc.getArea()
         if area < self.AREA_THRESHOLD and lc.getPointsCount() < self.NOISE_POINTS_COUNT_THRESHOLD:
-            return Noise(lc.getId(), lc.getConcaveHull())
+            return UnfinishedEntity(lc.getId(), lc.getConcaveHull())
 
         # try to treat this cluster as wall, see if it fits well
         try:
@@ -126,7 +127,7 @@ class EnvClassifier(object):
             lc = match[0]
             mcs = match[1]
             lc_entity = self.classifyOneLC(lc)
-            if isinstance(lc_entity, Noise):
+            if isinstance(lc_entity, UnfinishedEntity):
                 lc_entity = Furniture(lc.getId(), lc.getConcaveHull())
             env.register(lc_entity, lc)
 

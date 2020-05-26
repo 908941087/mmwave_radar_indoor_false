@@ -1,4 +1,4 @@
-from Entity import Wall, Furniture, Door, Noise
+from Entity import Wall, Furniture, Door, UnfinishedEntity
 
 
 class Environment(object):
@@ -6,7 +6,7 @@ class Environment(object):
     def __init__(self):
         self.is_enhanced = False
         self.entity_cluster_map = {}
-        self._show_noise = False
+        self._show_unfinished = False
         self.entity_count = 0
 
     def register(self, entity, cluster):
@@ -60,7 +60,7 @@ class Environment(object):
                 c = 'grey'
             elif isinstance(entity, Furniture):
                 c = 'blue'
-            elif isinstance(entity, Noise):
+            elif isinstance(entity, UnfinishedEntity):
                 c = 'r'
             elif isinstance(entity, Door):
                 entity.show(plt)
@@ -106,7 +106,7 @@ class Environment(object):
         mark_index = 0
         pub_markers = []
         for entity in self.getEntities():
-            if not self._show_noise and isinstance(entity, Noise):
+            if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
                 continue
             marker = entity.getInfoMarker(mark_index, duration)
             if marker is not None:
@@ -118,7 +118,7 @@ class Environment(object):
         mark_index = 0
         pub_markers = []
         for entity in self.getEntities():
-            if not self._show_noise and isinstance(entity, Noise):
+            if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
                 continue
             marker = entity.getShapeMarker(mark_index, duration)
             if marker is not None:
