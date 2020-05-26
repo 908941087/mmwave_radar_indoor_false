@@ -18,7 +18,6 @@ class Dynamic_Config:
 
         self.update = False
 
-        rospy.Subscriber("/move_base_simple/failed_path", Int8, self.invalidPathCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
 

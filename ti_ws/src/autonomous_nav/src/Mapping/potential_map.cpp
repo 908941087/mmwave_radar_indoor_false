@@ -29,7 +29,7 @@ using namespace std;
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Point.h>
 
-#include "visualization_msgs/Marker.h"
+#include <visualization_msgs/Marker.h>
 
 #include <autonomous_nav/PotentialGrid.h>
 #include <autonomous_nav/PotentialPlanner.h>
@@ -151,7 +151,8 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
     }
 
     //1. INFLATE OBSTACLES
-    int inflate = 10;
+    // ROS_INFO("start cal potential_map");
+    int inflate = 8;
     deque<Pixel> inflation_queue2;
 
     for(int n = 0; n < inflate; n++){
@@ -215,6 +216,7 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
         for(int i = 0; i < projected_map.size(); i++)
             last_potential_map.data.push_back( projected_map[i][j]);
 
+    // ROS_INFO("pub potential_map");
     potential_map_pub.publish(last_potential_map);  
     
     mtx.unlock();
