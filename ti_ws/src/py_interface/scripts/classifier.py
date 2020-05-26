@@ -126,10 +126,7 @@ def pc2_grid_sub_func():
     points = [[i[0], i[1], i[2]] for i in point_cloud2]
     # Generate points and marks
     if points is not None and len(points) > 0:
-        start = datetime.now()
         env = group_tracker.getEnv(points, laser_grid)
-        delta = datetime.now() - start
-        rospy.loginfo("Classification finished in {0} seconds.".format(delta.total_seconds()))
         classified_marks = env.generateInfoMarkers()
     else:
         rospy.loginfo("No enough points for classification")

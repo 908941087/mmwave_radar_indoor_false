@@ -196,10 +196,10 @@ class Door(Entity):
                             ("State", self.state)])
 
 
-class Noise(Entity):
+class UnfinishedEntity(Entity):
 
     def __init__(self, eid, polygon):
-        super(Noise, self).__init__(eid)
+        super(UnfinishedEntity, self).__init__(eid)
         self.center = None
         self.polygon = polygon
         self.is_enhanced = False
@@ -213,7 +213,7 @@ class Noise(Entity):
     def getInfo(self):
         loc = self.getRepresentativePoint()
         return OrderedDict([("Id", self.entity_id),
-                            ("Name", "N"),
+                            ("Name", "UE"),
                             ("Location", [round(loc.x, 2), round(loc.y, 2)]),
                             ("Enhanced", self.is_enhanced),
                             ("Area", round(self.polygon.area, 3))])

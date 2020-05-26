@@ -5,6 +5,7 @@ from Environment import Environment
 from EnvClassifier import EnvClassifier
 from Cluster import Cluster, ClusterType
 from shapely.geometry import MultiPoint, Point
+from timer import timer
 
 
 class GroupingTracker:
@@ -13,6 +14,7 @@ class GroupingTracker:
         self.env = None
         self.enhanced_env = None
 
+    @timer
     def pc_group(self, laser_pc, mmwave_pc):
         laser_clusters = []
         mmwave_clusters = []
