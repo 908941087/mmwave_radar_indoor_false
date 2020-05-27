@@ -1,8 +1,8 @@
 from Environment import Environment
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 from Cluster import Cluster, ClusterType
 from shapely.ops import transform
-from Entity import Wall, Furniture, Door, UnfinishedEntity
+from Entity import Wall, Furniture, TranspanrentObstacle, UnfinishedEntity
 from PointCloudOperator import ClusterFit
 from centerline.exceptions import TooFewRidgesError
 from rtree import index
@@ -24,8 +24,10 @@ class EnvClassifier(object):
     def __init__(self):
         self.distances = {}  # cluster to cluster distance
         self._show_noise = True
+        self.mmwave_clusters = []
 
     def classify(self, laser_clusters, mmwave_clusters):
+        self.mmwave_clusters = mmwave_clusters
         env = Environment()
 
         # for lc in laser_clusters:
@@ -51,10 +53,16 @@ class EnvClassifier(object):
         for c in mmwave_clusters:
             mc_2d[c.getId()] = Cluster(c.getId(), ClusterType.MMWAVE, 2, transform(lambda x, y, z=None: (x, y), c.getPoints()))
 
-        # create rtree index using mmwave clusters for matching
-        idx = index.Index()
+        lc_2d = {lc.getId(): lc for lc in laser_clusters}
+
+        # create rtree index for mmwave clusters and laser clusters
+        mc_idx = index.Index()
         for mc in mc_2d.values():
-            idx.insert(mc.getId(), mc.getBounds())
+            mc_idx.insert(mc.getId(), mc.getBounds())
+
+        lc_idx = index.Index()
+        for lc in lc_2d.values():
+            lc_idx.insert(lc.getId(), lc.getBounds())
 
         # loop through laser clusters, seek for matching mmwave clusters
         # one laser cluster might match with multiple mmwave clusters
@@ -62,17 +70,12 @@ class EnvClassifier(object):
         lc_mc_matches = []
         matched_mc_ids = []
         for lc in laser_clusters:
-            neighbor_mc_ids = [i for i in idx.nearest(lc.getBounds(), 3)]
+            neighbor_mc_ids = [i for i in mc_idx.intersection(lc.getBounds())]
             matched_mcs = []
-            lc_poly = lc.getConcaveHull()
             for mc_id in neighbor_mc_ids:
                 mc = mc_2d[mc_id]
-                if lc_poly.buffer(0.3).contains(mc.getCenter()):
-                    matched_mcs.append(mc)
-                    matched_mc_ids.append(mc_id)
-                    continue
-                intersection_area = mc.getConcaveHull().intersection(lc.getConcaveHull()).area
-                if intersection_area / mc.getArea() > 0.8:
+                nearest_lc_id = [i for i in lc_idx.nearest(mc.getBounds(), 1)][0]
+                if nearest_lc_id == lc.getId():
                     matched_mcs.append(mc)
                     matched_mc_ids.append(mc_id)
             if len(matched_mcs) != 0:
@@ -129,6 +132,7 @@ class EnvClassifier(object):
             lc_entity = self.classifyOneLC(lc)
             if isinstance(lc_entity, UnfinishedEntity):
                 lc_entity = Furniture(lc.getId(), lc.getConcaveHull())
+            lc_entity.setHeight(self.getHeightFromMcs(mcs))
             env.register(lc_entity, lc)
 
     def classifySingleMCs(self, mcs, env):
@@ -153,6 +157,7 @@ class EnvClassifier(object):
             dist, ind = tree.query([[p.x, p.y]], k=1)
             nearest_door = possible_doors[ind[0][0]]
             if mc.getConcaveHull().contains(nearest_door.getRepresentativePoint()):
+                nearest_door.setHeight(self.getHeightFromMcs(mcs))
                 env.register(nearest_door, mc)
 
     def findPossibleDoors(self, env):
@@ -160,7 +165,7 @@ class EnvClassifier(object):
         Find possible doors in the environment. Possible doors means that there doesn't necessarily have
         to be a door exist.
         :param env: type: Environment
-        :return: list of type Door, all possible doors
+        :return: list of type TranspanrentObstacle, all possible doors
         """
         walls = [w for w in env.getEntities() if isinstance(w, Wall)]
         doors = []
@@ -192,3 +197,14 @@ class EnvClassifier(object):
                     doors.append(door)
                     max_entity_id += 1
         return doors
+
+    def getHeightFromMcs(self, mcs):
+        heights = [self.getHeightFromMc(mc) for mc in mcs]
+        return np.average(heights)
+
+    def getHeightFromMc(self, mc):
+        height = float('-inf')
+        for p in self.mmwave_clusters[mc.getId()].getPoints():
+            if p.z > height:
+                height = p.z
+        return height
