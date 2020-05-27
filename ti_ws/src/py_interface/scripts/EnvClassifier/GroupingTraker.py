@@ -39,6 +39,7 @@ class GroupingTracker:
         return laser_clusters, mmwave_clusters
 
     def getEnv(self, mmwave_pc, laser_grid):
+        # convert laser grid to laser pc
         width, height = laser_grid.info.width, laser_grid.info.height
         x_offset, y_offset = laser_grid.info.origin.position.x, laser_grid.info.origin.position.y
         resolution = laser_grid.info.resolution

@@ -2,7 +2,7 @@ import numpy as np
 import math
 from shapely.geometry import LineString, Point, box, MultiPoint
 from shapely.ops import nearest_points
-from ..Entity import Wall, Door
+from ..Entity import Wall, TranspanrentObstacle
 from deprecated import deprecated
 
 def lineFit(points):
@@ -102,4 +102,4 @@ def doorFit(w1, w2):
     if not isinstance(w1, Wall) or not isinstance(w2, Wall):
         raise TypeError("Parameters must be of type Wall.")
     ls = LineString(nearest_points(w1.getPolygon(), w2.getPolygon()))
-    return Door(0, ls)
+    return TranspanrentObstacle(0, ls)

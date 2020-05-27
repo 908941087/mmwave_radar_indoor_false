@@ -4,16 +4,20 @@ from ShapeOperator.ShapeViewer import *
 from ShapeOperator.PointsGenerator import generateForPolygon
 from Cluster import Cluster, ClusterType
 import rospy
-from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Polygon, Point
 from numpy import sqrt
-
 
 
 class Entity(object):
 
     def __init__(self, eid):
         self.entity_id = eid
+        self.height = 0
+
+    def setHeight(self, height):
+        self.height = height
+
+    def getHeight(self):
+        return self.height
 
     def show(self, plt):
         pass
@@ -24,44 +28,6 @@ class Entity(object):
     def getInfo(self):
         pass
 
-    def getInfoMarker(self, mark_index, duration):
-        t_marker = Marker()
-        t_marker.header.frame_id = "/map"
-        t_marker.header.stamp = rospy.Time.now()
-        t_marker.ns = "cluster_class"
-
-        t_marker.id = mark_index
-        # Type
-        t_marker.type = Marker.TEXT_VIEW_FACING
-        loc = self.getRepresentativePoint()
-        if loc is None: print(self.getId())
-        t_marker.text = self.getInfo()["Name"] + "\n" + "x: " + str(round(loc.x, 3)) + "\n" + "y: " + str(
-            round(loc.y, 3))
-        # Size
-        t_marker.scale.x = 0.2
-        t_marker.scale.y = 0.2
-        t_marker.scale.z = 0.2
-
-        # ADD/DELETE
-        t_marker.action = Marker.MODIFY
-
-        # Pose
-        t_marker.pose.position.x = loc.x
-        t_marker.pose.position.y = loc.y
-        t_marker.pose.position.z = 0.2
-        t_marker.pose.orientation.x = 0.0
-        t_marker.pose.orientation.y = 0.0
-        t_marker.pose.orientation.z = 0.0
-        t_marker.pose.orientation.w = 1.0
-
-        # Color
-        t_marker.color.r = 0.0
-        t_marker.color.g = 1.0
-        t_marker.color.b = 0.5
-        t_marker.color.a = 1.0
-
-        t_marker.lifetime = rospy.Duration(duration)
-        return t_marker
 
     def getId(self):
         return self.entity_id
@@ -112,13 +78,6 @@ class Wall(Entity):
     def getPolygon(self):
         return self.polygon
 
-    def getShapeMarker(self, mark_index, duration):
-        p_marker = Polygon()
-        vertices = self.polygon.coords
-        for v in vertices:
-            p_marker.points.append(Point(v[0], v[1]))
-        return p_marker
-
     def getRepresentativePoint(self):
         return self.polygon.representative_point()
 
@@ -160,10 +119,10 @@ class DoorState(Enum):
     CLOSED = 1
 
 
-class Door(Entity):
+class TranspanrentObstacle(Entity):
 
     def __init__(self, eid, segment):
-        super(Door, self).__init__(eid)
+        super(TranspanrentObstacle, self).__init__(eid)
         self.state = DoorState.CLOSED
         self.is_enhanced = False
         self.segment = segment
@@ -182,6 +141,9 @@ class Door(Entity):
 
     def show(self, plt):
         self.showShape(plt)
+
+    def getSegment(self):
+        return self.segment
 
     def showShape(self, plt):
         showLineString(self.segment, plt, 'go-')

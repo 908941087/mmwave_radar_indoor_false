@@ -2,6 +2,7 @@ import rospy
 import functools
 from datetime import datetime
 
+
 def timer(func):
     """Print the runtime of the decorated function"""
     @functools.wraps(func)
