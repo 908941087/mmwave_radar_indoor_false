@@ -24,6 +24,7 @@ from threading import Thread, Lock
 from std_msgs.msg import Int8
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
+from kobuki_msgs.msg import BumperEvent
 
 def angle_wrap(ang):
     """
@@ -131,6 +132,9 @@ class MissionHandler:
         self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
         self.hist_count = 1
+        self.tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
+        self.force = True
+        rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
 
         # Path planning service proxy (object connecting to service)
         # rospy.wait_for_service('/autonomous_nav/WaypointProposition')
@@ -189,7 +193,18 @@ class MissionHandler:
             self.auto_goal_pub.publish(target_goal)
 
         else:
-            print("invalid, use random")
+            print("invalid, use false")
+            self.force = True
+            command = Twist()
+            rate = rospy.Rate(10)
+            command.linear.x = 0.1
+            command.angular.z = 0
+            # i = 0
+            while self.force:
+                self.tel_pub.publish(command)
+                # i += 1
+                rate.sleep()
+            print("use random")
             target_goal = PoseStamped()
             target_goal.header.seq = 0
             target_goal.header.stamp = rospy.get_rostime()
@@ -209,12 +224,38 @@ class MissionHandler:
 
         self.mutex.release()
 
+    def bumperCallback(self, msg):
+        # self.mutex.acquire()
+        self.force = False
+        command = Twist()
+        rate = rospy.Rate(10)
+        command.linear.x = -0.3
+        if msg.bumper == BumperEvent.LEFT:
+            command.angular.z = -0.4
+            for i in range(0, 10):
+                self.tel_pub.publish(command)
+                rate.sleep()
+        elif msg.bumper == BumperEvent.CENTER:
+            command.angular.z = 0.8
+            for i in range(0, 10):
+                self.tel_pub.publish(command)
+                rate.sleep()
+        else:
+            command.angular.z = 0.4
+            for i in range(0, 10):
+                self.tel_pub.publish(command)
+                rate.sleep()
+        self.force = True
+        # self.mutex.release()
+        # self.invalidPathCallback("1")
+
 
     def autoGoalFindCallback(self, msg):
 
         self.rotateOnce()
         self.needs_new_frontier = True
         self.next_frontier_random = True
+        self.force = False
 
         print("start find")
         print(self.frontiers)
@@ -329,6 +370,8 @@ class MissionHandler:
 
         self.fresh_frontiers = True
         self.showFrontiersRviz()
+
+        # rospy.sleep(1)
 
         self.mutex.release()
 
@@ -588,3 +631,4 @@ if __name__ == '__main__':
             
     # except rospy.ROSInterruptException:
     #     pass
+
