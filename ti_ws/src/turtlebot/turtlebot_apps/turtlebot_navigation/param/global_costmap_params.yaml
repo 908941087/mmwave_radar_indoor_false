@@ -12,5 +12,7 @@ global_costmap:
    plugins:
      - {name: static_layer,            type: "costmap_2d::StaticLayer"}
      - {name: obstacle_layer,          type: "costmap_2d::VoxelLayer"}
-     - {name: transparent_layer,          type: "transparent_layer_namespace::TransparentLayer"}
      - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+
+#  - {name: transparent_layer,          type: "transparent_layer_namespace::TransparentLayer"}

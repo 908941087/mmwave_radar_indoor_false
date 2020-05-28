@@ -26,18 +26,15 @@ namespace transparent_layer_namespace
         default_value_ = NO_INFORMATION;
         matchSize();
 
+        // we'll subscribe to the latched topic that the map server uses
+        ROS_INFO("Requesting the transparent obstacles...");
+        obstacle_sub_ = g_nh.subscribe(obstacle_topic, 1, &TransparentLayer::handlePolygon, this);
+
         dsrv_ = new dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>(nh);
         dynamic_reconfigure::Server<costmap_2d::GenericPluginConfig>::CallbackType cb = boost::bind(
                 &TransparentLayer::reconfigureCB, this, _1, _2);
         dsrv_->setCallback(cb);
 
-        // Only resubscribe if topic has changed
-        if (obstacle_sub_.getTopic() != ros::names::resolve(obstacle_topic)) {
-            // we'll subscribe to the latched topic that the map server uses
-            ROS_INFO("Requesting the transparent obstacles...");
-            obstacle_sub_ = g_nh.subscribe(obstacle_topic, 1, &TransparentLayer::handlePolygon, this);
-            obstacle_received_ = false;
-        }
     }
 
     void TransparentLayer::matchSize()
@@ -61,6 +58,7 @@ namespace transparent_layer_namespace
 
     void TransparentLayer::handlePolygon(const geometry_msgs::PolygonConstPtr &polygonPtr)
     {
+        ROS_INFO("Handling the transparent obstacles...");
         if(polygonPtr == NULL || (*polygonPtr).points.size() <= 1) return;
         mark_lines.clear();
         for(int i = 0; i < (*polygonPtr).points.size(); ++i) {
