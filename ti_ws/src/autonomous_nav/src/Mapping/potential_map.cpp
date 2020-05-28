@@ -151,7 +151,7 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
     }
 
     //1. INFLATE OBSTACLES
-    int inflate = 10;
+    int inflate = 5;
     deque<Pixel> inflation_queue2;
 
     for(int n = 0; n < inflate; n++){

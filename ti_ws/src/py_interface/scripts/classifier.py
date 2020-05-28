@@ -6,8 +6,10 @@ from nav_msgs.msg import OccupancyGrid
 import sensor_msgs.point_cloud2
 from EnvClassifier import GroupingTraker
 import threading
+from datetime import datetime
 
 from visualization_msgs.msg import MarkerArray, Marker
+from geometry_msgs.msg import Polygon
 
 
 class PubBlock:
@@ -57,14 +59,31 @@ class SubThread(threading.Thread):
             rospy.sleep(self.duration)
 
 
+class Distributer:
+    def __init__(self, publisher, call_back):
+        self.publisher = publisher
+        self.call_back = call_back
+
+    def deal_and_pub(self, data):
+        res = self.call_back(data)
+        if isinstance(res, MarkerArray):
+            res_delete = []
+            for mark in res:
+                mark.action = Marker.DELETE
+            self.publisher.publish(res_delete)
+        self.publisher.publish(res)
+
 class PubThread(threading.Thread):
-    def __init__(self, thread_name, publisher, pub_event, pub_rate=3):
+    def __init__(self, thread_name, pub_event, pub_rate=3):
         super(PubThread, self).__init__(name=thread_name)
         self.thread_name = thread_name
         self.data = None
-        self.publisher = publisher
         self.pub_event = pub_event
         self.pub_rate = pub_rate
+        self.distributers = []
+
+    def register_distributer(self, distributer):
+        self.distributers.append(distributer)
 
     def run(self):
         rospy.loginfo("Start pub thread: " + self.thread_name)
@@ -72,7 +91,8 @@ class PubThread(threading.Thread):
             while self.pub_event.is_set():
                 if self.data is not None:
                     # rospy.loginfo("Pub " + self.thread_name)
-                    self.publisher.publish(self.data)
+                    for distributer in self.distributers:
+                        distributer.deal_and_pub(self.data)
                     rospy.sleep(0.2)
                 else:
                     rospy.loginfo("Nothing to Pub " + self.thread_name)
@@ -84,26 +104,43 @@ def pc2_grid_sub_func():
     data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
     laser_grid = rospy.wait_for_message('/map', OccupancyGrid, timeout=None)
     point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
-    points = [[i[0], i[1]] for i in point_cloud2]
+    points = [[i[0], i[1], i[2]] for i in point_cloud2]
     # Generate points and marks
     if points is not None and len(points) > 0:
         env = group_tracker.getEnv(points, laser_grid)
-        classified_marks = env.generateInfoMarkers()
     else:
         rospy.loginfo("No enough points for classification")
         return None
     # Generate markers
-    return classified_marks
+    return env
 
+def get_marker_array_callback(data):
+    return data.generateInfoMarkers()
+
+def get_polygon_array_callback(data):
+    return data.generateShapeMarkers()
+
+def get_transparent_obstacle_callback(data):
+    return data.generateTransparentObstacleMarkers()
 
 if __name__ == '__main__':
     # Pub components
     marker_array_pub = rospy.Publisher("/class_marker", MarkerArray, queue_size=1)
-    marker_array_pub_event = threading.Event()
-    marker_array_pub_thread = PubThread("PubMarkerArray", marker_array_pub, marker_array_pub_event)
-    marker_pub_block = PubBlock(marker_array_pub_thread, marker_array_pub_event, pc2_grid_sub_func)
+    polygon_array_pub = rospy.Publisher("/polygon_marker", MarkerArray, queue_size=1)
+    transparent_obstacle_pub = rospy.Publisher("/transparent_obstacle", Polygon, queue_size=1)
 
-    pc2_sub_thread = SubThread("SubPC2", duration=2.0)
+    marker_distributer = Distributer(marker_array_pub, get_marker_array_callback)
+    polygon_distributer = Distributer(polygon_array_pub, get_polygon_array_callback)
+    transparent_obstacle_distributer = Distributer(transparent_obstacle_pub, get_transparent_obstacle_callback)
+
+    pub_event = threading.Event()
+    pub_thread = PubThread("PubMarkerArray", pub_event)
+    pub_thread.register_distributer(marker_distributer)
+    pub_thread.register_distributer(polygon_distributer)
+    pub_thread.register_distributer(transparent_obstacle_distributer)
+    marker_pub_block = PubBlock(pub_thread, pub_event, pc2_grid_sub_func)
+
+    pc2_sub_thread = SubThread("SubPC2", duration=4.0)
     pc2_sub_thread.register_thread_CB(marker_pub_block)
     try:
         rospy.init_node('map_classifier', anonymous=True)

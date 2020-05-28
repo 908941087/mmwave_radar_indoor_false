@@ -1,20 +1,21 @@
-from Entity import Wall, Furniture, Door, Noise
-
+from Entity import Wall, Furniture, TranspanrentObstacle, UnfinishedEntity
+from MarkerGenerator import MarkerGenerator
+from geometry_msgs import msg
+from shapely.geometry import MultiPolygon, Polygon
 
 class Environment(object):
 
     def __init__(self):
         self.is_enhanced = False
         self.entity_cluster_map = {}
-        self._show_noise = False
+        self._show_unfinished = True
+        self.entity_count = 0
+        self.marker_generator = MarkerGenerator()
 
     def register(self, entity, cluster):
-        if cluster is None:
-            self.entity_cluster_map[entity.getId()] = [entity, None]
-        else:
-            if entity.getId() != cluster.getId():
-                raise Exception("Entity and cluster must have the same id.")
-            self.entity_cluster_map[cluster.getId()] = [entity, cluster]
+        entity.id = self.entity_count
+        self.entity_count += 1
+        self.entity_cluster_map[entity.getId()] = [entity, cluster]
 
     def getEntities(self):
         return [i[0] for i in self.entity_cluster_map.values()]
@@ -62,9 +63,9 @@ class Environment(object):
                 c = 'grey'
             elif isinstance(entity, Furniture):
                 c = 'blue'
-            elif isinstance(entity, Noise):
+            elif isinstance(entity, UnfinishedEntity):
                 c = 'r'
-            elif isinstance(entity, Door):
+            elif isinstance(entity, TranspanrentObstacle):
                 entity.show(plt)
                 continue
             cluster.show(plt, c)
@@ -104,26 +105,44 @@ class Environment(object):
     def __str__(self):
         return str(len(self.entity_cluster_map)) + " entities and clusters."
 
-    def generateInfoMarkers(self, duration=5.0):
-        mark_index = 0
+    def generateInfoMarkers(self):
         pub_markers = []
         for entity in self.getEntities():
-            if not self._show_noise and isinstance(entity, Noise):
+            if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
                 continue
-            marker = entity.getInfoMarker(mark_index, duration)
+            marker = self.marker_generator.generate_entity_info_marker(entity.getInfo())
             if marker is not None:
                 pub_markers.append(marker)
-                mark_index += 1
         return pub_markers
 
-    def generateShapeMarkers(self, duration=5.0):
+    def generateShapeMarkers(self):
         mark_index = 0
         pub_markers = []
         for entity in self.getEntities():
-            if not self._show_noise and isinstance(entity, Noise):
+            if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
                 continue
-            marker = entity.getShapeMarker(mark_index, duration)
-            if marker is not None:
-                pub_markers.append(marker)
-                mark_index += 1
+            if hasattr(entity, "getPolygon"):
+                poly = entity.getPolygon().simplify(tolerance=0.1, preserve_topology=False)
+                if isinstance(poly, MultiPolygon):
+                    for p in list(poly):
+                        if len(p.exterior.coords) > 0:
+                            marker = self.marker_generator.generate_obstacle_bbox(p.exterior.coords, entity.getHeight())
+                            pub_markers.append(marker)
+                            mark_index += 1
+                elif isinstance(poly, Polygon):
+                    try:
+                        marker = self.marker_generator.generate_obstacle_bbox(poly.exterior.coords, entity.getHeight())
+                        pub_markers.append(marker)
+                        mark_index += 1
+                    except IndexError:
+                        print("Encountered empty polygon.")
+                else:
+                    print(type(poly))
         return pub_markers
+
+    def generateTransparentObstacleMarkers(self):
+        poly = msg.Polygon()
+        transparent_obstacles = [e for e in self.getEntities() if isinstance(e, TranspanrentObstacle)]
+        for to in transparent_obstacles:
+            poly.points.extend(to.getSegment().coords)
+        return poly
