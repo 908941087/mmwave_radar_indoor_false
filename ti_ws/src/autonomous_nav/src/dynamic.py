@@ -37,6 +37,12 @@ class Dynamic_Config:
             print("global:")
             print(config_global)
 
+            client_auto = dynamic_reconfigure.client.Client("/potential_map/autoConfig")
+            params_auto = { 'inflation_radius' : '4' }
+            config_auto = client_auto.update_configuration(params_auto)
+            print("auto:")
+            print(config_auto)
+
         self.update = True
 
 
@@ -53,6 +59,12 @@ class Dynamic_Config:
             config_global = client_global.update_configuration(params_global)
             print("global:")
             print(config_global)
+
+            client_auto = dynamic_reconfigure.client.Client("/potential_map/autoConfig")
+            params_auto = { 'inflation_radius' : '8' }
+            config_auto = client_auto.update_configuration(params_auto)
+            print("auto:")
+            print(config_auto)
 
         self.update = False
 

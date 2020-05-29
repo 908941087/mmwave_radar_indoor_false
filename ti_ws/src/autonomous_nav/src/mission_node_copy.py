@@ -135,6 +135,10 @@ class MissionHandler:
         self.tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
         self.force = True
         rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
+        self.start_x = 0.0
+        self.start_y = 0.0
+        self.started = False
+        self.returned = False
 
         # Path planning service proxy (object connecting to service)
         # rospy.wait_for_service('/autonomous_nav/WaypointProposition')
@@ -146,7 +150,7 @@ class MissionHandler:
     def rotateOnce(self):
         print ('current orientation' + str(self.robot_theta))
         control_input = Twist()
-        control_input.angular.z = 0.6
+        control_input.angular.z = 0.3
         #rate = rospy.Rate(10) # 10hz
         while (np.abs(self.robot_theta) < 0.5).any():
             #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
@@ -174,17 +178,19 @@ class MissionHandler:
         self.hist_count += 1
         print("invalid, use past")
         print(self.waypoint_filter.wp_history)
-        if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
-            target_goal = PoseStamped()
-            target_goal.header.seq = 0
-            target_goal.header.stamp = rospy.get_rostime()
-            target_goal.header.frame_id = "map"
-            target_goal.pose.position.z = 0.0
-            target_goal.pose.orientation.x = 0.0
-            target_goal.pose.orientation.y = 0.0
-            target_goal.pose.orientation.z = 0.0
-            target_goal.pose.orientation.w = 1.0
 
+        target_goal = PoseStamped()
+        target_goal.header.seq = 0
+        target_goal.header.stamp = rospy.get_rostime()
+        target_goal.header.frame_id = "map"
+        target_goal.pose.position.z = 0.0
+        target_goal.pose.orientation.x = 0.0
+        target_goal.pose.orientation.y = 0.0
+        target_goal.pose.orientation.z = 0.0
+        target_goal.pose.orientation.w = 1.0
+
+        if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+            
             target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
             target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
 
@@ -204,19 +210,11 @@ class MissionHandler:
                 self.tel_pub.publish(command)
                 # i += 1
                 rate.sleep()
-            print("use random")
-            target_goal = PoseStamped()
-            target_goal.header.seq = 0
-            target_goal.header.stamp = rospy.get_rostime()
-            target_goal.header.frame_id = "map"
-            target_goal.pose.position.z = 0.0
-            target_goal.pose.orientation.x = 0.0
-            target_goal.pose.orientation.y = 0.0
-            target_goal.pose.orientation.z = 0.0
-            target_goal.pose.orientation.w = 1.0
+            print("back safety dis")
+            safety_dis = 0.2
 
-            target_goal.pose.position.x = self.robot_x + np.random.random_sample() - 0.5
-            target_goal.pose.position.y = self.robot_y + np.random.random_sample() - 0.5
+            target_goal.pose.position.x = self.robot_x - math.cos(self.robot_theta) * safety_dis
+            target_goal.pose.position.y = self.robot_y - math.sin(self.robot_theta) * safety_dis
 
             print(target_goal.pose.position.x, target_goal.pose.position.y)
 
@@ -229,14 +227,14 @@ class MissionHandler:
         self.force = False
         command = Twist()
         rate = rospy.Rate(10)
-        command.linear.x = -0.3
+        command.linear.x = -0.1
         if msg.bumper == BumperEvent.LEFT:
             command.angular.z = -0.4
             for i in range(0, 10):
                 self.tel_pub.publish(command)
                 rate.sleep()
         elif msg.bumper == BumperEvent.CENTER:
-            command.angular.z = 0.8
+            command.angular.z = 0
             for i in range(0, 10):
                 self.tel_pub.publish(command)
                 rate.sleep()
@@ -246,6 +244,7 @@ class MissionHandler:
                 self.tel_pub.publish(command)
                 rate.sleep()
         self.force = True
+        self.rotateOnce()
         # self.mutex.release()
         # self.invalidPathCallback("1")
 
@@ -261,18 +260,19 @@ class MissionHandler:
         print(self.frontiers)
         self.proposeWaypoints()
 
+        target_goal = PoseStamped()
+        target_goal.header.seq = 0
+        target_goal.header.stamp = rospy.get_rostime()
+        target_goal.header.frame_id = "map"
+        target_goal.pose.position.z = 0.0
+        target_goal.pose.orientation.x = 0.0
+        target_goal.pose.orientation.y = 0.0
+        target_goal.pose.orientation.z = 0.0
+        target_goal.pose.orientation.w = 1.0
+
         if self.found_waypoint:
             print("found goal")
-            target_goal = PoseStamped()
-            target_goal.header.seq = 0
-            target_goal.header.stamp = rospy.get_rostime()
-            target_goal.header.frame_id = "map"
-            target_goal.pose.position.z = 0.0
-            target_goal.pose.orientation.x = 0.0
-            target_goal.pose.orientation.y = 0.0
-            target_goal.pose.orientation.z = 0.0
-            target_goal.pose.orientation.w = 1.0
-
+            
             target_goal.pose.position.x = self.auto_goal.x
             target_goal.pose.position.y = self.auto_goal.y
 
@@ -286,20 +286,21 @@ class MissionHandler:
             self.hist_count += 1
             print(self.waypoint_filter.wp_history)
             if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
-                target_goal = PoseStamped()
-                target_goal.header.seq = 0
-                target_goal.header.stamp = rospy.get_rostime()
-                target_goal.header.frame_id = "map"
-                target_goal.pose.position.z = 0.0
-                target_goal.pose.orientation.x = 0.0
-                target_goal.pose.orientation.y = 0.0
-                target_goal.pose.orientation.z = 0.0
-                target_goal.pose.orientation.w = 1.0
-
                 target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
                 target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
 
                 self.auto_goal_pub.publish(target_goal)
+            else:
+                if self.returned is False:
+                    target_goal.pose.position.x = self.start_x
+                    target_goal.pose.position.y = self.start_y
+
+                    self.auto_goal_pub.publish(target_goal)
+                    self.returned = True
+                    print("return phase")
+                else:
+                    print("returned, auto navi ended")
+                
 
     def replanCallback(self, msg):
         self.mutex.acquire()
@@ -326,6 +327,14 @@ class MissionHandler:
 
         self.robot_theta = euler_from_quaternion(quaternion)
         self.robot_theta = angle_wrap(self.robot_theta[2])
+
+        if self.started is False:
+            self.start_x = self.robot_x
+            self.start_y = self.robot_y
+            print("start: " + str(self.start_x) + "," + str(self.start_y))
+            self.started = True
+
+        # print(self.robot_theta)
 
         self.mutex.release()
 
@@ -631,4 +640,3 @@ if __name__ == '__main__':
             
     # except rospy.ROSInterruptException:
     #     pass
-

@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   tf
   roslib
+  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -103,6 +104,10 @@ generate_messages(
 #   cfg/DynReconf2.cfg
 # )
 
+generate_dynamic_reconfigure_options(
+  cfg/autonomous_nav.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -165,7 +170,7 @@ target_link_libraries(potential_map
     ${catkin_LIBRARIES} 
 )
 
-
+add_dependencies(potential_map autonomous_nav_gencfg)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

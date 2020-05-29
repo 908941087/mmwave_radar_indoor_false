@@ -29,11 +29,14 @@ using namespace std;
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Point.h>
 
-#include "visualization_msgs/Marker.h"
+#include <visualization_msgs/Marker.h>
 
 #include <autonomous_nav/PotentialGrid.h>
 #include <autonomous_nav/PotentialPlanner.h>
 #include <autonomous_nav/CollisionChecker.h>
+
+#include <dynamic_reconfigure/server.h>
+#include <autonomous_nav/AutoConfig.h>
 
 
 struct Pixel{
@@ -54,6 +57,8 @@ public:
                     autonomous_nav::PotentialPlanner::Response& response);
     bool checkIfCollisionFree(autonomous_nav::CollisionChecker::Request& request, 
                               autonomous_nav::CollisionChecker::Response& response);
+
+    void dynamicCallback(autonomous_nav::AutoConfig &config, uint32_t level);
 
 private:
     boost::mutex mtx;
@@ -82,11 +87,16 @@ private:
     //Auxiliar functions
     bool isWalkable(struct Pixel start, struct Pixel end);
     void publishRvizPath(const autonomous_nav::PotentialPlanner::Response& response);
+
+    //Dynamic Reconfigure
+    dynamic_reconfigure::Server<autonomous_nav::AutoConfig> *dsrv_;
+    int inflation_radius;
 };
 
 PotentialMapMaker::PotentialMapMaker(){
     //Initalize some variables
     robot_x = 0; robot_y = 0;
+    inflation_radius = 8;
     last_potential_map = autonomous_nav::PotentialGrid();
 
     //Node I/O
@@ -103,6 +113,18 @@ PotentialMapMaker::PotentialMapMaker(){
 
     //Collision checking
     collision_srv = node_handle.advertiseService("/autonomous_nav/CollisionChecker", &PotentialMapMaker::checkIfCollisionFree, this);
+
+    dynamic_reconfigure::Server<autonomous_nav::AutoConfig>::CallbackType cb = boost::bind(
+        &PotentialMapMaker::dynamicCallback, this, _1, _2);
+
+    if (dsrv_ != NULL){
+      dsrv_->clearCallback();
+      dsrv_->setCallback(cb);
+    } 
+    else {
+      dsrv_ = new dynamic_reconfigure::Server<autonomous_nav::AutoConfig>(ros::NodeHandle("~/autoConfig"));
+      dsrv_->setCallback(cb);
+    }
 }
 
 void PotentialMapMaker::odometryCallback(const nav_msgs::Odometry& msg){
@@ -112,6 +134,11 @@ void PotentialMapMaker::odometryCallback(const nav_msgs::Odometry& msg){
     robot_y = msg.pose.pose.position.y;
 
     mtx.unlock();
+}
+
+void PotentialMapMaker::dynamicCallback(autonomous_nav::AutoConfig &config, uint32_t level) {
+    ROS_INFO("dynamicCallback");
+    inflation_radius = config.inflation_radius;
 }
 
 //#####################################################################
@@ -151,7 +178,8 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
     }
 
     //1. INFLATE OBSTACLES
-    int inflate = 5;
+    // ROS_INFO("start cal potential_map");
+    int inflate = inflation_radius;
     deque<Pixel> inflation_queue2;
 
     for(int n = 0; n < inflate; n++){
@@ -215,6 +243,7 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
         for(int i = 0; i < projected_map.size(); i++)
             last_potential_map.data.push_back( projected_map[i][j]);
 
+    // ROS_INFO("pub potential_map");
     potential_map_pub.publish(last_potential_map);  
     
     mtx.unlock();
