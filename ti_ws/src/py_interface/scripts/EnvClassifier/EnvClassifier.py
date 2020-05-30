@@ -4,7 +4,6 @@ from Cluster import Cluster, ClusterType
 from shapely.ops import transform
 from Entity import Wall, Furniture, TranspanrentObstacle, UnfinishedEntity
 from PointCloudOperator import ClusterFit
-from centerline.exceptions import TooFewRidgesError
 from rtree import index
 from sklearn.neighbors import KDTree
 import numpy as np
@@ -148,6 +147,8 @@ class EnvClassifier(object):
 
         # create KDTree using door centers
         door_centers = [[d.getRepresentativePoint().x, d.getRepresentativePoint().y] for d in possible_doors]
+        if len(door_centers) == 0:
+            return None
         door_centers = np.array(door_centers).reshape(-1, 2)
         tree = KDTree(door_centers, leaf_size=2)
 
