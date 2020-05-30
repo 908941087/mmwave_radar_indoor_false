@@ -155,8 +155,8 @@ add_definitions(${EIGEN_DEFINITIONS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fext-numeric-literals")
 
-add_executable(laserscan_to_pointcloud src/Mapping/laserscan_to_pointcloud.cpp)
-target_link_libraries(laserscan_to_pointcloud ${catkin_LIBRARIES} ${Eigen_LIBRARIES} )
+# add_executable(laserscan_to_pointcloud src/Mapping/laserscan_to_pointcloud.cpp)
+# target_link_libraries(laserscan_to_pointcloud ${catkin_LIBRARIES} ${Eigen_LIBRARIES} )
 
 add_executable(potential_map src/Mapping/potential_map.cpp)
 
