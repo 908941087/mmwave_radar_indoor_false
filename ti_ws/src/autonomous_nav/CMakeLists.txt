@@ -104,10 +104,6 @@ generate_messages(
 #   cfg/DynReconf2.cfg
 # )
 
-generate_dynamic_reconfigure_options(
-  cfg/autonomous_nav.cfg
-)
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -169,8 +165,6 @@ add_executable(potential_map src/Mapping/potential_map.cpp)
 target_link_libraries(potential_map 
     ${catkin_LIBRARIES} 
 )
-
-add_dependencies(potential_map autonomous_nav_gencfg)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
