@@ -18,7 +18,6 @@ class Dynamic_Config:
 
         self.update = False
 
-        rospy.Subscriber("/move_base_simple/failed_path", Int8, self.invalidPathCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
 
@@ -37,6 +36,12 @@ class Dynamic_Config:
             print("global:")
             print(config_global)
 
+            client_auto = dynamic_reconfigure.client.Client("/potential_map/autoConfig")
+            params_auto = { 'inflation_radius' : '4' }
+            config_auto = client_auto.update_configuration(params_auto)
+            print("auto:")
+            print(config_auto)
+
         self.update = True
 
 
@@ -53,6 +58,12 @@ class Dynamic_Config:
             config_global = client_global.update_configuration(params_global)
             print("global:")
             print(config_global)
+
+            client_auto = dynamic_reconfigure.client.Client("/potential_map/autoConfig")
+            params_auto = { 'inflation_radius' : '8' }
+            config_auto = client_auto.update_configuration(params_auto)
+            print("auto:")
+            print(config_auto)
 
         self.update = False
 
