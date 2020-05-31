@@ -138,8 +138,9 @@ class MissionHandler:
         rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
         self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
-       
+        
         self.tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
+        
 
         # Path planning service proxy (object connecting to service)
         # rospy.wait_for_service('/autonomous_nav/WaypointProposition')
@@ -206,13 +207,13 @@ class MissionHandler:
             rate = rospy.Rate(10)
             command.linear.x = 0.1
             command.angular.z = 0
-            # i = 0
-            while self.force:
+            i = 0
+            while self.force and i < 100:
                 self.tel_pub.publish(command)
-                # i += 1
+                i += 1
                 rate.sleep()
             print("back safety dis")
-            safety_dis = 0.2
+            safety_dis = 0.1
 
             target_goal.pose.position.x = self.robot_x - math.cos(self.robot_theta) * safety_dis
             target_goal.pose.position.y = self.robot_y - math.sin(self.robot_theta) * safety_dis
@@ -282,6 +283,7 @@ class MissionHandler:
             self.updateCurrentWaypoint()
 
             self.hist_count = 1
+            self.returned = False
         else:
             print("use past goal")
             self.hist_count += 1
@@ -336,6 +338,7 @@ class MissionHandler:
             self.started = True
 
         # print(self.robot_theta)
+        # print(self.robot_x, self.robot_y)
 
         self.mutex.release()
 
