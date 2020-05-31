@@ -118,6 +118,12 @@ class MissionHandler:
         # UPDATE
         self.auto_goal = None
         self.found_waypoint = False
+        self.hist_count = 1
+        self.force = True
+        self.start_x = 0.0
+        self.start_y = 0.0
+        self.started = False
+        self.returned = False
 
         # Mission Handler Publisher
         self.pub_rviz = rospy.Publisher("/mission_visualize", Marker, queue_size=10)
@@ -129,16 +135,11 @@ class MissionHandler:
         # UPDATE
         rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
+        rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
         self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
-        self.hist_count = 1
+       
         self.tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
-        self.force = True
-        rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
-        self.start_x = 0.0
-        self.start_y = 0.0
-        self.started = False
-        self.returned = False
 
         # Path planning service proxy (object connecting to service)
         # rospy.wait_for_service('/autonomous_nav/WaypointProposition')
