@@ -139,7 +139,7 @@ class MissionHandler:
         self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 10)
         
-        self.tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
+        # self.tel_pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, queue_size=10)
         
 
         # Path planning service proxy (object connecting to service)
@@ -209,7 +209,7 @@ class MissionHandler:
             command.angular.z = 0
             i = 0
             while self.force and i < 100:
-                self.tel_pub.publish(command)
+                self.control_input_pub_.publish(command)
                 i += 1
                 rate.sleep()
             print("back safety dis")
@@ -227,25 +227,25 @@ class MissionHandler:
     def bumperCallback(self, msg):
         # self.mutex.acquire()
         self.force = False
-        command = Twist()
-        rate = rospy.Rate(10)
-        command.linear.x = -0.1
-        if msg.bumper == BumperEvent.LEFT:
-            command.angular.z = -0.4
-            for i in range(0, 10):
-                self.tel_pub.publish(command)
-                rate.sleep()
-        elif msg.bumper == BumperEvent.CENTER:
-            command.angular.z = 0
-            for i in range(0, 10):
-                self.tel_pub.publish(command)
-                rate.sleep()
-        else:
-            command.angular.z = 0.4
-            for i in range(0, 10):
-                self.tel_pub.publish(command)
-                rate.sleep()
-        self.force = True
+        # command = Twist()
+        # rate = rospy.Rate(10)
+        # command.linear.x = -0.1
+        # if msg.bumper == BumperEvent.LEFT:
+        #     command.angular.z = -0.4
+        #     for i in range(0, 10):
+        #         self.control_input_pub_.publish(command)
+        #         rate.sleep()
+        # elif msg.bumper == BumperEvent.CENTER:
+        #     command.angular.z = 0
+        #     for i in range(0, 10):
+        #         self.control_input_pub_.publish(command)
+        #         rate.sleep()
+        # else:
+        #     command.angular.z = 0.4
+        #     for i in range(0, 10):
+        #         self.control_input_pub_.publish(command)
+        #         rate.sleep()
+        # self.force = True
         self.rotateOnce()
         # self.mutex.release()
         # self.invalidPathCallback("1")

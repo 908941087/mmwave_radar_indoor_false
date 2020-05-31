@@ -93,7 +93,7 @@ PotentialMapMaker::PotentialMapMaker(){
     robot_pos_sub = node_handle.subscribe("/odom", 10, &PotentialMapMaker::odometryCallback, this);
     
     //Potential Map Making
-    projected_map_sub = node_handle.subscribe("/map", 1, &PotentialMapMaker::projectedMapCallback, this);
+    projected_map_sub = node_handle.subscribe("/polygon_map", 1, &PotentialMapMaker::projectedMapCallback, this);
     // projected_map_sub = node_handle.subscribe("/projected_map", 1, &PotentialMapMaker::projectedMapCallback, this);
     potential_map_pub = node_handle.advertise<autonomous_nav::PotentialGrid>("potential_map", 1);
 
