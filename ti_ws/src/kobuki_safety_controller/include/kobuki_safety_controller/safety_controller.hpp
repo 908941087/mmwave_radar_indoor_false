@@ -314,7 +314,7 @@ void SafetyController::spin()
     else if (bumper_center_pressed_ || cliff_center_detected_)
     {
       msg_.reset(new geometry_msgs::Twist());
-      msg_->linear.x = -0.1;
+      msg_->linear.x = -0.2;
       msg_->linear.y = 0.0;
       msg_->linear.z = 0.0;
       msg_->angular.x = 0.0;
@@ -326,24 +326,24 @@ void SafetyController::spin()
     {
       // left bump/cliff; also spin a bit to the right to make escape easier
       msg_.reset(new geometry_msgs::Twist());
-      msg_->linear.x = -0.1;
+      msg_->linear.x = -0.2;
       msg_->linear.y = 0.0;
       msg_->linear.z = 0.0;
       msg_->angular.x = 0.0;
       msg_->angular.y = 0.0;
-      msg_->angular.z = -0.4;
+      msg_->angular.z = -0.8;
       velocity_command_publisher_.publish(msg_);
     }
     else if (bumper_right_pressed_ || cliff_right_detected_)
     {
       // right bump/cliff; also spin a bit to the left to make escape easier
       msg_.reset(new geometry_msgs::Twist());
-      msg_->linear.x = -0.1;
+      msg_->linear.x = -0.2;
       msg_->linear.y = 0.0;
       msg_->linear.z = 0.0;
       msg_->angular.x = 0.0;
       msg_->angular.y = 0.0;
-      msg_->angular.z = 0.4;
+      msg_->angular.z = 0.8;
       velocity_command_publisher_.publish(msg_);
     }
     //if we want to extend the safety state and we're within the time, just keep sending msg_
