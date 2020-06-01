@@ -1,5 +1,5 @@
 from Environment import Environment
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, MultiPolygon, LineString, LinearRing
 from Cluster import Cluster, ClusterType
 from shapely.ops import transform
 from Entity import Wall, Furniture, TranspanrentObstacle, UnfinishedEntity
@@ -25,7 +25,7 @@ class EnvClassifier(object):
         self._show_noise = True
         self.mmwave_clusters = []
 
-    def classify(self, laser_clusters, mmwave_clusters):
+    def classify(self, laser_clusters, mmwave_clusters, robot_pose):
         self.mmwave_clusters = mmwave_clusters
         env = Environment()
 
@@ -35,7 +35,7 @@ class EnvClassifier(object):
         single_lcs, lc_mc_matches, single_mcs = self.match(laser_clusters, mmwave_clusters)
         self.classifySingleLCs(single_lcs, env)
         self.classifyLCMCMatches(lc_mc_matches, env)
-        self.classifySingleMCs(single_mcs, env)
+        self.classifySingleMCs(single_mcs, env, robot_pose)
         return env
 
     @timer
@@ -134,15 +134,32 @@ class EnvClassifier(object):
             lc_entity.setHeight(self.getHeightFromMcs(mcs))
             env.register(lc_entity, lc)
 
-    def classifySingleMCs(self, mcs, env):
+    def classifySingleMCs(self, mcs, env, robot_pose):
         """
         Classification for mmwave cluster with no matching laser cluster, mostly doors
         :param mcs: list of mmwave clusters
         :param env: type: Environment
+        :param robot_pose: robot odometry data
         :return: None
         """
         if mcs is None or len(mcs) == 0:
             return None
+
+        # use robot pose to determine if a mmwave cluster is noise, and filter out those that are noise
+        pose = Point(robot_pose.pose.pose.position.x, robot_pose.pose.pose.position.y)
+        wall_polygons = []
+        for entity in env.getEntities():
+            if isinstance(entity, Wall):
+                poly = entity.getPolygon()
+                if isinstance(poly, MultiPolygon):
+                    wall_polygons.extend([p for p in poly])
+                elif isinstance(poly, LinearRing):
+                    wall_polygons.append(Polygon(poly))
+                elif isinstance(poly, Polygon):
+                    wall_polygons.append(poly)
+        wall_obstacle = MultiPolygon(wall_polygons)
+        mcs = [mc for mc in mcs if not LineString([mc.getPoints()[0], pose]).intersects(wall_obstacle)]
+
         possible_doors = self.findPossibleDoors(env)
 
         # create KDTree using door centers
@@ -153,6 +170,7 @@ class EnvClassifier(object):
         tree = KDTree(door_centers, leaf_size=2)
 
         # query the KDTree to find the nearest door of a mmwave cluster
+        registered_mc_ids = []
         for mc in mcs:
             p = mc.getConcaveHull().representative_point()
             dist, ind = tree.query([[p.x, p.y]], k=1)
@@ -160,11 +178,17 @@ class EnvClassifier(object):
             if mc.getConcaveHull().contains(nearest_door.getRepresentativePoint()):
                 nearest_door.setHeight(self.getHeightFromMcs(mcs))
                 env.register(nearest_door, mc)
+                registered_mc_ids.append(mc.getId())
+
+        # unregistered mmwave clusters are considered to be Furniture
+        unregistered_mcs = [mc for mc in mcs if mc.getId() not in registered_mc_ids]
+        for mc in unregistered_mcs:
+            env.register(Furniture(0, mc.getConcaveHull()), mc)
 
     def findPossibleDoors(self, env):
         """
-        Find possible doors in the environment. Possible doors means that there doesn't necessarily have
-        to be a door exist.
+        Find possible doors in the environment. **Possible** doors means that there doesn't necessarily have
+        to be a door.
         :param env: type: Environment
         :return: list of type TranspanrentObstacle, all possible doors
         """

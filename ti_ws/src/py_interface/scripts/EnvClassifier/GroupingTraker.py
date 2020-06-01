@@ -38,7 +38,7 @@ class GroupingTracker:
             mmwave_clusters.append(Cluster(i, ClusterType.MMWAVE, 3, MultiPoint(one_cluster)))
         return laser_clusters, mmwave_clusters
 
-    def getEnv(self, mmwave_pc, laser_grid):
+    def getEnv(self, mmwave_pc, laser_grid, robot_pose):
         # convert laser grid to laser pc
         width, height = laser_grid.info.width, laser_grid.info.height
         x_offset, y_offset = laser_grid.info.origin.position.x, laser_grid.info.origin.position.y
@@ -49,7 +49,7 @@ class GroupingTracker:
         if len(laser_pc) == 0:
             return Environment()
         laser_clusters, mmwave_clusters = self.pc_group(laser_pc, mmwave_pc)
-        self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters)
+        self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters, robot_pose)
         # import matplotlib
         # matplotlib.use('TkAgg')
         # import matplotlib.pyplot as plt
@@ -62,7 +62,7 @@ class GroupingTracker:
         #     points = a_cluster.getPoints()
         #     plt.scatter([p.x for p in points], [p.y for p in points], s=20, c=cs[index % len(cs)], edgecolors='none')
         #     index += 1
-        # # plt.scatter([p[0] for p in laser_pc], [p[1] for p in laser_pc], s=1, c='r')
+        # plt.scatter([p[0] for p in laser_pc], [p[1] for p in laser_pc], s=1, c='r')
         # self.env.showClusters(plt)
         # self.env.showEntityShapes(plt)
         # self.env.showEntityTags(plt)

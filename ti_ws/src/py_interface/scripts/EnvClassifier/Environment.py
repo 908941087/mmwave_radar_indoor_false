@@ -151,7 +151,7 @@ class Environment(object):
         try:
             transparent_obstacles = [e for e in self.getEntities() if isinstance(e, TranspanrentObstacle)]
             for to in transparent_obstacles:
-                poly.points.extend(to.getSegment().coords)
+                poly.points.extend([msg.Point32(p[0], p[1], 0.0) for p in to.getSegment().coords])
         except (AttributeError, IndexError, ValueError):
             rospy.loginfo("Encountered problem getting transparent obstacles. Skipping...")
         return poly
