@@ -14,8 +14,7 @@ from geometry_msgs.msg import Point
 
 class MarkerGenerator:
     def __init__(self):
-        self.bbox_id = 0
-        self.info_id = 0
+        pass
 
     def generate_entity_info_marker(self, info):
         t_marker = Marker()
@@ -23,8 +22,7 @@ class MarkerGenerator:
         t_marker.header.stamp = rospy.Time.now()
         t_marker.ns = "info"
 
-        t_marker.id = self.info_id
-        self.info_id += 1
+        t_marker.id = info["Id"]
         # Type
         t_marker.type = Marker.TEXT_VIEW_FACING
         loc = info["Location"]
@@ -35,7 +33,7 @@ class MarkerGenerator:
         t_marker.scale.z = 0.2
 
         # ADD/DELETE
-        t_marker.action = Marker.MODIFY
+        t_marker.action = Marker.ADD
 
         # Pose
         t_marker.pose.position.x = loc[0]
@@ -52,20 +50,19 @@ class MarkerGenerator:
         t_marker.color.b = 0.5
         t_marker.color.a = 1.0
 
-        t_marker.lifetime = rospy.Duration.from_sec(0.2)
+        t_marker.lifetime = rospy.Duration.from_sec(6.0)
         return t_marker
 
     # Generate a 3d bounding box for one polygon
-    def generate_obstacle_bbox(self, polygon, height):
+    def generate_obstacle_bbox(self, marker_id, polygon, height):
         res_marker = Marker()
         res_marker.header.frame_id = "/map"
         res_marker.header.stamp = rospy.Time.now()
         res_marker.type = Marker.LINE_LIST
         res_marker.action = Marker.MODIFY
 
-        res_marker.id = self.bbox_id
-        res_marker.ns = "env_boundary"
-        self.bbox_id += 1
+        res_marker.id = marker_id
+        res_marker.ns = "obstacles"
 
         # Visualization config
         res_marker.scale.x = 0.05
@@ -84,7 +81,7 @@ class MarkerGenerator:
         res_marker.points.extend(self.generate_obstacle_ring(polygon, 0.0))
         res_marker.points.extend(self.generate_obstacle_ring(polygon, height))
 
-        res_marker.lifetime = rospy.Duration.from_sec(0.2)
+        res_marker.lifetime = rospy.Duration.from_sec(6.0)
         return res_marker
 
     # Util func for generate bounding box

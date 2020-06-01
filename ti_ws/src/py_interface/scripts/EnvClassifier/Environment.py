@@ -117,7 +117,6 @@ class Environment(object):
         return pub_markers
 
     def generateShapeMarkers(self):
-        mark_index = 0
         pub_markers = []
         for entity in self.getEntities():
             if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
@@ -127,18 +126,20 @@ class Environment(object):
                 try:
                     if isinstance(poly, MultiPolygon):
                         for p in list(poly):
+                            count = 0
                             if len(p.exterior.coords) > 0:
-                                marker = self.marker_generator.generate_obstacle_bbox(p.exterior.coords, entity.getHeight())
+                                marker_id = entity.getId() * 10000 + count
+                                marker = self.marker_generator.generate_obstacle_bbox(marker_id, p.exterior.coords, entity.getHeight())
                                 pub_markers.append(marker)
-                                mark_index += 1
+                                count += 1
                     elif isinstance(poly, Polygon):
-                        marker = self.marker_generator.generate_obstacle_bbox(poly.exterior.coords, entity.getHeight())
+                        marker_id = entity.getId()
+                        marker = self.marker_generator.generate_obstacle_bbox(marker_id, poly.exterior.coords, entity.getHeight())
                         pub_markers.append(marker)
-                        mark_index += 1
                     elif isinstance(poly, LinearRing):
-                        marker = self.marker_generator.generate_obstacle_bbox(poly.coords, entity.getHeight())
+                        marker_id = entity.getId()
+                        marker = self.marker_generator.generate_obstacle_bbox(marker_id, poly.coords, entity.getHeight())
                         pub_markers.append(marker)
-                        mark_index += 1
                     else:
                         print(type(poly))
                 except (AttributeError, IndexError, ValueError):

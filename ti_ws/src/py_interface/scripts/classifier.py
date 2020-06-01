@@ -66,12 +66,14 @@ class Distributer:
 
     def deal_and_pub(self, data):
         res = self.call_back(data)
-        if isinstance(res, MarkerArray):
-            res_delete = []
-            for mark in res:
-                mark.action = Marker.DELETE
-            self.publisher.publish(res_delete)
+        # if isinstance(res, MarkerArray):
+        #     for mark in res:
+        #         mark.action = Marker.DELETE
+        #     self.publisher.publish(res)
+        #     for mark in res:
+        #         mark.action = Marker.ADD
         self.publisher.publish(res)
+
 
 class PubThread(threading.Thread):
     def __init__(self, thread_name, pub_event, pub_rate=3):
@@ -93,7 +95,7 @@ class PubThread(threading.Thread):
                     # rospy.loginfo("Pub " + self.thread_name)
                     for distributer in self.distributers:
                         distributer.deal_and_pub(self.data)
-                    rospy.sleep(0.2)
+                    rospy.sleep(2.0)
                 else:
                     rospy.loginfo("Nothing to Pub " + self.thread_name)
 
@@ -115,12 +117,15 @@ def pc2_grid_sub_func():
     return env
 
 def get_marker_array_callback(data):
+    rospy.loginfo("Updating obstacle infos.")
     return data.generateInfoMarkers()
 
 def get_polygon_array_callback(data):
+    rospy.loginfo("Updating obstacle polygons.")
     return data.generateShapeMarkers()
 
 def get_transparent_obstacle_callback(data):
+    rospy.loginfo("Updating transparent obstacles.")
     return data.generateTransparentObstacleMarkers()
 
 if __name__ == '__main__':
