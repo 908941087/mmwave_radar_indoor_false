@@ -13,7 +13,7 @@ obstacle_layer:
   z_resolution:         0.2
   z_voxels:             16    #2
   unknown_threshold:    15
-  mark_threshold:       1    #0
+  mark_threshold:       0    #0
   combination_method:   1
   track_unknown_space:  true    #true needed for disabling global path planning through unknown space
   obstacle_range: 2.5
@@ -23,6 +23,7 @@ obstacle_layer:
   z_voxels: 2
   publish_voxel_map: false
   observation_sources: laser scan bump
+  # observation_sources: laser bump
   laser:
     data_type: LaserScan
     topic: scan
@@ -54,5 +55,6 @@ inflation_layer:
 
 static_layer:
   enabled:              true
-  map_topic:            polygon_map
+  map_topic:            map
+  # map_topic:            polygon_map
 

@@ -14,7 +14,7 @@ class Environment(object):
         self.marker_generator = MarkerGenerator()
 
     def register(self, entity, cluster):
-        entity.id = self.entity_count
+        entity.setId(self.entity_count)
         self.entity_count += 1
         self.entity_cluster_map[entity.getId()] = [entity, cluster]
 
@@ -118,6 +118,7 @@ class Environment(object):
 
     def generateShapeMarkers(self):
         pub_markers = []
+        index = 0
         for entity in self.getEntities():
             if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
                 continue
@@ -126,20 +127,21 @@ class Environment(object):
                 try:
                     if isinstance(poly, MultiPolygon):
                         for p in list(poly):
-                            count = 0
                             if len(p.exterior.coords) > 0:
-                                marker_id = entity.getId() * 10000 + count
+                                marker_id = index
                                 marker = self.marker_generator.generate_obstacle_bbox(marker_id, p.exterior.coords, entity.getHeight())
                                 pub_markers.append(marker)
-                                count += 1
+                                index += 1
                     elif isinstance(poly, Polygon):
-                        marker_id = entity.getId()
+                        marker_id = index
                         marker = self.marker_generator.generate_obstacle_bbox(marker_id, poly.exterior.coords, entity.getHeight())
                         pub_markers.append(marker)
+                        index += 1
                     elif isinstance(poly, LinearRing):
-                        marker_id = entity.getId()
+                        marker_id = index
                         marker = self.marker_generator.generate_obstacle_bbox(marker_id, poly.coords, entity.getHeight())
                         pub_markers.append(marker)
+                        index += 1
                     else:
                         print(type(poly))
                 except (AttributeError, IndexError, ValueError):
@@ -151,7 +153,7 @@ class Environment(object):
         try:
             transparent_obstacles = [e for e in self.getEntities() if isinstance(e, TranspanrentObstacle)]
             for to in transparent_obstacles:
-                poly.points.extend(to.getSegment().coords)
+                poly.points.extend([msg.Point32(p[0], p[1], 0.0) for p in to.getSegment().coords])
         except (AttributeError, IndexError, ValueError):
             rospy.loginfo("Encountered problem getting transparent obstacles. Skipping...")
         return poly

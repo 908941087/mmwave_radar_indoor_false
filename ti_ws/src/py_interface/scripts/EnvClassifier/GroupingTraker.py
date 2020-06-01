@@ -14,7 +14,6 @@ class GroupingTracker:
         self.env = None
         self.enhanced_env = None
 
-    @timer
     def pc_group(self, laser_pc, mmwave_pc):
         laser_clusters = []
         mmwave_clusters = []
@@ -35,9 +34,10 @@ class GroupingTracker:
         clusters_num = len(set(labels)) - (1 if -1 in labels else 0)
         for i in range(clusters_num):
             one_cluster = mmwave_pc[labels == i]
-            mmwave_clusters.append(Cluster(i, ClusterType.MMWAVE, 3, MultiPoint(one_cluster)))
+            mmwave_clusters.append(Cluster(i, ClusterType.MMWAVE, 3, MultiPoint(list(one_cluster))))
         return laser_clusters, mmwave_clusters
 
+    @timer
     def getEnv(self, mmwave_pc, laser_grid):
         # convert laser grid to laser pc
         width, height = laser_grid.info.width, laser_grid.info.height
@@ -62,12 +62,12 @@ class GroupingTracker:
         #     points = a_cluster.getPoints()
         #     plt.scatter([p.x for p in points], [p.y for p in points], s=20, c=cs[index % len(cs)], edgecolors='none')
         #     index += 1
-        # # plt.scatter([p[0] for p in laser_pc], [p[1] for p in laser_pc], s=1, c='r')
+        # plt.scatter([p[0] for p in laser_pc], [p[1] for p in laser_pc], s=1, c='r')
         # self.env.showClusters(plt)
         # self.env.showEntityShapes(plt)
         # self.env.showEntityTags(plt)
         # plt.show()
-        return self.env
+        return self.env, laser_clusters, mmwave_clusters
 
     def getEnhancedEnv(self, pc2):
         self.enhanced_env = self.getEnv(pc2).enhance()

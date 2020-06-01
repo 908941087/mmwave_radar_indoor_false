@@ -1,15 +1,15 @@
+import numpy as np
+import rospy
+
 from Environment import Environment
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, MultiPolygon, LineString, LinearRing, MultiLineString
 from Cluster import Cluster, ClusterType
-from shapely.ops import transform
+from shapely.ops import transform, nearest_points
 from Entity import Wall, Furniture, TranspanrentObstacle, UnfinishedEntity
 from PointCloudOperator import ClusterFit
 from rtree import index
-from sklearn.neighbors import KDTree
-import numpy as np
 from timer import timer
-from PointCloudOperator.ClusterFit import boneFit
-
+from ShapeOperator.ExtendLine import getExtendedLine
 
 class EnvClassifier(object):
     AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
@@ -18,15 +18,16 @@ class EnvClassifier(object):
     RATIO_THRESHOLD = 5  # longer edge over shorter edge
     NOISE_POINTS_COUNT_THRESHOLD = 40
     MIN_DOOR_LENGTH = 0.5  # meters
-    MAX_DOOR_LENGTH = 5  # meters
+    MAX_END_TO_WALL_LENGTH = 0.5  # meters
+    MIN_DOOR_AREA = 0.6  # square meters
 
     def __init__(self):
         self.distances = {}  # cluster to cluster distance
         self._show_noise = True
-        self.mmwave_clusters = []
+        self.mmwave_clusters_dict = None
 
     def classify(self, laser_clusters, mmwave_clusters):
-        self.mmwave_clusters = mmwave_clusters
+        self.mmwave_clusters_dict = {mc.getId(): mc for mc in mmwave_clusters}
         env = Environment()
 
         # for lc in laser_clusters:
@@ -44,7 +45,7 @@ class EnvClassifier(object):
         Match laser clusters(2D) with mmwave clusters(3D), some may have a match, some may not.
         :param laser_clusters: list of Cluster with 2D points inside
         :param mmwave_clusters: list of Cluster with 3D points inside
-        :return: laser clusters with no mmwave cluster match, mmwave clusters with no laser cluster match, matched laser
+        :return: laser clusters with no mmwave cluster match, 2d mmwave clusters, matched laser
         cluster and mmwave cluster pairs.
         """
         # convert 3d mmwave cluster to 2d clusters
@@ -74,34 +75,35 @@ class EnvClassifier(object):
             for mc_id in neighbor_mc_ids:
                 mc = mc_2d[mc_id]
                 nearest_lc_id = [i for i in lc_idx.nearest(mc.getBounds(), 1)][0]
-                if nearest_lc_id == lc.getId():
+                if nearest_lc_id == lc.getId() and \
+                        lc.getConcaveHull().buffer(0.1).contains(mc.getCenter()):
                     matched_mcs.append(mc)
                     matched_mc_ids.append(mc_id)
             if len(matched_mcs) != 0:
                 lc_mc_matches.append((lc, matched_mcs))
             else:
                 single_lcs.append(lc)
-
+        
         single_mcs = [mc for mc in mc_2d.values() if mc.getId() not in matched_mc_ids]
         return single_lcs, lc_mc_matches, single_mcs
 
-    def classifyOneLC(self, lc):
+    def classify2DCluster(self, lc):
         # env.register(UnfinishedEntity(lc.getId(), Polygon([[0, 0], [0, 1], [1, 0]])), lc)
         # use area and points count to recognize noise
         area = lc.getArea()
         if area < self.AREA_THRESHOLD and lc.getPointsCount() < self.NOISE_POINTS_COUNT_THRESHOLD:
-            return UnfinishedEntity(lc.getId(), lc.getConcaveHull())
+            return UnfinishedEntity(lc.getConcaveHull())
 
         # try to treat this cluster as wall, see if it fits well
         try:
             wall = ClusterFit.boneFit(lc)
             if wall.getWidth() > self.MAX_WALL_WIDTH or wall.getLength() < self.MIN_WALL_LENGTH or \
                     wall.getLength() / wall.getWidth() < self.RATIO_THRESHOLD:
-                return Furniture(lc.getId(), lc.getConcaveHull())
+                return Furniture(lc.getConcaveHull())
             else:
                 return wall
         except:
-            return Furniture(lc.getId(), lc.getConcaveHull())
+            return Furniture(lc.getConcaveHull())
 
     def classifySingleLCs(self, lcs, env):
         """
@@ -114,7 +116,7 @@ class EnvClassifier(object):
             return
 
         for lc in lcs:
-            entity = self.classifyOneLC(lc)
+            entity = self.classify2DCluster(lc)
             env.register(entity, lc)
 
     def classifyLCMCMatches(self, lc_mc_matches, env):
@@ -128,84 +130,83 @@ class EnvClassifier(object):
         for match in lc_mc_matches:
             lc = match[0]
             mcs = match[1]
-            lc_entity = self.classifyOneLC(lc)
+            lc_entity = self.classify2DCluster(lc)
             if isinstance(lc_entity, UnfinishedEntity):
-                lc_entity = Furniture(lc.getId(), lc.getConcaveHull())
+                lc_entity = Furniture(lc.getConcaveHull())
             lc_entity.setHeight(self.getHeightFromMcs(mcs))
             env.register(lc_entity, lc)
 
-    def classifySingleMCs(self, mcs, env):
+    def classifySingleMCs(self, single_mcs, env):
         """
-        Classification for mmwave cluster with no matching laser cluster, mostly doors
-        :param mcs: list of mmwave clusters
+        Classification for mmwave cluster, mostly doors
+        :param single_mcs: list of mmwave clusters with no lc match
         :param env: type: Environment
         :return: None
         """
-        if mcs is None or len(mcs) == 0:
+        if single_mcs is None or len(single_mcs) == 0:
             return None
-        possible_doors = self.findPossibleDoors(env)
 
-        # create KDTree using door centers
-        door_centers = [[d.getRepresentativePoint().x, d.getRepresentativePoint().y] for d in possible_doors]
-        if len(door_centers) == 0:
-            return None
-        door_centers = np.array(door_centers).reshape(-1, 2)
-        tree = KDTree(door_centers, leaf_size=2)
+        # build RTree using entities in env
+        entities = [entity for entity in env.getEntities()]
+        entity_idx = index.Index()
+        for e in entities:
+            entity_idx.insert(e.getId(), e.getPolygon().bounds)
 
-        # query the KDTree to find the nearest door of a mmwave cluster
-        for mc in mcs:
-            p = mc.getConcaveHull().representative_point()
-            dist, ind = tree.query([[p.x, p.y]], k=1)
-            nearest_door = possible_doors[ind[0][0]]
-            if mc.getConcaveHull().contains(nearest_door.getRepresentativePoint()):
-                nearest_door.setHeight(self.getHeightFromMcs(mcs))
-                env.register(nearest_door, mc)
+        # filter out mcs that are too small
+        candidate_mcs = [mc for mc in single_mcs if mc.getArea() > self.MIN_DOOR_AREA]
 
-    def findPossibleDoors(self, env):
-        """
-        Find possible doors in the environment. Possible doors means that there doesn't necessarily have
-        to be a door exist.
-        :param env: type: Environment
-        :return: list of type TranspanrentObstacle, all possible doors
-        """
-        walls = [w for w in env.getEntities() if isinstance(w, Wall)]
-        doors = []
-        if len(walls) == 0:
-            return doors
+        # try to fit mc as wall, if valid, extend the ends to the nearest wall
+        for mc in candidate_mcs:
+            try:
+                temp_w = ClusterFit.boneFit(mc)
+            except ValueError:
+                fur = Furniture(mc.getConcaveHull())
+                fur.setHeight(self.getHeightFromMc(self.mmwave_clusters_dict[mc.getId()]))
+                env.register(fur, mc)
+                continue
 
-        # create RTree using walls
-        idx = index.Index()
-        for w in walls:
-            idx.insert(w.getId(), w.getPolygon().bounds)
-
-        # query for the nearest 3 walls for every wall and check if there exists a door
-        max_entity_id = env.entity_count
-        queried_pairs = []
-        for w in walls:
-            neighbor_wall_ids = [i for i in idx.nearest(w.getPolygon().bounds, 4)][1:]
-            for n in neighbor_wall_ids:
-                id_pair = [n, w.getId()]
-                id_pair.sort()
-                if id_pair in queried_pairs:
-                    continue
-                queried_pairs.append(id_pair)
-                door = ClusterFit.doorFit(w, env.getEntity(n))
-
-                # check if door is valid
-                length = door.getLength()
-                if self.MIN_DOOR_LENGTH <= length <= self.MAX_DOOR_LENGTH:
-                    door.entity_id = max_entity_id
-                    doors.append(door)
-                    max_entity_id += 1
-        return doors
+            if temp_w.getLength() >= self.MIN_DOOR_LENGTH:
+                bounds = mc.getBounds()
+                length = max([bounds[2] - bounds[0], bounds[3] - bounds[1]])
+                if 0.7 <= length / temp_w.getLength() <= 1.3:
+                    line = ClusterFit.lineFit(mc.getPoints())
+                    ends = [Point(t) for t in list(line.coords)]
+                    nearest_entities = []
+                    for end in ends:
+                        neighbor_entity_ids = [i for i in entity_idx.nearest(end.bounds, 3)]
+                        distances = {end.distance(env.getEntity(eid).getPolygon()): eid for eid in neighbor_entity_ids}
+                        min_dist = min(distances.keys())
+                        nearest_entities.append(env.getEntity(distances[min_dist]))
+                    if nearest_entities[0] != nearest_entities[1]:
+                        max_length_line = getExtendedLine(getExtendedLine(line, self.MAX_END_TO_WALL_LENGTH)
+                                                          , -self.MAX_END_TO_WALL_LENGTH)
+                        entity_invalid_flag = False
+                        mid_point = line.centroid
+                        new_ends = []
+                        for e in nearest_entities:
+                            intersection_points = \
+                                [Point(t) for t in list(max_length_line.intersection(e.getPolygon()).coords)]
+                            if len(intersection_points) == 0:
+                                entity_invalid_flag = True
+                                break
+                            sorted(intersection_points, key=lambda x: x.distance(mid_point))
+                            new_ends.append(intersection_points[0])
+                        if entity_invalid_flag:
+                            continue
+                        rospy.logerr(str([list(p.coords) for p in new_ends]))
+                        env.register(TranspanrentObstacle(LineString(new_ends)), mc)
+                        continue
+            fur = Furniture(mc.getConcaveHull())
+            fur.setHeight(self.getHeightFromMc(self.mmwave_clusters_dict[mc.getId()]))
+            env.register(fur, mc)
 
     def getHeightFromMcs(self, mcs):
         heights = [self.getHeightFromMc(mc) for mc in mcs]
         return np.average(heights)
 
     def getHeightFromMc(self, mc):
-        height = float('-inf')
-        for p in self.mmwave_clusters[mc.getId()].getPoints():
+        height = 0.0
+        for p in self.mmwave_clusters_dict[mc.getId()].getPoints():
             if p.z > height:
                 height = p.z
         return height

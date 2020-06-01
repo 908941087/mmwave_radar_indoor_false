@@ -9,7 +9,7 @@ The final map is just for visualization.
 
 import rospy
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point32
 
 
 class MarkerGenerator:
@@ -50,16 +50,16 @@ class MarkerGenerator:
         t_marker.color.b = 0.5
         t_marker.color.a = 1.0
 
-        t_marker.lifetime = rospy.Duration.from_sec(6.0)
+        t_marker.lifetime = rospy.Duration.from_sec(120.0)
         return t_marker
 
     # Generate a 3d bounding box for one polygon
-    def generate_obstacle_bbox(self, marker_id, polygon, height):
+    def generate_obstacle_bbox(self, marker_id, polygon, height=0.0):
         res_marker = Marker()
         res_marker.header.frame_id = "/map"
         res_marker.header.stamp = rospy.Time.now()
         res_marker.type = Marker.LINE_LIST
-        res_marker.action = Marker.MODIFY
+        res_marker.action = Marker.ADD
 
         res_marker.id = marker_id
         res_marker.ns = "obstacles"
@@ -73,7 +73,7 @@ class MarkerGenerator:
 
         # Data config
         for line_p in polygon:
-            t_p1, t_p2 = Point(), Point()
+            t_p1, t_p2 = Point32(), Point32()
             t_p1.x, t_p1.y, t_p1.z = line_p[0], line_p[1], 0.0
             t_p2.x, t_p2.y, t_p2.z = line_p[0], line_p[1], height
             res_marker.points.append(t_p1)
@@ -81,7 +81,7 @@ class MarkerGenerator:
         res_marker.points.extend(self.generate_obstacle_ring(polygon, 0.0))
         res_marker.points.extend(self.generate_obstacle_ring(polygon, height))
 
-        res_marker.lifetime = rospy.Duration.from_sec(6.0)
+        res_marker.lifetime = rospy.Duration.from_sec(120.0)
         return res_marker
 
     # Util func for generate bounding box
@@ -89,12 +89,12 @@ class MarkerGenerator:
     def generate_obstacle_ring(polygon, height=0.0):
         res_points = []
         for i in range(len(polygon)):
-            t_p = Point()
+            t_p = Point32()
             t_p.x, t_p.y, t_p.z = polygon[i][0], polygon[i][1], height
             res_points.append(t_p)
             if i != 0:
                 res_points.append(t_p)
-        p_start = Point()
+        p_start = Point32()
         p_start.x, p_start.y, p_start.z = polygon[0][0], polygon[0][1], height
         res_points.append(p_start)
         return res_points

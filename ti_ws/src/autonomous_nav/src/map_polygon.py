@@ -26,7 +26,7 @@ def OccupancyGridCallback(msg):
     res = msg.info.resolution
     xorg = msg.info.origin.position.x
     yorg = msg.info.origin.position.y
-    rospy.loginfo("receive map! %s", wid)
+    # rospy.loginfo("receive map! %s", wid)
 
     #测试数据
     # polygon_data = []
@@ -58,29 +58,29 @@ def OccupancyGridCallback(msg):
     point_index = numpy.zeros(2, dtype=numpy.int)
 
     polygon_data_list = []  # 断点在网格中的坐标
-    rospy.loginfo("the number of the polygon points: %s", polygon_len)
+    # rospy.loginfo("the number of the polygon points: %s", polygon_len)
     for i in range(0, polygon_len):
-        rospy.loginfo("point one: %s, %s", polygon_data[i].x, polygon_data[i].y)
+        # rospy.loginfo("point one: %s, %s", polygon_data[i].x, polygon_data[i].y)
         point_index_temp = numpy.zeros(2, dtype=numpy.int)
         point_index_temp[1] = int((polygon_data[i].x - xorg) / res)
         point_index_temp[0] = int((polygon_data[i].y - yorg) / res)
-        rospy.loginfo("point one: %s", point_index)
-        print(i)
+        # rospy.loginfo("point one: %s", point_index)
+        # print(i)
         polygon_data_list.append(point_index_temp)
-        print("%s", polygon_data_list)
+        # print("%s", polygon_data_list)
 
     # 直线求点
     polygon_line_data_list = []
     for i in range(0, polygon_len, 2):
         x1 = polygon_data_list[i][0]
         y1 = polygon_data_list[i][1]
-        print("%s,%s",x1,y1)
+        # print("%s,%s",x1,y1)
         temp = i + 1
         x2 = polygon_data_list[temp][0]
         y2 = polygon_data_list[temp][1]
-        print("%s,%s",x2,y2)
+        # print("%s,%s",x2,y2)
         if x1 < 0 or x2 < 0 or x1 >= wid or x2 >= wid or y1 < 0 or y2 < 0 or y1 >= heigh or y2 >= heigh:
-            rospy.loginfo("negative point: %s", i)
+            # rospy.loginfo("negative point: %s", i)
             continue
         else:
             point_index1 = numpy.zeros(2, dtype=numpy.int)
@@ -110,7 +110,7 @@ def OccupancyGridCallback(msg):
                 polygon_line_data_list.append(point_index3)
 
     # 发布加入polygon点了以后的新地图
-    rospy.loginfo("直线上的网格数量：%s", len(polygon_line_data_list))
+    # rospy.loginfo("直线上的网格数量：%s", len(polygon_line_data_list))
     polygon_map = OccupancyGrid()
     polygon_map.header = msg.header
     polygon_map.header.stamp = rospy.get_rostime()
@@ -123,7 +123,7 @@ def OccupancyGridCallback(msg):
             datalist[i * heigh + j] = map[i][j]
     polygon_map.data = datalist
     map_polygon_pub.publish(polygon_map)
-    rospy.loginfo("publish map!")
+    # rospy.loginfo("publish map!")
 
 if __name__ == '__main__':
     rospy.init_node('map_polygon_node', log_level=rospy.INFO)

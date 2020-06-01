@@ -17,15 +17,14 @@ find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   tf
   roslib
-  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
 #find_package(Eigen3 REQUIRED)
-find_package(PCL REQUIRED)
-find_package(Octomap)
-find_package(OMPL REQUIRED)
+#find_package(PCL REQUIRED)
+#find_package(Octomap)
+#find_package(OMPL REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -64,11 +63,16 @@ add_message_files(
  )
 
 ## Generate services in the 'srv' folder
+## add_service_files(
+##   FILES
+##   PotentialPlanner.srv
+##   CollisionChecker.srv
+##   WaypointProposition.srv
+## )
+
 add_service_files(
   FILES
-  PotentialPlanner.srv
-  CollisionChecker.srv
-  WaypointProposition.srv
+  ForceFind.srv
 )
 
 ## Generate actions in the 'action' folder

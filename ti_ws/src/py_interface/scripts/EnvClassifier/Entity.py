@@ -9,15 +9,20 @@ from numpy import sqrt
 
 class Entity(object):
 
-    def __init__(self, eid):
-        self.entity_id = eid
+    def __init__(self):
+        self.entity_id = None
         self.height = 0
+        self.is_valid = False
 
     def setHeight(self, height):
         self.height = height
 
     def getHeight(self):
         return self.height
+
+    def setId(self, eid):
+        self.entity_id = eid
+        self.is_valid = True
 
     def show(self, plt):
         pass
@@ -28,7 +33,6 @@ class Entity(object):
     def getInfo(self):
         pass
 
-
     def getId(self):
         return self.entity_id
 
@@ -38,8 +42,8 @@ class Entity(object):
 
 class Wall(Entity):
 
-    def __init__(self, eid, polygon, length, width):
-        super(Wall, self).__init__(eid)
+    def __init__(self, polygon, length, width):
+        super(Wall, self).__init__()
         self.enhanced = False
         self.polygon = polygon
         self.length = length
@@ -67,7 +71,8 @@ class Wall(Entity):
         perimeter = poly.length
         area = poly.area
         length = perimeter / 4.0 + sqrt(perimeter ** 2 / 4.0 - 4 * area) / 2.0
-        return Wall(self.getId(), poly, length, area / length), c
+        wall = Wall(poly, length, area / length)
+        return wall, c
 
     def getWidth(self):
         return self.width
@@ -84,8 +89,8 @@ class Wall(Entity):
 
 class Furniture(Entity):
 
-    def __init__(self, eid, polygon):
-        super(Furniture, self).__init__(eid)
+    def __init__(self, polygon):
+        super(Furniture, self).__init__()
         self.polygon = polygon
         self.type = None
         self.is_enhanced = False
@@ -121,8 +126,8 @@ class DoorState(Enum):
 
 class TranspanrentObstacle(Entity):
 
-    def __init__(self, eid, segment):
-        super(TranspanrentObstacle, self).__init__(eid)
+    def __init__(self, segment):
+        super(TranspanrentObstacle, self).__init__()
         self.state = DoorState.CLOSED
         self.is_enhanced = False
         self.segment = segment
@@ -160,8 +165,8 @@ class TranspanrentObstacle(Entity):
 
 class UnfinishedEntity(Entity):
 
-    def __init__(self, eid, polygon):
-        super(UnfinishedEntity, self).__init__(eid)
+    def __init__(self, polygon):
+        super(UnfinishedEntity, self).__init__()
         self.center = None
         self.polygon = polygon
         self.is_enhanced = False
@@ -185,3 +190,6 @@ class UnfinishedEntity(Entity):
 
     def showShape(self, plt):
         showPolygon(self.polygon, plt)
+
+    def getPolygon(self):
+        return self.polygon

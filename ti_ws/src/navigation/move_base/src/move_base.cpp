@@ -784,8 +784,8 @@ namespace move_base {
 
       r.sleep();
       //make sure to sleep for the remainder of our cycle time
-      if(r.cycleTime() > ros::Duration(1 / controller_frequency_) && state_ == CONTROLLING)
-        ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
+      // if(r.cycleTime() > ros::Duration(1 / controller_frequency_) && state_ == CONTROLLING)
+      //   ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
     }
 
     //wake up the planner thread so that it can exit cleanly
@@ -932,9 +932,9 @@ namespace move_base {
         }
         else {
 
-          std_msgs::Int8 invalid_mess ;
-          invalid_mess.data = 1;
-          invalid_path_pub.publish(invalid_mess);
+          // std_msgs::Int8 invalid_mess ;
+          // invalid_mess.data = 1;
+          // invalid_path_pub.publish(invalid_mess);
           
           ROS_DEBUG_NAMED("move_base", "The local planner could not find a valid plan.");
           ros::Time attempt_end = last_valid_control_ + ros::Duration(controller_patience_);
