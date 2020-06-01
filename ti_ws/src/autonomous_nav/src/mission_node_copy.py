@@ -152,7 +152,7 @@ class MissionHandler:
     def rotateOnce(self):
         print ('current orientation' + str(self.robot_theta))
         control_input = Twist()
-        control_input.angular.z = 0.3
+        control_input.angular.z = 0.5
         #rate = rospy.Rate(10) # 10hz
         while (np.abs(self.robot_theta) < 0.5).any():
             #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
