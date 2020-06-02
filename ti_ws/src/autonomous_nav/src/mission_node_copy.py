@@ -351,6 +351,8 @@ class MissionHandler:
             return
         
         w = int(msg.info.width)
+
+        print("got potential_map")
         
         self.frontiers = None
         for i in range(2, msg.info.height - 1):
