@@ -14,7 +14,7 @@ class Environment(object):
         self.marker_generator = MarkerGenerator()
 
     def register(self, entity, cluster):
-        entity.id = self.entity_count
+        entity.setId(self.entity_count)
         self.entity_count += 1
         self.entity_cluster_map[entity.getId()] = [entity, cluster]
 

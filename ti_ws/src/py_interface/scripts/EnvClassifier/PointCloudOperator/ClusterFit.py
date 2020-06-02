@@ -2,7 +2,7 @@ import numpy as np
 import math
 from shapely.geometry import LineString, Point, box, MultiPoint
 from shapely.ops import nearest_points
-from ..Entity import Wall, TranspanrentObstacle
+from ..Entity import Wall, TranspanrentObstacle, Furniture
 from deprecated import deprecated
 
 def lineFit(points):
@@ -33,8 +33,8 @@ def lineFit(points):
     return LineString([p1, p2])
 
 
-def circleFit(points):
-    pass
+def furnitureFit(cluster):
+    return Furniture(cluster.getConcaveHull())
 
 
 @deprecated(reason="This function is deprecated, use boneFit instead.")
@@ -78,8 +78,7 @@ def wallFit(cluster):
         return var < WALL_VARIANCE_THRESHOLD, sum(distances)
 
     wallFitCore(cluster.getPoints())
-    return Wall(cluster.getId(),
-                cluster.getConcaveHull(),
+    return Wall(cluster.getConcaveHull(),
                 segments,
                 2 * total_dists[0] / float(cluster.getPointsCount()))
 
@@ -92,14 +91,11 @@ def boneFit(cluster):
     if delta < 0:
         raise ValueError("delta must be bigger than zero.")
     length = perimeter / 4.0 + np.sqrt(delta) / 2.0
-    return Wall(cluster.getId(),
-                poly,  # .simplify(tolerance=0.2, preserve_topology=False)
+    return Wall(poly,  # .simplify(tolerance=0.2, preserve_topology=False)
                 length,  # length
                 poly.area / length)  # width
 
 
 def doorFit(w1, w2):
-    if not isinstance(w1, Wall) or not isinstance(w2, Wall):
-        raise TypeError("Parameters must be of type Wall.")
     ls = LineString(nearest_points(w1.getPolygon(), w2.getPolygon()))
-    return TranspanrentObstacle(0, ls)
+    return TranspanrentObstacle(ls)

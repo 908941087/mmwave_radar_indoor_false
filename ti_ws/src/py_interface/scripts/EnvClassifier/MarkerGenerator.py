@@ -59,7 +59,7 @@ class MarkerGenerator:
         res_marker.header.frame_id = "/map"
         res_marker.header.stamp = rospy.Time.now()
         res_marker.type = Marker.LINE_LIST
-        res_marker.action = Marker.MODIFY
+        res_marker.action = Marker.ADD
 
         res_marker.id = marker_id
         res_marker.ns = "obstacles"
