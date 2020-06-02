@@ -208,7 +208,7 @@ class MissionHandler:
             command.linear.x = 0.1
             command.angular.z = 0
             i = 0
-            while self.force and i < 100:
+            while self.force and i < 40:
                 self.control_input_pub_.publish(command)
                 i += 1
                 rate.sleep()
@@ -253,9 +253,9 @@ class MissionHandler:
 
     def autoGoalFindCallback(self, msg):
 
-        self.rotateOnce()
+        # self.rotateOnce()
         self.needs_new_frontier = True
-        self.next_frontier_random = True
+        # self.next_frontier_random = True
         self.force = False
 
         print("start find")
