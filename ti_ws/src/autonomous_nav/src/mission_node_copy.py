@@ -152,7 +152,7 @@ class MissionHandler:
     def rotateOnce(self):
         print ('current orientation' + str(self.robot_theta))
         control_input = Twist()
-        control_input.angular.z = 0.3
+        control_input.angular.z = 0.5
         #rate = rospy.Rate(10) # 10hz
         while (np.abs(self.robot_theta) < 0.5).any():
             #control_input.angular.z  = control_input.angular.z * 1.1 + 0.05
@@ -208,12 +208,12 @@ class MissionHandler:
             command.linear.x = 0.1
             command.angular.z = 0
             i = 0
-            while self.force and i < 100:
+            while self.force and i < 40:
                 self.control_input_pub_.publish(command)
                 i += 1
                 rate.sleep()
             print("back safety dis")
-            safety_dis = 0.1
+            safety_dis = 0.01
 
             target_goal.pose.position.x = self.robot_x - math.cos(self.robot_theta) * safety_dis
             target_goal.pose.position.y = self.robot_y - math.sin(self.robot_theta) * safety_dis
@@ -246,16 +246,16 @@ class MissionHandler:
         #         self.control_input_pub_.publish(command)
         #         rate.sleep()
         # self.force = True
-        self.rotateOnce()
+        # self.rotateOnce()
         # self.mutex.release()
         # self.invalidPathCallback("1")
 
 
     def autoGoalFindCallback(self, msg):
 
-        self.rotateOnce()
+        # self.rotateOnce()
         self.needs_new_frontier = True
-        self.next_frontier_random = True
+        # self.next_frontier_random = True
         self.force = False
 
         print("start find")
@@ -351,6 +351,8 @@ class MissionHandler:
             return
         
         w = int(msg.info.width)
+
+        print("got potential_map")
         
         self.frontiers = None
         for i in range(2, msg.info.height - 1):
