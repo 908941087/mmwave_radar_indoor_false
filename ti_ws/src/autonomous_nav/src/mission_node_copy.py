@@ -201,14 +201,14 @@ class MissionHandler:
             self.auto_goal_pub.publish(target_goal)
 
         else:
-            print("invalid, use false")
+            print("invalid, use force")
             self.force = True
             command = Twist()
             rate = rospy.Rate(10)
             command.linear.x = 0.1
             command.angular.z = 0
             i = 0
-            while self.force and i < 40:
+            while self.force and i < 60:
                 self.control_input_pub_.publish(command)
                 i += 1
                 rate.sleep()
