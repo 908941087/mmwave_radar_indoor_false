@@ -368,7 +368,11 @@ class MissionHandler:
                         (msg.data[w*(i + 1) + j] == 2 and msg.data[w*i + j + 1] == 1) or \
                         (msg.data[w*(i + 1) + j] == 1 and msg.data[w*i + j + 1] == 2) or \
                         (msg.data[w*(i + 1) + j] == 2 and msg.data[w*i + j - 1] == 1) or \
-                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*i + j - 1] == 2) :
+                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*i + j - 1] == 2) or \
+                        (msg.data[w*(i + 1) + j] == 2 and msg.data[w*(i - 1) + j] == 1) or \
+                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*(i - 1) + j] == 2) or \
+                        (msg.data[w*i + j + 1] == 2 and msg.data[w*i + j - 1] == 1) or \
+                        (msg.data[w*i + j + 1] == 1 and msg.data[w*i + j - 1] == 2) :
 
                     frontier_x = float(j * msg.info.resolution + msg.info.origin.position.x)
                     frontier_y = float(i * msg.info.resolution + msg.info.origin.position.y)
