@@ -201,14 +201,14 @@ class MissionHandler:
             self.auto_goal_pub.publish(target_goal)
 
         else:
-            print("invalid, use false")
+            print("invalid, use force")
             self.force = True
             command = Twist()
             rate = rospy.Rate(10)
             command.linear.x = 0.1
             command.angular.z = 0
             i = 0
-            while self.force and i < 40:
+            while self.force and i < 60:
                 self.control_input_pub_.publish(command)
                 i += 1
                 rate.sleep()
@@ -368,7 +368,11 @@ class MissionHandler:
                         (msg.data[w*(i + 1) + j] == 2 and msg.data[w*i + j + 1] == 1) or \
                         (msg.data[w*(i + 1) + j] == 1 and msg.data[w*i + j + 1] == 2) or \
                         (msg.data[w*(i + 1) + j] == 2 and msg.data[w*i + j - 1] == 1) or \
-                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*i + j - 1] == 2) :
+                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*i + j - 1] == 2) or \
+                        (msg.data[w*(i + 1) + j] == 2 and msg.data[w*(i - 1) + j] == 1) or \
+                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*(i - 1) + j] == 2) or \
+                        (msg.data[w*i + j + 1] == 2 and msg.data[w*i + j - 1] == 1) or \
+                        (msg.data[w*i + j + 1] == 1 and msg.data[w*i + j - 1] == 2) :
 
                     frontier_x = float(j * msg.info.resolution + msg.info.origin.position.x)
                     frontier_y = float(i * msg.info.resolution + msg.info.origin.position.y)
