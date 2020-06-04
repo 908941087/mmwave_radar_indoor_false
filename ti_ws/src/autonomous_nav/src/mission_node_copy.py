@@ -125,6 +125,8 @@ class MissionHandler:
         self.started = False
         self.returned = False
 
+        self.gotFirst = False
+
         # Mission Handler Publisher
         self.pub_rviz = rospy.Publisher("/mission_visualize", Marker, queue_size=10)
 
@@ -201,17 +203,17 @@ class MissionHandler:
             self.auto_goal_pub.publish(target_goal)
 
         else:
-            print("invalid, use force")
-            self.force = True
-            command = Twist()
-            rate = rospy.Rate(10)
-            command.linear.x = 0.1
-            command.angular.z = 0
-            i = 0
-            while self.force and i < 60:
-                self.control_input_pub_.publish(command)
-                i += 1
-                rate.sleep()
+            # print("invalid, use force")
+            # self.force = True
+            # command = Twist()
+            # rate = rospy.Rate(10)
+            # command.linear.x = 0.1
+            # command.angular.z = 0
+            # i = 0
+            # while self.force and i < 60:
+            #     self.control_input_pub_.publish(command)
+            #     i += 1
+            #     rate.sleep()
             print("back safety dis")
             safety_dis = 0.01
 
@@ -344,6 +346,11 @@ class MissionHandler:
 
     # Calling callback
     def frontierCallback(self, msg):
+
+        if self.gotFirst is False:
+            rospy.logwarn("potential map first got")
+            self.gotFirst = True
+
         self.mutex.acquire()
 
         if not self.exploring:
@@ -518,6 +525,11 @@ class MissionHandler:
 
     # Calling frontiers function
     def proposeWaypoints(self):
+
+        if self.gotFirst is False:
+            rospy.logwarn("potential map not got, try again later")
+            rospy.sleep(2)
+
         self.mutex.acquire()
 
         if self.frontiers is None:
