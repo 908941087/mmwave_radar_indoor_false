@@ -118,6 +118,7 @@ class Environment(object):
 
     def generateShapeMarkers(self):
         pub_markers = []
+        index = 0
         for entity in self.getEntities():
             if not self._show_unfinished and isinstance(entity, UnfinishedEntity):
                 continue
@@ -126,20 +127,21 @@ class Environment(object):
                 try:
                     if isinstance(poly, MultiPolygon):
                         for p in list(poly):
-                            count = 0
                             if len(p.exterior.coords) > 0:
-                                marker_id = entity.getId() * 10000 + count
+                                marker_id = index
                                 marker = self.marker_generator.generate_obstacle_bbox(marker_id, p.exterior.coords, entity.getHeight())
                                 pub_markers.append(marker)
-                                count += 1
+                                index += 1
                     elif isinstance(poly, Polygon):
-                        marker_id = entity.getId()
+                        marker_id = index
                         marker = self.marker_generator.generate_obstacle_bbox(marker_id, poly.exterior.coords, entity.getHeight())
                         pub_markers.append(marker)
+                        index += 1
                     elif isinstance(poly, LinearRing):
-                        marker_id = entity.getId()
+                        marker_id = index
                         marker = self.marker_generator.generate_obstacle_bbox(marker_id, poly.coords, entity.getHeight())
                         pub_markers.append(marker)
+                        index += 1
                     else:
                         print(type(poly))
                 except (AttributeError, IndexError, ValueError):

@@ -14,7 +14,6 @@ class GroupingTracker:
         self.env = None
         self.enhanced_env = None
 
-    @timer
     def pc_group(self, laser_pc, mmwave_pc):
         laser_clusters = []
         mmwave_clusters = []
@@ -38,6 +37,7 @@ class GroupingTracker:
             mmwave_clusters.append(Cluster(i, ClusterType.MMWAVE, 3, MultiPoint(one_cluster)))
         return laser_clusters, mmwave_clusters
 
+    @timer
     def getEnv(self, mmwave_pc, laser_grid, robot_pose):
         # convert laser grid to laser pc
         width, height = laser_grid.info.width, laser_grid.info.height
