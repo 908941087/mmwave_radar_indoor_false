@@ -27,9 +27,9 @@ class PubBlock:
         return True
 
     def update_data(self):
-        self.event_handle.clear()
         if self.callback_func is not None:
             self.data = self.callback_func(self.data)
+        self.event_handle.clear()
         self.thread_handle.data = self.data
         self.event_handle.set()
         rospy.loginfo("Pub " + self.thread_handle.thread_name)
@@ -66,12 +66,12 @@ class Distributer:
 
     def deal_and_pub(self, data):
         res = self.call_back(data)
-        # if isinstance(res, MarkerArray):
-        #     for mark in res:
-        #         mark.action = Marker.DELETE
-        #     self.publisher.publish(res)
-        #     for mark in res:
-        #         mark.action = Marker.ADD
+        if isinstance(res, MarkerArray):
+            for mark in res:
+                mark.action = Marker.DELETE
+            self.publisher.publish(res)
+            for mark in res:
+                mark.action = Marker.ADD
         self.publisher.publish(res)
 
 
@@ -91,6 +91,8 @@ class PubThread(threading.Thread):
         rospy.loginfo("Start pub thread: " + self.thread_name)
         while not rospy.is_shutdown():
             while self.pub_event.is_set():
+                if rospy.is_shutdown():
+                    break
                 if self.data is not None:
                     # rospy.loginfo("Pub " + self.thread_name)
                     for distributer in self.distributers:
@@ -132,7 +134,7 @@ def get_transparent_obstacle_callback(data):
 if __name__ == '__main__':
     # Pub components
     marker_array_pub = rospy.Publisher("/class_marker", MarkerArray, queue_size=1)
-    polygon_array_pub = rospy.Publisher("/polygon_marker", MarkerArray, queue_size=1)
+    polygon_array_pub = rospy.Publisher("/polygon_marker", MarkerArray, queue_size=100)
     transparent_obstacle_pub = rospy.Publisher("/transparent_obstacle", Polygon, queue_size=1)
 
     marker_distributer = Distributer(marker_array_pub, get_marker_array_callback)
@@ -146,7 +148,7 @@ if __name__ == '__main__':
     pub_thread.register_distributer(transparent_obstacle_distributer)
     marker_pub_block = PubBlock(pub_thread, pub_event, pc2_grid_sub_func)
 
-    pc2_sub_thread = SubThread("SubPC2", duration=4.0)
+    pc2_sub_thread = SubThread("SubPC2", duration=8.0)
     pc2_sub_thread.register_thread_CB(marker_pub_block)
     try:
         rospy.init_node('map_classifier', anonymous=True)
