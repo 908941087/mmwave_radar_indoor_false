@@ -275,7 +275,7 @@ class EnvClassifier(object):
         return np.average(heights)
 
     def getHeightFromMc(self, mc):
-        height = float('-inf')
+        height = 0.0
         for p in self.mmwave_clusters[mc.getId()].getPoints():
             if p.z > height:
                 height = p.z

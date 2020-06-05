@@ -54,7 +54,7 @@ class MarkerGenerator:
         return t_marker
 
     # Generate a 3d bounding box for one polygon
-    def generate_obstacle_bbox(self, marker_id, polygon, height):
+    def generate_obstacle_bbox(self, marker_id, polygon, height=0.0):
         res_marker = Marker()
         res_marker.header.frame_id = "/map"
         res_marker.header.stamp = rospy.Time.now()
