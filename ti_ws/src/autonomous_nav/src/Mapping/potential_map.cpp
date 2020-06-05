@@ -159,8 +159,8 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
         inflation_queue2 = deque<Pixel>();
 
         while(!inflation_queue.empty()){
-            for(int i = std::max(0, inflation_queue.front().x-5); i < std::min(inflation_queue.front().x+5, (int)msg.info.width); i++){
-                for(int j = std::max(0, inflation_queue.front().y-5); j < std::min(inflation_queue.front().y+5, (int)msg.info.height); j++){
+            for(int i = std::max(0, inflation_queue.front().x-1); i < std::min(inflation_queue.front().x+2, (int)msg.info.width); i++){
+                for(int j = std::max(0, inflation_queue.front().y-1); j < std::min(inflation_queue.front().y+2, (int)msg.info.height); j++){
                     if(projected_map[i][j] <= 1){
                         projected_map[i][j] = 2;
                         inflation_queue2.push_back(Pixel(i, j));
@@ -193,8 +193,8 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
     queue.push_back(Pixel(robot_pixel_i, robot_pixel_j));
 
     while(!queue.empty()){
-        for(int i = std::max(0, queue.front().x-1); i < std::min(queue.front().x+2, (int)msg.info.width); i++){
-            for(int j = std::max(0, queue.front().y-1); j < std::min(queue.front().y+2, (int)msg.info.height); j++){
+        for(int i = std::max(0, queue.front().x-5); i < std::min(queue.front().x+5, (int)msg.info.width); i++){
+            for(int j = std::max(0, queue.front().y-5); j < std::min(queue.front().y+5, (int)msg.info.height); j++){
                 //Free
                 if(projected_map[i][j] == 0){
                     projected_map[i][j] = projected_map[queue.front().x][queue.front().y] + 1;

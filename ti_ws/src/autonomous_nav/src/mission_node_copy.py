@@ -215,7 +215,7 @@ class MissionHandler:
             #     i += 1
             #     rate.sleep()
             print("back safety dis")
-            safety_dis = 0.01
+            safety_dis = 0.05
 
             target_goal.pose.position.x = self.robot_x - math.cos(self.robot_theta) * safety_dis
             target_goal.pose.position.y = self.robot_y - math.sin(self.robot_theta) * safety_dis
