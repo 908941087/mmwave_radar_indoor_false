@@ -34,7 +34,7 @@ class GroupingTracker:
         clusters_num = len(set(labels)) - (1 if -1 in labels else 0)
         for i in range(clusters_num):
             one_cluster = mmwave_pc[labels == i]
-            mmwave_clusters.append(Cluster(i, ClusterType.MMWAVE, 3, MultiPoint(one_cluster)))
+            mmwave_clusters.append(Cluster(i, ClusterType.MMWAVE, 3, MultiPoint(list(one_cluster))))
         return laser_clusters, mmwave_clusters
 
     @timer
