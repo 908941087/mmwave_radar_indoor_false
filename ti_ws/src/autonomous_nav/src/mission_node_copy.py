@@ -179,7 +179,6 @@ class MissionHandler:
         self.started = False
         self.returned = False
         self.startTime = rospy.get_time()
-        self.once = False
         self.target_goal = PoseStamped()
         self.auto_goal = Pose2D()
         # init target_goal
@@ -246,8 +245,14 @@ class MissionHandler:
             self.auto_goal_pub.publish(self.target_goal)
 
         else:
+            # init vars
+            self.auto_goal.x = -100
+            self.auto_goal.y = -100
+            self.fresh_frontiers = False
+            self.found_waypoint = False
+            self.returned = False
             rospy.logwarn("back safety distance")
-            safety_dis = 0.15
+            safety_dis = 0.10
 
             if self.hist_count < 5:
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
@@ -418,10 +423,6 @@ class MissionHandler:
             if self.returned is False:
                 rospy.logwarn("no suitable target point, use 0.0 for goal")
                 self.frontiers = np.array([[0.1, 0.1, 1.0]])
-                self.once = True
-                # self.found_waypoint = False
-                # self.mutex.release()
-                # return
             else:
                 self.found_waypoint = False
                 self.fresh_frontiers = True
