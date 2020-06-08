@@ -201,9 +201,10 @@ class MissionHandler:
         rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.anotherGoalCallback, queue_size=1)
-        # rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
+        rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
         self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 1)
+        self.force_pub_ = rospy.Publisher("/force_find", Int8, queue_size = 1)
 
 
     # rotate robot
@@ -231,44 +232,51 @@ class MissionHandler:
 
 
     def invalidPathCallback(self, msg):
-        self.mutex.acquire()
-        self.hist_count += 1
-        rospy.logwarn("got invalid, use past goals")
-        print(self.waypoint_filter.wp_history)
+        self.auto_goal.x = -100
+        self.auto_goal.y = -100
+        self.fresh_frontiers = False
+        self.found_waypoint = False
+        self.returned = False
+        self.force_pub_.publish(1)
 
-        if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+        # self.mutex.acquire()
+        # self.hist_count += 1
+        # rospy.logwarn("got invalid, use past goals")
+        # print(self.waypoint_filter.wp_history)
+
+        # if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
             
-            self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
-            self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
+        #     self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
+        #     self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
 
-            rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-            self.auto_goal_pub.publish(self.target_goal)
+        #     rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+        #     self.auto_goal_pub.publish(self.target_goal)
 
-        else:
-            # init vars
-            self.auto_goal.x = -100
-            self.auto_goal.y = -100
-            self.fresh_frontiers = False
-            self.found_waypoint = False
-            self.returned = False
-            rospy.logwarn("back safety distance")
-            safety_dis = 0.10
+        # else:
+        #     # init vars
+        #     self.auto_goal.x = -100
+        #     self.auto_goal.y = -100
+        #     self.fresh_frontiers = False
+        #     self.found_waypoint = False
+        #     self.returned = False
+        #     rospy.logwarn("back safety distance")
+        #     safety_dis = 0.10
 
-            if self.hist_count < 5:
-                self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-                self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-            else:
-                self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-                self.target_goal.pose.position.y = self.robot_y + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+        #     if self.hist_count < 5:
+        #         self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+        #         self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+        #     else:
+        #         self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+        #         self.target_goal.pose.position.y = self.robot_y + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
 
-            rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-            self.auto_goal_pub.publish(self.target_goal)
+        #     rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+        #     self.auto_goal_pub.publish(self.target_goal)
 
-        self.mutex.release()
+        # self.mutex.release()
 
 
     def bumperCallback(self, msg):
-        pass
+        self.force_pub_.publish(1)
 
 
     def autoGoalFindCallback(self, msg):
