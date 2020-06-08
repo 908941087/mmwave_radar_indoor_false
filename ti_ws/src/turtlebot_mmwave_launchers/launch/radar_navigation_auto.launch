@@ -29,9 +29,9 @@
   </node>
   -->
 
-  <node name="potential_map" pkg="autonomous_nav" type="potential_map" output="screen">
+  <!-- <node name="potential_map" pkg="autonomous_nav" type="potential_map" output="screen">
     <rosparam command="load" file="$(find autonomous_nav)/param/potential_param.yaml" />
-  </node>
+  </node> -->
   <node name="mission_handler" pkg="autonomous_nav" type="mission_node_copy.py" output="screen"/>
   <node name="dynamic_config" pkg="autonomous_nav" type="dynamic.py" output="screen"/>
 

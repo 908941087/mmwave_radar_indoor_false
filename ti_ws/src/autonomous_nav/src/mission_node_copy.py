@@ -9,6 +9,7 @@ import math
 #ROS messages
 from geometry_msgs.msg import Pose2D, Point
 from autonomous_nav.msg import PotentialGrid
+from nav_msgs.msg import OccupancyGrid
 from visualization_msgs.msg import Marker, MarkerArray
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty, Bool
@@ -20,6 +21,7 @@ from std_msgs.msg import Int8
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from kobuki_msgs.msg import BumperEvent
+from collections import deque
 
 def angle_wrap(ang):
     """
@@ -59,6 +61,95 @@ class WaypointHistory:
             
             if self.wp_history.shape[0] > self.hist_size:
                 self.wp_history = np.delete( self.wp_history , (0), axis=0 )
+
+
+class Pixel:
+    x = 0
+    y = 0
+    def __init__(self, x , y):
+        self.x = x
+        self.y = y
+
+
+class PotentialMapMaker:
+    def __init__(self):
+        self.robot_x = 0.0
+        self.robot_y = 0.0
+        self.robot_pixel_i = 0
+        self.robot_pixel_j = 0
+        self.param_odom = "/odom"
+        self.param_polygon_map = "/map"
+        self.param_inflation_radius = 8
+        self.mutex = Lock()
+        self.map = None
+
+        rospy.Subscriber(self.param_odom, Odometry, self.odometryCallback)
+        rospy.Subscriber(self.param_polygon_map, OccupancyGrid, self.mapCallback)
+        self.pub = rospy.Publisher("potential_map", PotentialGrid, queue_size=1)
+
+
+    def odometryCallback(self, msg):
+        self.mutex.acquire()
+        self.robot_x = msg.pose.pose.position.x
+        self.robot_y = msg.pose.pose.position.y
+        self.mutex.release()
+
+    
+    def mapCallback(self, msg):
+        self.mutex.acquire()
+
+        self.map = msg
+        self.map.data = list(msg.data)
+        inflation_queue = deque()
+        for i in range(0, msg.info.width):
+            for j in range(0, msg.info.height):
+                if msg.data[j * msg.info.width + i] == 100:
+                    self.map.data[j * msg.info.width + i] = 2
+                    inflation_queue.append(Pixel(i, j))
+                elif msg.data[j * msg.info.width + i] == -1:
+                    self.map.data[j * msg.info.width + i] = 1
+                else:
+                    self.map.data[j * msg.info.width + i] = 0
+
+        inflation_queue2 = deque()
+        
+        for n in range(0, self.param_inflation_radius):
+            inflation_queue2 = deque()
+
+            while len(inflation_queue) > 0:
+                temp = inflation_queue.popleft()
+                for i in range(max(temp.x - 1, 0), min(temp.x + 2, msg.info.width)):
+                    for j in range(max(temp.y - 1, 0), min(temp.y + 2, msg.info.height)):
+                        if self.map.data[j * msg.info.width + i] <= 1:
+                            self.map.data[j * msg.info.width + i] = 2
+                            inflation_queue2.append(Pixel(i, j))
+            inflation_queue = inflation_queue2
+        self.robot_pixel_i = int((self.robot_x - msg.info.origin.position.x)/msg.info.resolution)
+        self.robot_pixel_j = int((self.robot_y - msg.info.origin.position.y)/msg.info.resolution)
+
+        if self.robot_pixel_i < 0 or self.robot_pixel_i > msg.info.width or self.robot_pixel_j < 0 or self.robot_pixel_j > msg.info.height:
+            rospy.logwarn("Robot outside of projected_map")
+            self.mutex.release()
+            return
+        
+        self.map.data[self.robot_pixel_j * msg.info.width + self.robot_pixel_i] = 3
+        queue = deque()
+        queue.append(Pixel(self.robot_pixel_i, self.robot_pixel_j))
+
+        while len(queue) > 0:
+            temp = queue.popleft()
+            for i in range(max(temp.x - 5, 0), min(temp.x + 5, msg.info.width)):
+                    for j in range(max(temp.y - 5, 0), min(temp.y + 5, msg.info.height)):
+                        if self.map.data[j * msg.info.width + i] == 0:
+                            self.map.data[j * msg.info.width + i] = self.map.data[temp.y * msg.info.width + temp.x] + 1
+                            queue.append(Pixel(i, j))
+
+        pub_map = PotentialGrid()
+        pub_map.header = self.map.header
+        pub_map.info = self.map.info
+        pub_map.data = tuple(self.map.data)
+        self.pub.publish(pub_map)
+        self.mutex.release()
 
 
 class MissionHandler:
@@ -210,11 +301,11 @@ class MissionHandler:
             else:
                 if (rospy.get_time() - self.startTime) < 240.0:
                     self.hist_count = 1
-                    rospy.logwarn("too early, try again later, use random now!!!")
-                    rospy.logwarn("too early, try again later, use random now!!!")
-                    rospy.logwarn("too early, try again later, use random now!!!")
-                    self.target_goal.pose.position.x = np.random.random()
-                    self.target_goal.pose.position.y = np.random.random()
+                    rospy.logerr("too early, try again later, use random now!!!")
+                    rospy.logerr("too early, try again later, use random now!!!")
+                    rospy.logerr("too early, try again later, use random now!!!")
+                    self.target_goal.pose.position.x = self.robot_x + np.random.random()
+                    self.target_goal.pose.position.y = self.robot_y + np.random.random()
                     rospy.logwarn("current goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                     self.auto_goal_pub.publish(self.target_goal)
                     return
@@ -299,6 +390,9 @@ class MissionHandler:
                     else:                    
                         self.frontiers = np.vstack((self.frontiers, np.array([[frontier_x, frontier_y, frontier_weight]])))
 
+        rospy.loginfo("potential goals")
+        rospy.loginfo("potential goals")
+        print(self.frontiers)
         self.fresh_frontiers = True
         self.mutex.release()
 
@@ -306,9 +400,9 @@ class MissionHandler:
     # Calling frontiers function
     def proposeWaypoints(self):
         if self.fresh_frontiers is not True:
-            rospy.logwarn("not got potential_map yet, please request later!")
-            rospy.logwarn("not got potential_map yet, please request later!")
-            rospy.logwarn("not got potential_map yet, please request later!")
+            rospy.logerr("not got potential_map yet, please request later!")
+            rospy.logerr("not got potential_map yet, please request later!")
+            rospy.logerr("not got potential_map yet, please request later!")
             self.found_waypoint = False
             return
 
@@ -383,4 +477,5 @@ class MissionHandler:
 if __name__ == '__main__':
 
     mission_handler = MissionHandler()
+    map_maker = PotentialMapMaker()
     rospy.spin()
