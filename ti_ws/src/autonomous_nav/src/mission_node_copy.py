@@ -87,6 +87,7 @@ class MissionHandler:
         self.start_y = 0.0
         self.started = False
         self.returned = False
+        self.startTime = rospy.get_time()
         self.once = False
         self.target_goal = PoseStamped()
         self.auto_goal = Pose2D()
@@ -155,14 +156,14 @@ class MissionHandler:
 
         else:
             rospy.logwarn("back safety distance")
-            safety_dis = 0.05
+            safety_dis = 0.15
 
             if self.hist_count < 5:
-                self.target_goal.pose.position.x = self.robot_x - math.cos(self.robot_theta) * safety_dis
-                self.target_goal.pose.position.y = self.robot_y - math.sin(self.robot_theta) * safety_dis
+                self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+                self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
             else:
-                self.target_goal.pose.position.x = self.robot_x + math.cos(self.robot_theta) * safety_dis
-                self.target_goal.pose.position.y = self.robot_y + math.sin(self.robot_theta) * safety_dis
+                self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+                self.target_goal.pose.position.y = self.robot_y + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
 
             rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
             self.auto_goal_pub.publish(self.target_goal)
@@ -207,6 +208,16 @@ class MissionHandler:
                 rospy.logwarn("selected: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                 self.auto_goal_pub.publish(self.target_goal)
             else:
+                if (rospy.get_time() - self.startTime) < 240.0:
+                    self.hist_count = 1
+                    rospy.logwarn("too early, try again later, use random now!!!")
+                    rospy.logwarn("too early, try again later, use random now!!!")
+                    rospy.logwarn("too early, try again later, use random now!!!")
+                    self.target_goal.pose.position.x = np.random.random()
+                    self.target_goal.pose.position.y = np.random.random()
+                    rospy.logwarn("current goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                    self.auto_goal_pub.publish(self.target_goal)
+                    return
                 rospy.logwarn("got return flag")
                 if self.returned is False:
                     self.target_goal.pose.position.x = self.start_x

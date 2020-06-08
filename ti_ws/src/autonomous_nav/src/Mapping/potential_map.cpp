@@ -61,6 +61,10 @@ private:
     int robot_pixel_i, robot_pixel_j;
     autonomous_nav::PotentialGrid last_potential_map;
 
+    // add params
+    string param_odom, param_polygon_map;
+    int param_inflation_radius;
+
 };
 
 PotentialMapMaker::PotentialMapMaker(){
@@ -68,11 +72,17 @@ PotentialMapMaker::PotentialMapMaker(){
     robot_x = 0; robot_y = 0;
     last_potential_map = autonomous_nav::PotentialGrid();
 
+    //read the params from potential_map_param.yaml
+    ros::NodeHandle private_nh("~");
+    private_nh.param("potential_odom", param_odom, string("/odom"));
+    private_nh.param("potential_polygon_map", param_polygon_map, string("/map"));
+    private_nh.param("potential_inflation_radius", param_inflation_radius, 8);
+
     //Node I/O
-    robot_pos_sub = node_handle.subscribe("/odom", 10, &PotentialMapMaker::odometryCallback, this);
+    robot_pos_sub = node_handle.subscribe(param_odom, 10, &PotentialMapMaker::odometryCallback, this);
     
     //Potential Map Making
-    projected_map_sub = node_handle.subscribe("/polygon_map", 1, &PotentialMapMaker::projectedMapCallback, this);
+    projected_map_sub = node_handle.subscribe(param_polygon_map, 1, &PotentialMapMaker::projectedMapCallback, this);
     potential_map_pub = node_handle.advertise<autonomous_nav::PotentialGrid>("potential_map", 1);
 }
 
@@ -121,7 +131,7 @@ void PotentialMapMaker::projectedMapCallback(const nav_msgs::OccupancyGrid& msg)
 
     //1. INFLATE OBSTACLES
     // ROS_INFO("start cal potential_map");
-    int inflate = 8;
+    int inflate = param_inflation_radius;
     deque<Pixel> inflation_queue2;
 
     for(int n = 0; n < inflate; n++){
