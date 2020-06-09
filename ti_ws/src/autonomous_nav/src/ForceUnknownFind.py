@@ -16,6 +16,8 @@ from std_msgs.msg import Int8
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import PoseStamped
 
+from autonomous_nav.srv import ForceFind, ForceFindResponse
+
 # Numpy
 import numpy as np
 
@@ -41,21 +43,21 @@ output: start_point, goal_point
 """
 
 
-def visual_pub(tx, ty):
-    target_pose = PoseStamped()
+# def visual_pub(tx, ty):
+#     target_pose = PoseStamped()
 
-    # Transform res_point to goal_point
-    target_pose.header.seq = 0
-    target_pose.header.stamp = rospy.get_rostime()
-    target_pose.header.frame_id = "map"
-    target_pose.pose.position.z = 0.0
-    target_pose.pose.orientation.x = 0.0
-    target_pose.pose.orientation.y = 0.0
-    target_pose.pose.orientation.w = 1.0
+#     # Transform res_point to goal_point
+#     target_pose.header.seq = 0
+#     target_pose.header.stamp = rospy.get_rostime()
+#     target_pose.header.frame_id = "map"
+#     target_pose.pose.position.z = 0.0
+#     target_pose.pose.orientation.x = 0.0
+#     target_pose.pose.orientation.y = 0.0
+#     target_pose.pose.orientation.w = 1.0
 
-    target_pose.pose.position.x = xorg + tx * res
-    target_pose.pose.position.y = yorg + ty * res
-    goal_pub.publish(target_pose)
+#     target_pose.pose.position.x = xorg + tx * res
+#     target_pose.pose.position.y = yorg + ty * res
+#     goal_pub.publish(target_pose)
 
 
 def log_neighbor(point_index, neighbor_field = 4):
@@ -108,6 +110,8 @@ def ForceUnknownFindCB(msg):
     m_heigh = heigh
     m_res = res
 
+    resGoal = ForceFindResponse()
+
     filtered_map = np.array(dat).reshape((m_wid, m_heigh))
     rospy.loginfo("Map: %s, %s, %d, %d, %d, %d, %s", m_xorg, m_yorg, m_wid, m_heigh, filtered_map.shape[0],
                   filtered_map.shape[1], m_res)
@@ -157,8 +161,10 @@ def ForceUnknownFindCB(msg):
             target_pose.pose.position.y = m_yorg + res_point[0] * res
             rospy.loginfo("Publish neareast unknown point value" + str(
                 filtered_map[int(res_point[0])][int(res_point[1])]))
-            goal_pub.publish(target_pose)
+            # goal_pub.publish(target_pose)
             p_point = np.zeros(2, int)
+            resGoal.goal = target_pose
+            return resGoal
             #log_neighbor(res_point)
             # for x_d in range(-1, 2):
             #     p_point[0] = x_d + res_point[0]
@@ -170,13 +176,19 @@ def ForceUnknownFindCB(msg):
         else:
             target_pose.pose.position.x = m_xorg + (3+res_point[0]) * res
             target_pose.pose.position.y = m_yorg + (3+res_point[1]) * res
-            goal_pub.publish(target_pose)
+            resGoal.goal = target_pose
+            return resGoal
+            # goal_pub.publish(target_pose)
     else:
         target_pose.pose.position.x = 0.0
         target_pose.pose.position.y = 0.0
-        goal_pub.publish(target_pose)
+
+        # goal_pub.publish(target_pose)
+
         rospy.loginfo("Returning!")
         rospy.on_shutdown(myhook)
+        resGoal.goal = target_pose
+        return resGoal
 
 
 # DFS version
@@ -403,11 +415,18 @@ def test():
 if __name__ == '__main__':
     global oldgoalmap 
     oldgoalmap = None
+
     rospy.init_node('force_unknown_find_handler', log_level=rospy.INFO)
     rospy.loginfo("Start find unknown point")
-    force_unknown_find_sub = rospy.Subscriber("/force_find", Int8, ForceUnknownFindCB, queue_size=1)
+    
+    try:
+        force_find_srv = rospy.Service('/force_find', ForceFind, ForceUnknownFindCB)
+    except rospy.ServiceException, e:
+        rospy.logerr("Service registration failed: %s", str(e))
+
+    # force_unknown_find_sub = rospy.Subscriber("/force_find", Int8, ForceUnknownFindCB, queue_size=1)
     odom_sub = rospy.Subscriber("/odom", Odometry, odomCallback, queue_size=1)
     map_sub_ = rospy.Subscriber("/map", OccupancyGrid, OccupancyGridCallback, queue_size=1)
-    goal_pub = rospy.Publisher("/unknown_goal", PoseStamped, queue_size=1)
+    # goal_pub = rospy.Publisher("/unknown_goal", PoseStamped, queue_size=1)
     test()
     rospy.spin()

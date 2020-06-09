@@ -23,6 +23,8 @@ from geometry_msgs.msg import Twist
 from kobuki_msgs.msg import BumperEvent
 from collections import deque
 
+from autonomous_nav.srv import ForceFind, ForceFindRequest, ForceFindResponse
+
 def angle_wrap(ang):
     """
     Return the angle normalized between [-pi, pi].
@@ -167,7 +169,6 @@ class MissionHandler:
         # Initalize variables
         self.robot_x = self.robot_y = self.robot_theta = None
 
-        self.current_wp = None
         self.frontiers = None
         self.waypoint_filter = WaypointHistory()
 
@@ -180,6 +181,7 @@ class MissionHandler:
         self.returned = False
         self.startTime = rospy.get_time()
         self.target_goal = PoseStamped()
+        self.current_wp = Pose2D()
         self.auto_goal = Pose2D()
         # init target_goal
         self.target_goal.header.seq = 0
@@ -197,14 +199,23 @@ class MissionHandler:
         # Mission Handler Subscribers
         rospy.Subscriber("/odom", Odometry, self.odometryCallback)
         rospy.Subscriber("/potential_map", PotentialGrid, self.frontierCallback, queue_size=1)
+
         # UPDATE
         rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.anotherGoalCallback, queue_size=1)
+        rospy.Subscriber("/unknown_goal", PoseStamped, self.anotherGoalCallback, queue_size=1)
         rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
-        self.auto_goal_pub = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
+
+        # Add service
+        rospy.wait_for_service('force_find')
+        try:
+            self.propose_ForceFind = rospy.ServiceProxy('force_find', ForceFind, persistent=True)
+        except rospy.ServiceException, e:
+            rospy.logerr("Service call failed: %s", str(e))
+        
+        self.auto_goal_pub_ = rospy.Publisher("/move_base_simple/auto_goal", PoseStamped, queue_size=1)
         self.control_input_pub_ = rospy.Publisher("/mobile_base/commands/velocity", Twist, queue_size = 1)
-        self.force_pub_ = rospy.Publisher("/force_find", Int8, queue_size = 1)
 
 
     # rotate robot
@@ -226,60 +237,95 @@ class MissionHandler:
 
     def anotherGoalCallback(self, msg):
         rospy.logwarn("got another goal")
-        if self.auto_goal.x != msg.pose.position.x or self.auto_goal.y != msg.pose.position.y:
-            self.auto_goal.x = -100
-            self.auto_goal.y = -100
+        self.current_wp.x = msg.pose.position.x
+        self.current_wp.y = msg.pose.position.y
+        self.updateCurrentWaypoint()
+        self.auto_goal.x = -1000
+        self.auto_goal.y = -1000
 
 
     def invalidPathCallback(self, msg):
+        self.mutex.acquire()
+
+        self.hist_count += 1
+        req = ForceFindRequest()
+        resGoal = ForceFindResponse()
+        req.callFlag = 1
+        try:
+            resGoal = self.propose_ForceFind(req)
+        except rospy.ServiceException, e:
+            rospy.logwarn("Request error: %s", str(e))
+        
+        if self.hist_count <= 3 and resGoal.goal is not None:
+            self.target_goal = resGoal.goal
+            rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            self.auto_goal_pub_.publish(self.target_goal)
+        else:
+            rospy.logwarn("got invalid, use past goals")
+            print(self.waypoint_filter.wp_history)
+
+            if (self.hist_count <= 5) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+                
+                self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
+                self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
+
+                rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                self.auto_goal_pub_.publish(self.target_goal)
+
+            else:
+                # init vars
+                self.auto_goal.x = -100
+                self.auto_goal.y = -100
+                self.fresh_frontiers = False
+                self.found_waypoint = False
+                self.returned = False
+                rospy.logwarn("back safety distance")
+                safety_dis = 0.10
+
+                if self.hist_count < 5:
+                    self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+                    self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+                else:
+                    self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+                    self.target_goal.pose.position.y = self.robot_y + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+
+                rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                self.auto_goal_pub_.publish(self.target_goal)
+
+        self.mutex.release()
+
+
+    def bumperCallback(self, msg):
+        self.mutex.acquire()
+
+        # init vars
         self.auto_goal.x = -100
         self.auto_goal.y = -100
         self.fresh_frontiers = False
         self.found_waypoint = False
         self.returned = False
-        self.force_pub_.publish(1)
 
-        # self.mutex.acquire()
-        # self.hist_count += 1
-        # rospy.logwarn("got invalid, use past goals")
-        # print(self.waypoint_filter.wp_history)
-
-        # if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
-            
-        #     self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
-        #     self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
-
-        #     rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-        #     self.auto_goal_pub.publish(self.target_goal)
-
-        # else:
-        #     # init vars
-        #     self.auto_goal.x = -100
-        #     self.auto_goal.y = -100
-        #     self.fresh_frontiers = False
-        #     self.found_waypoint = False
-        #     self.returned = False
-        #     rospy.logwarn("back safety distance")
-        #     safety_dis = 0.10
-
-        #     if self.hist_count < 5:
-        #         self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-        #         self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-        #     else:
-        #         self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-        #         self.target_goal.pose.position.y = self.robot_y + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-
-        #     rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-        #     self.auto_goal_pub.publish(self.target_goal)
-
-        # self.mutex.release()
-
-
-    def bumperCallback(self, msg):
-        self.force_pub_.publish(1)
+        req = ForceFindRequest()
+        resGoal = ForceFindResponse()
+        req.callFlag = 1
+        try:
+            resGoal = self.propose_ForceFind(req)
+        except rospy.ServiceException, e:
+            rospy.logwarn("Request error: %s", str(e))
+        
+        if resGoal.goal is not None:
+            self.target_goal = resGoal.goal
+            rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            self.auto_goal_pub_.publish(self.target_goal)
+        
+        self.mutex.release()
 
 
     def autoGoalFindCallback(self, msg):
+        self.current_wp.x = self.target_goal.pose.position.x
+        self.current_wp.y = self.target_goal.pose.position.y
+        self.updateCurrentWaypoint()
+
         self.showTextRobot("exploring")
         rospy.loginfo("started find, current goals:")
         print(self.frontiers)
@@ -293,51 +339,56 @@ class MissionHandler:
             self.target_goal.pose.position.y = self.auto_goal.y
 
             rospy.loginfo("selected: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-            self.auto_goal_pub.publish(self.target_goal)
+            self.auto_goal_pub_.publish(self.target_goal)
 
             self.updateCurrentWaypoint()
 
             self.hist_count = 1
             self.returned = False
         else:
-            rospy.logwarn("use past goal")
-            print(self.waypoint_filter.wp_history)
-
-            self.hist_count += 1
+            req = ForceFindRequest()
+            resGoal = ForceFindResponse()
+            req.callFlag = 1
+            try:
+                resGoal = self.propose_ForceFind(req)
+            except rospy.ServiceException, e:
+                rospy.logwarn("Request error: %s", str(e))
             
-            if (self.hist_count <= 3) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
-                self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
-                self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
-
-                rospy.logwarn("selected: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-                self.auto_goal_pub.publish(self.target_goal)
-            else:
-                if (rospy.get_time() - self.startTime) < 240.0:
-                    self.hist_count = 1
-                    rospy.logerr("too early, try again later, use random now!!!")
-                    rospy.logerr("too early, try again later, use random now!!!")
-                    rospy.logerr("too early, try again later, use random now!!!")
-                    self.target_goal.pose.position.x = self.robot_x + np.random.random()
-                    self.target_goal.pose.position.y = self.robot_y + np.random.random()
-                    rospy.logwarn("current goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-                    self.auto_goal_pub.publish(self.target_goal)
-                    return
-                rospy.logwarn("got return flag")
-                if self.returned is False:
-                    self.target_goal.pose.position.x = self.start_x
-                    self.target_goal.pose.position.y = self.start_y
-
-                    rospy.logwarn("back to start: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-                    self.auto_goal_pub.publish(self.target_goal)
-                    self.showTextRobot("returning")
-                    
-                    self.returned = True
-                    rospy.logwarn("return phase")
+            if resGoal.goal is not None:
+                if resGoal.goal.pose.position.x != 0.0 or resGoal.goal.pose.position.y != 0.0:
+                    self.target_goal = resGoal.goal
+                    rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                    self.auto_goal_pub_.publish(self.target_goal)
+                    self.current_wp.x = self.target_goal.pose.position.x
+                    self.current_wp.y = self.target_goal.pose.position.y
+                    self.updateCurrentWaypoint()
                 else:
-                    if self.returned:
-                        self.showTextRobot("exploring")
-                        rospy.logwarn("returned, auto navi ended")
-                        rospy.logwarn("please use two point navigation")
+                    if (rospy.get_time() - self.startTime) < 240.0:
+                        self.hist_count = 1
+                        rospy.logerr("too early, try again later, use random now!!!")
+                        rospy.logerr("too early, try again later, use random now!!!")
+                        rospy.logerr("too early, try again later, use random now!!!")
+                        self.target_goal.pose.position.x = self.robot_x + np.random.random()
+                        self.target_goal.pose.position.y = self.robot_y + np.random.random()
+                        rospy.logwarn("current goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                        self.auto_goal_pub_.publish(self.target_goal)
+                        return
+                    rospy.logwarn("got return flag")
+                    if self.returned is False:
+                        self.target_goal.pose.position.x = self.start_x
+                        self.target_goal.pose.position.y = self.start_y
+
+                        rospy.logwarn("back to start: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                        self.auto_goal_pub_.publish(self.target_goal)
+                        self.showTextRobot("returning")
+                        
+                        self.returned = True
+                        rospy.logwarn("return phase")
+                    else:
+                        if self.returned:
+                            self.showTextRobot("exploring")
+                            rospy.logwarn("returned, auto navi ended")
+                            rospy.logwarn("please use two point navigation")
                 
 
     def odometryCallback(self, msg):
@@ -390,11 +441,11 @@ class MissionHandler:
                         (msg.data[w*(i + 1) + j] == 2 and msg.data[w*(i - 1) + j] == 1) or \
                         (msg.data[w*(i + 1) + j] == 1 and msg.data[w*(i - 1) + j] == 2) or \
                         (msg.data[w*i + j + 1] == 2 and msg.data[w*i + j - 1] == 1) or \
-                        (msg.data[w*i + j + 1] == 1 and msg.data[w*i + j - 1] == 2) or \
-                        (msg.data[w*(i + 1) + j] == 2 and msg.data[w*(i - 1) + j] == 2) or \
-                        (msg.data[w*(i + 1) + j] == 1 and msg.data[w*(i - 1) + j] == 1) or \
-                        (msg.data[w*i + j + 1] == 2 and msg.data[w*i + j - 1] == 2) or \
-                        (msg.data[w*i + j + 1] == 1 and msg.data[w*i + j - 1] == 1) :
+                        (msg.data[w*i + j + 1] == 1 and msg.data[w*i + j - 1] == 2) :
+                        # (msg.data[w*(i + 1) + j] == 2 and msg.data[w*(i - 1) + j] == 2) or \
+                        # (msg.data[w*(i + 1) + j] == 1 and msg.data[w*(i - 1) + j] == 1) or \
+                        # (msg.data[w*i + j + 1] == 2 and msg.data[w*i + j - 1] == 2) or \
+                        # (msg.data[w*i + j + 1] == 1 and msg.data[w*i + j - 1] == 1) :
 
                     frontier_x = float(j * msg.info.resolution + msg.info.origin.position.x)
                     frontier_y = float(i * msg.info.resolution + msg.info.origin.position.y)
