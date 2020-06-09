@@ -932,9 +932,9 @@ namespace move_base {
         }
         else {
 
-          std_msgs::Int8 invalid_mess ;
-          invalid_mess.data = 1;
-          invalid_path_pub.publish(invalid_mess);
+          // std_msgs::Int8 invalid_mess ;
+          // invalid_mess.data = 1;
+          // invalid_path_pub.publish(invalid_mess);
           
           ROS_DEBUG_NAMED("move_base", "The local planner could not find a valid plan.");
           ros::Time attempt_end = last_valid_control_ + ros::Duration(controller_patience_);

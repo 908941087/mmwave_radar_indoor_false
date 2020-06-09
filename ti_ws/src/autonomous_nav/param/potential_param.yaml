@@ -1,0 +1,3 @@
+potential_odom: /odom
+potential_polygon_map: /map
+potential_inflation_radius: 8
