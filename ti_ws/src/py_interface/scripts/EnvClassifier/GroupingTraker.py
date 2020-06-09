@@ -38,7 +38,7 @@ class GroupingTracker:
         return laser_clusters, mmwave_clusters
 
     @timer
-    def getEnv(self, mmwave_pc, laser_grid, robot_pose):
+    def getEnv(self, mmwave_pc, laser_grid):
         # convert laser grid to laser pc
         width, height = laser_grid.info.width, laser_grid.info.height
         x_offset, y_offset = laser_grid.info.origin.position.x, laser_grid.info.origin.position.y
@@ -49,7 +49,7 @@ class GroupingTracker:
         if len(laser_pc) == 0:
             return Environment()
         laser_clusters, mmwave_clusters = self.pc_group(laser_pc, mmwave_pc)
-        self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters, robot_pose)
+        self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters)
         # import matplotlib
         # matplotlib.use('TkAgg')
         # import matplotlib.pyplot as plt
@@ -67,7 +67,7 @@ class GroupingTracker:
         # self.env.showEntityShapes(plt)
         # self.env.showEntityTags(plt)
         # plt.show()
-        return self.env
+        return self.env, laser_clusters, mmwave_clusters
 
     def getEnhancedEnv(self, pc2):
         self.enhanced_env = self.getEnv(pc2).enhance()

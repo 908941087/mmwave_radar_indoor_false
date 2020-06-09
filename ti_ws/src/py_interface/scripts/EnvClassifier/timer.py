@@ -11,6 +11,6 @@ def timer(func):
         value = func(*args, **kwargs)
         end_time = datetime.now()      # 2
         run_time = end_time - start_time    # 3
-        rospy.loginfo("{0} finished in {1} secs.".format(func.__name__, run_time.total_seconds()))
+        rospy.logwarn("{0} finished in {1} secs.".format(func.__name__, run_time.total_seconds()))
         return value
     return wrapper_timer
