@@ -197,6 +197,9 @@ class MissionHandler:
         # Mission Handler Publisher
         self.pub_rviz = rospy.Publisher("/mission_visualize", Marker, queue_size=10)
 
+        self.latencyPose = Pose2D()
+        self.latency = rospy.Timer(rospy.Duration(15), self.latencyCallback)
+
         # Mission Handler Subscribers
         rospy.Subscriber("/odom", Odometry, self.odometryCallback)
         rospy.Subscriber("/potential_map", PotentialGrid, self.frontierCallback, queue_size=1)
@@ -257,7 +260,7 @@ class MissionHandler:
         except rospy.ServiceException, e:
             rospy.logwarn("Request error: %s", str(e))
         
-        if self.hist_count <= 3 and resGoal.goal is not None:
+        if self.hist_count < 3 and resGoal.goal is not None:
             self.target_goal = resGoal.goal
             rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
             self.auto_goal_pub_.publish(self.target_goal)
@@ -265,7 +268,7 @@ class MissionHandler:
             rospy.logwarn("got invalid, use past goals")
             print(self.waypoint_filter.wp_history)
 
-            if (self.hist_count <= 5) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+            if (self.hist_count < 4) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
                 
                 self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
                 self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
@@ -283,7 +286,7 @@ class MissionHandler:
                 rospy.logwarn("back safety distance")
                 safety_dis = 0.10
 
-                if self.hist_count < 5:
+                if self.hist_count < 6:
                     self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                     self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 else:
@@ -319,7 +322,7 @@ class MissionHandler:
             self.target_goal = resGoal.goal
             rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
             self.auto_goal_pub_.publish(self.target_goal)
-        elif (self.bumper_count <= 5) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.bumper_count:
+        elif (self.bumper_count < 5) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.bumper_count:
             self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.bumper_count, 0]
             self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.bumper_count, 1]
 
@@ -358,27 +361,28 @@ class MissionHandler:
             rospy.loginfo("selected: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
             self.auto_goal_pub_.publish(self.target_goal)
 
-            self.updateCurrentWaypoint()
-
             self.hist_count = 1
             self.returned = False
         else:
             req = ForceFindRequest()
             resGoal = ForceFindResponse()
             req.callFlag = 1
-            try:
-                resGoal = self.propose_ForceFind(req)
-            except rospy.ServiceException, e:
-                rospy.logwarn("Request error: %s", str(e))
+            if self.returned is False:
+                try:
+                    resGoal = self.propose_ForceFind(req)
+                except rospy.ServiceException, e:
+                    rospy.logwarn("Request error: %s", str(e))
+            else:
+                resGoal.goal.pose.position.x = 0.0
+                resGoal.goal.pose.position.y = 0.0
             
             if resGoal.goal is not None:
-                if resGoal.goal.pose.position.x != 0.0 or resGoal.goal.pose.position.y != 0.0:
+                if abs(resGoal.goal.pose.position.x - 0.0) > 1e-3 or abs(resGoal.goal.pose.position.y - 0.0) > 1e-3:
                     self.target_goal = resGoal.goal
                     rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                     self.auto_goal_pub_.publish(self.target_goal)
                     self.current_wp.x = self.target_goal.pose.position.x
                     self.current_wp.y = self.target_goal.pose.position.y
-                    self.updateCurrentWaypoint()
                 else:
                     if (rospy.get_time() - self.startTime) < 240.0:
                         self.hist_count = 1
@@ -476,7 +480,6 @@ class MissionHandler:
                         self.frontiers = np.vstack((self.frontiers, np.array([[frontier_x, frontier_y, frontier_weight]])))
 
         rospy.loginfo("potential goals")
-        rospy.loginfo("potential goals")
         print(self.frontiers)
         self.fresh_frontiers = True
         self.mutex.release()
@@ -525,8 +528,6 @@ class MissionHandler:
         if self.current_wp is not None:
             self.waypoint_filter.addWaypointToHistory(self.current_wp)
 
-        self.fresh_frontiers = False
-
 
     def showTextRobot(self, text):
         marker = Marker()
@@ -553,6 +554,17 @@ class MissionHandler:
         marker.text = text
 
         self.pub_rviz.publish(marker)
+
+
+    def latencyCallback(self, evevt):
+        rospy.loginfo("running latencyCallback")
+        if abs(self.latencyPose.x - self.robot_x) > 1e-3 or abs(self.latencyPose.y - self.robot_y) > 1e-3:
+            self.latencyPose.x = self.robot_x
+            self.latencyPose.y = self.robot_y
+        elif self.returned is False:
+            control_input = Twist()
+            control_input.linear.x = -0.2
+            self.control_input_pub_.publish(control_input)
 
 
 if __name__ == '__main__':
