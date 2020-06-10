@@ -175,6 +175,7 @@ class MissionHandler:
         # UPDATE
         self.found_waypoint = False
         self.hist_count = 1
+        self.bumper_count = 1
         self.start_x = 0.0
         self.start_y = 0.0
         self.started = False
@@ -298,6 +299,7 @@ class MissionHandler:
     def bumperCallback(self, msg):
         self.mutex.acquire()
 
+        self.bumper_count += 1
         # init vars
         self.auto_goal.x = -100
         self.auto_goal.y = -100
@@ -313,9 +315,23 @@ class MissionHandler:
         except rospy.ServiceException, e:
             rospy.logwarn("Request error: %s", str(e))
         
-        if resGoal.goal is not None:
+        if resGoal.goal is not None and self.bumper_count < 3:
             self.target_goal = resGoal.goal
             rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            self.auto_goal_pub_.publish(self.target_goal)
+        elif (self.bumper_count <= 5) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.bumper_count:
+            self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.bumper_count, 0]
+            self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.bumper_count, 1]
+
+            rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            self.auto_goal_pub_.publish(self.target_goal)
+        else:
+            rospy.logwarn("back safety distance")
+            safety_dis = 0.10
+            self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+            self.target_goal.pose.position.y = self.robot_y - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+
+            rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
             self.auto_goal_pub_.publish(self.target_goal)
         
         self.mutex.release()
@@ -326,6 +342,7 @@ class MissionHandler:
         self.current_wp.y = self.target_goal.pose.position.y
         self.updateCurrentWaypoint()
 
+        self.bumper_count = 1
         self.showTextRobot("exploring")
         rospy.loginfo("started find, current goals:")
         print(self.frontiers)

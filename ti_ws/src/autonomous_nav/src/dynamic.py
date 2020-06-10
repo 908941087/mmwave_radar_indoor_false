@@ -25,13 +25,13 @@ class Dynamic_Config:
     def invalidPathCallback(self, msg):
         if self.update is False:
             client_local = dynamic_reconfigure.client.Client("/move_base/local_costmap/inflation_layer")
-            params_local = { 'inflation_radius' : '0.15' }
+            params_local = { 'inflation_radius' : '0.20' }
             config_local = client_local.update_configuration(params_local)
             print("local:")
             print(config_local)
 
             client_global = dynamic_reconfigure.client.Client("/move_base/global_costmap/inflation_layer")
-            params_global = { 'inflation_radius' : '0.15' }
+            params_global = { 'inflation_radius' : '0.30' }
             config_global = client_global.update_configuration(params_global)
             print("global:")
             print(config_global)
