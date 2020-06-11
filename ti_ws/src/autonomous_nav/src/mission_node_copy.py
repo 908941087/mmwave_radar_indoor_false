@@ -282,7 +282,7 @@ class MissionHandler:
                 self.auto_goal.y = -100
                 self.fresh_frontiers = False
                 self.found_waypoint = False
-                self.returned = False
+                # self.returned = False
                 rospy.logwarn("back safety distance")
                 safety_dis = 0.10
 
@@ -308,7 +308,7 @@ class MissionHandler:
         self.auto_goal.y = -100
         self.fresh_frontiers = False
         self.found_waypoint = False
-        self.returned = False
+        # self.returned = False
 
         req = ForceFindRequest()
         resGoal = ForceFindResponse()
@@ -351,6 +351,9 @@ class MissionHandler:
         print(self.frontiers)
 
         self.proposeWaypoints()
+
+        if self.returned is True:
+            return
 
         if self.found_waypoint:
             rospy.loginfo("found goal")
