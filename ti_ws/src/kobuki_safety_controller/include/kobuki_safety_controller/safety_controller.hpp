@@ -341,7 +341,7 @@ namespace kobuki
         msg_->linear.z = 0.0;
         msg_->angular.x = 0.0;
         msg_->angular.y = 0.0;
-        msg_->angular.z = 0.0;
+        msg_->angular.z = 0.8;
         velocity_command_publisher_.publish(msg_);
       }
       else if (bumper_left_pressed_ || cliff_left_detected_)
