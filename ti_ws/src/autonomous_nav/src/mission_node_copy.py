@@ -585,7 +585,9 @@ class MissionHandler:
             self.latencyPose.x = self.robot_x
             self.latencyPose.y = self.robot_y
         elif self.returned is False:
-            self.rotateOnce()
+            control_input = Twist()
+            control_input.angular.z = 1.57
+            self.control_input_pub_.publish(control_input)
 
 
 if __name__ == '__main__':
