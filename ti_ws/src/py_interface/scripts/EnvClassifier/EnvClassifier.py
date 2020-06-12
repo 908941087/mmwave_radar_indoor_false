@@ -1,3 +1,6 @@
+import numpy as np
+import rospy
+
 from Environment import Environment
 from shapely.geometry import Polygon, Point, MultiPolygon, LineString, LinearRing, MultiLineString
 from Cluster import Cluster, ClusterType
@@ -5,12 +8,8 @@ from shapely.ops import transform, nearest_points
 from Entity import Wall, Furniture, TranspanrentObstacle, UnfinishedEntity
 from PointCloudOperator import ClusterFit
 from rtree import index
-from sklearn.neighbors import KDTree
-import numpy as np
 from timer import timer
-from PointCloudOperator.ClusterFit import boneFit
-import rospy
-
+from ShapeOperator.ExtendLine import getExtendedLine
 
 class EnvClassifier(object):
     AREA_THRESHOLD = 0.25  # in square meter, area smaller than this threshold will be considered as noise
@@ -19,8 +18,8 @@ class EnvClassifier(object):
     RATIO_THRESHOLD = 5  # longer edge over shorter edge
     NOISE_POINTS_COUNT_THRESHOLD = 40
     MIN_DOOR_LENGTH = 0.5  # meters
-    MIN_END_TO_WALL_LENGTH = 0.8  # meters
-    MIN_DOOR_AREA = 0.4  # square meters
+    MAX_END_TO_WALL_LENGTH = 0.5  # meters
+    MIN_DOOR_AREA = 0.6  # square meters
 
     def __init__(self):
         self.distances = {}  # cluster to cluster distance
@@ -179,14 +178,24 @@ class EnvClassifier(object):
                         min_dist = min(distances.keys())
                         nearest_entities.append(env.getEntity(distances[min_dist]))
                     if nearest_entities[0] != nearest_entities[1]:
-                        end_entity_dist = [line.distance(e.getPolygon()) for e in nearest_entities]
-                        ends_validity = [0 <= d <= self.MIN_END_TO_WALL_LENGTH for d in end_entity_dist]
-                        if False not in ends_validity:
-                            mid_point = line.centroid
-                            new_ends = [nearest_points(mid_point, e.getPolygon())[1] for e in nearest_entities]
-                            rospy.logerr(str([list(p.coords) for p in new_ends]))
-                            env.register(TranspanrentObstacle(LineString(new_ends)), mc)
+                        max_length_line = getExtendedLine(getExtendedLine(line, self.MAX_END_TO_WALL_LENGTH)
+                                                          , -self.MAX_END_TO_WALL_LENGTH)
+                        entity_invalid_flag = False
+                        mid_point = line.centroid
+                        new_ends = []
+                        for e in nearest_entities:
+                            intersection_points = \
+                                [Point(t) for t in list(max_length_line.intersection(e.getPolygon()).coords)]
+                            if len(intersection_points) == 0:
+                                entity_invalid_flag = True
+                                break
+                            sorted(intersection_points, key=lambda x: x.distance(mid_point))
+                            new_ends.append(intersection_points[0])
+                        if entity_invalid_flag:
                             continue
+                        rospy.logerr(str([list(p.coords) for p in new_ends]))
+                        env.register(TranspanrentObstacle(LineString(new_ends)), mc)
+                        continue
             fur = Furniture(mc.getConcaveHull())
             fur.setHeight(self.getHeightFromMc(self.mmwave_clusters_dict[mc.getId()]))
             env.register(fur, mc)
