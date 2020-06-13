@@ -342,9 +342,13 @@ class MissionHandler:
                 rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                 self.auto_goal_pub_.publish(self.target_goal)
         else:
-            if self.bumper_count > 3:
+            if self.bumper_count == 2:
+                self.auto_goal.x = self.target_goal.pose.position.x
+                self.auto_goal.y = self.target_goal.pose.position.y
+            if self.bumper_count > 2:
                 rospy.logwarn("back safety distance")
                 safety_dis = 0.50
+
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
 
@@ -366,7 +370,7 @@ class MissionHandler:
         # self.proposeWaypoints()
 
         if self.returned is True:
-            if self.bumper_count > 3:
+            if self.bumper_count > 2:
                 rospy.logwarn("republish goal")
                 self.target_goal.pose.position.x = self.auto_goal.x
                 self.target_goal.pose.position.y = self.auto_goal.y
@@ -406,7 +410,7 @@ class MissionHandler:
             resGoal.goal.pose.position.y = 0.0
         
         if resGoal.goal is not None:
-            if abs(resGoal.goal.pose.position.x - 0.0) > 1e-3 or abs(resGoal.goal.pose.position.y - 0.0) > 1e-3:
+            if abs(resGoal.goal.pose.position.x - 0.0) > 1e-6 or abs(resGoal.goal.pose.position.y - 0.0) > 1e-6:
                 self.target_goal = resGoal.goal
                 rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                 self.auto_goal_pub_.publish(self.target_goal)
@@ -582,7 +586,7 @@ class MissionHandler:
 
 
     def latencyCallback(self, evevt):
-        if abs(self.latencyPose.x - self.robot_x) > 1e-3 or abs(self.latencyPose.y - self.robot_y) > 1e-3:
+        if abs(self.latencyPose.x - self.robot_x) > 1e-6 or abs(self.latencyPose.y - self.robot_y) > 1e-6:
             self.latencyPose.x = self.robot_x
             self.latencyPose.y = self.robot_y
         elif self.returned is False:
