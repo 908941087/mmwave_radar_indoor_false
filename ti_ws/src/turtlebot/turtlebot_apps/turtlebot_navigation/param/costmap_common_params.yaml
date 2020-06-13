@@ -55,5 +55,6 @@ inflation_layer:
 
 static_layer:
   enabled:              true
-  map_topic:            polygon_map
+  map_topic:            map
+  # map_topic:            polygon_map
 
