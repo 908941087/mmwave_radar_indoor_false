@@ -50,7 +50,7 @@ class MarkerGenerator:
         t_marker.color.b = 0.5
         t_marker.color.a = 1.0
 
-        t_marker.lifetime = rospy.Duration.from_sec(10.0)
+        t_marker.lifetime = rospy.Duration.from_sec(120.0)
         return t_marker
 
     # Generate a 3d bounding box for one polygon
@@ -81,7 +81,7 @@ class MarkerGenerator:
         res_marker.points.extend(self.generate_obstacle_ring(polygon, 0.0))
         res_marker.points.extend(self.generate_obstacle_ring(polygon, height))
 
-        res_marker.lifetime = rospy.Duration.from_sec(10.0)
+        res_marker.lifetime = rospy.Duration.from_sec(120.0)
         return res_marker
 
     # Util func for generate bounding box

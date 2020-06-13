@@ -37,7 +37,7 @@ class PubBlock:
 
 
 class SubThread(threading.Thread):
-    def __init__(self, thread_name="SubThread", duration=10.0):
+    def __init__(self, thread_name="SubThread", duration=60.0):
         super(SubThread, self).__init__(name=thread_name)
         self.thread_name = thread_name
         self.duration = duration
@@ -132,7 +132,6 @@ def get_transparent_obstacle_callback(data):
 def get_clustered_mmwave_pointcloud2_callback(data):
     rospy.loginfo("Updating clustered transparent mmwave clusters.")
     mcs = data[2]
-    print(len(mcs))
     return ClustersToPointCloud2(mcs)
 
 
@@ -156,7 +155,7 @@ if __name__ == '__main__':
     pub_thread.register_distributer(clustered_mmwave_distributer)
     marker_pub_block = PubBlock(pub_thread, pub_event, pc2_grid_sub_func)
 
-    pc2_sub_thread = SubThread("SubPC2", duration=8.0)
+    pc2_sub_thread = SubThread("SubPC2", duration=60.0)
     pc2_sub_thread.register_thread_CB(marker_pub_block)
     try:
         rospy.init_node('map_classifier', anonymous=True)
