@@ -261,7 +261,12 @@ class MissionHandler:
                 #     rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                 #     self.auto_goal_pub_.publish(self.target_goal)
                 pass
-            elif self.hist_count < 5:
+            elif self.hist_count < 7:
+                rospy.loginfo("got invalid, use rotate")
+                control_input = Twist()
+                control_input.angular.z = 1.57
+                self.control_input_pub_.publish(control_input)
+
                 req = ForceFindRequest()
                 resGoal = ForceFindResponse()
                 req.callFlag = 1
@@ -278,9 +283,9 @@ class MissionHandler:
                 self.found_waypoint = False
                 # self.returned = False
                 rospy.logwarn("back safety distance")
-                safety_dis = 0.50
+                safety_dis = 0.20
 
-                if self.hist_count < 8:
+                if self.hist_count < 10:
                     self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                     self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 else:
@@ -291,7 +296,7 @@ class MissionHandler:
                 self.auto_goal_pub_.publish(self.target_goal)
         else:
             rospy.logwarn("back safety distance")
-            safety_dis = 0.50
+            safety_dis = 0.20
             self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
             self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
 
@@ -335,7 +340,7 @@ class MissionHandler:
             #     self.auto_goal_pub_.publish(self.target_goal)
             else:
                 rospy.logwarn("back safety distance")
-                safety_dis = 0.50
+                safety_dis = 0.20
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
 
@@ -347,7 +352,7 @@ class MissionHandler:
                 self.auto_goal.y = self.target_goal.pose.position.y
             if self.bumper_count > 2:
                 rospy.logwarn("back safety distance")
-                safety_dis = 0.50
+                safety_dis = 0.20
 
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
