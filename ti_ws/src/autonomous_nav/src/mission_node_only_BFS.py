@@ -248,18 +248,8 @@ class MissionHandler:
 
         self.hist_count += 1
         if self.returned is False:
-            if self.hist_count < 3:
-                # rospy.logwarn("got invalid, use past goals")
-                # print(self.waypoint_filter.wp_history)
-                # if (self.hist_count < 4) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
-                    
-                #     self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
-                #     self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
 
-                #     rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-                #     self.auto_goal_pub_.publish(self.target_goal)
-                pass
-            elif self.hist_count < 7:
+            if self.hist_count > 3:
                 rospy.loginfo("got invalid, use rotate")
                 control_input = Twist()
                 control_input.angular.z = 1.57
@@ -273,30 +263,60 @@ class MissionHandler:
                 except rospy.ServiceException, e:
                     rospy.logwarn("Request error: %s", str(e))
 
-                self.target_goal = resGoal.goal
-                rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-                self.auto_goal_pub_.publish(self.target_goal)
-            else:
-                self.fresh_frontiers = False
-                self.found_waypoint = False
-                # self.returned = False
+                if resGoal.goal is not None:
+                    self.target_goal = resGoal.goal
+                    rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                    self.auto_goal_pub_.publish(self.target_goal)
 
-                control_input = Twist()
-                control_input.angular.z = 1.57
-                self.control_input_pub_.publish(control_input)
+            # if self.hist_count < 3:
+            #     # rospy.logwarn("got invalid, use past goals")
+            #     # print(self.waypoint_filter.wp_history)
+            #     # if (self.hist_count < 4) and self.waypoint_filter.wp_history is not None and self.waypoint_filter.wp_history.shape[0] > self.hist_count:
+                    
+            #     #     self.target_goal.pose.position.x = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 0]
+            #     #     self.target_goal.pose.position.y = self.waypoint_filter.wp_history[self.waypoint_filter.wp_history.shape[0] - self.hist_count, 1]
 
-                # rospy.logwarn("got invalid too many times, back safety distance")
-                # safety_dis = 0.20
+            #     #     rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            #     #     self.auto_goal_pub_.publish(self.target_goal)
+            #     pass
+            # elif self.hist_count < 7:
+            #     rospy.loginfo("got invalid, use rotate")
+            #     control_input = Twist()
+            #     control_input.angular.z = 1.57
+            #     self.control_input_pub_.publish(control_input)
 
-                # if self.hist_count < 10:
-                #     self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-                #     self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
-                # else:
-                #     self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-                #     self.target_goal.pose.position.y = self.robot_y + (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
+            #     req = ForceFindRequest()
+            #     resGoal = ForceFindResponse()
+            #     req.callFlag = 1
+            #     try:
+            #         resGoal = self.propose_ForceFind(req)
+            #     except rospy.ServiceException, e:
+            #         rospy.logwarn("Request error: %s", str(e))
 
-                # rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-                # self.auto_goal_pub_.publish(self.target_goal)
+            #     self.target_goal = resGoal.goal
+            #     rospy.logwarn("Force Find: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            #     self.auto_goal_pub_.publish(self.target_goal)
+            # else:
+            #     self.fresh_frontiers = False
+            #     self.found_waypoint = False
+            #     # self.returned = False
+
+            #     control_input = Twist()
+            #     control_input.angular.z = 1.57
+            #     self.control_input_pub_.publish(control_input)
+
+            #     # rospy.logwarn("got invalid too many times, back safety distance")
+            #     # safety_dis = 0.20
+
+            #     # if self.hist_count < 10:
+            #     #     self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+            #     #     self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
+            #     # else:
+            #     #     self.target_goal.pose.position.x = self.robot_x + (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
+            #     #     self.target_goal.pose.position.y = self.robot_y + (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
+
+            #     # rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+            #     # self.auto_goal_pub_.publish(self.target_goal)
         else:
             if self.hist_count > 4:
                 rospy.logwarn("got invalid too many times, use rotate")
