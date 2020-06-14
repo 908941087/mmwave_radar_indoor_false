@@ -240,16 +240,14 @@ class MissionHandler:
 
     def anotherGoalCallback(self, msg):
         rospy.logwarn("got another goal")
-        self.auto_goal.x = msg.pose.position.x
-        self.auto_goal.y = msg.pose.position.y
+        self.target_goal = msg
 
 
     def invalidPathCallback(self, msg):
         self.mutex.acquire()
 
+        self.hist_count += 1
         if self.returned is False:
-            self.hist_count += 1
-
             if self.hist_count < 3:
                 # rospy.logwarn("got invalid, use past goals")
                 # print(self.waypoint_filter.wp_history)
@@ -282,7 +280,7 @@ class MissionHandler:
                 self.fresh_frontiers = False
                 self.found_waypoint = False
                 # self.returned = False
-                rospy.logwarn("back safety distance")
+                rospy.logwarn("got invalid too many times, back safety distance")
                 safety_dis = 0.20
 
                 if self.hist_count < 10:
@@ -295,13 +293,11 @@ class MissionHandler:
                 rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                 self.auto_goal_pub_.publish(self.target_goal)
         else:
-            rospy.logwarn("back safety distance")
-            safety_dis = 0.20
-            self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
-            self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
-
-            rospy.logwarn("back goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
-            self.auto_goal_pub_.publish(self.target_goal)
+            if self.hist_count > 4:
+                rospy.logwarn("got invalid too many times, use rotate")
+                control_input = Twist()
+                control_input.angular.z = 1.57
+                self.control_input_pub_.publish(control_input)
 
         self.mutex.release()
 
@@ -339,7 +335,7 @@ class MissionHandler:
             #     rospy.logwarn("got past goal: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
             #     self.auto_goal_pub_.publish(self.target_goal)
             else:
-                rospy.logwarn("back safety distance")
+                rospy.logwarn("got bumper too many times, back safety distance")
                 safety_dis = 0.20
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
@@ -350,8 +346,13 @@ class MissionHandler:
             if self.bumper_count == 2:
                 self.auto_goal.x = self.target_goal.pose.position.x
                 self.auto_goal.y = self.target_goal.pose.position.y
-            if self.bumper_count > 2:
-                rospy.logwarn("back safety distance")
+            elif self.bumper_count < 6:
+                rospy.logwarn("got bumper, use rotate")
+                control_input = Twist()
+                control_input.angular.z = 1.57
+                self.control_input_pub_.publish(control_input)
+            else:
+                rospy.logwarn("got bumper too many times, back safety distance")
                 safety_dis = 0.20
 
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
