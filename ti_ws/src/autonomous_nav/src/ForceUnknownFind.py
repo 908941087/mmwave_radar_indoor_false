@@ -76,7 +76,7 @@ def log_neighbor(point_index, neighbor_field = 4):
             if p_point[1] < 0 or p_point[1] >= m_heigh: continue
             rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
 
-def ObstacleInflation(filtered_map, neighbor_field = 8):
+def ObstacleInflation(filtered_map, neighbor_field = 6):
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
     # Format map
     for i in range(filtered_map.shape[0]):

@@ -105,7 +105,8 @@ void RotateRecovery::runBehavior(){
 
   double current_angle = -1.0 * M_PI;
 
-  bool got_180 = false;
+  // bool got_180 = false;
+  bool got_90 = false;
 
   double start_offset = angles::normalize_angle_positive(tf::getYaw(global_pose.getRotation()));
   while(n.ok()){
@@ -115,7 +116,8 @@ void RotateRecovery::runBehavior(){
     current_angle = angles::normalize_angle_positive(norm_angle - start_offset);
 
     //compute the distance left to rotate
-    double dist_left = (2 * M_PI) - current_angle;
+    // double dist_left = (2 * M_PI) - current_angle;
+    double dist_left = (M_PI) - current_angle;
 
     double x = global_pose.getOrigin().x(), y = global_pose.getOrigin().y();
 
@@ -148,13 +150,17 @@ void RotateRecovery::runBehavior(){
     vel_pub.publish(cmd_vel);
 
     //makes sure that we won't decide we're done right after we start
-    if ((fabs(current_angle - M_PI) < M_PI/2) && (got_180 == false))
+    // if ((fabs(current_angle - M_PI) < M_PI/2) && (got_180 == false))
+    // {
+    //   got_180 = true;
+    // }
+    if ((fabs(current_angle - M_PI / 2) < M_PI/4) && (got_90 == false))
     {
-      got_180 = true;
+      got_90 = true;
     }
 
     //if we're done with our in-place rotation... then return
-    if(got_180 && ((current_angle >= (2*M_PI - tolerance_)) || (current_angle <= (M_PI/2))))
+    if(got_90 && ((current_angle >= (M_PI - tolerance_)) || (current_angle <= (M_PI/4))))
     {
       cmd_vel.angular.z = 0;
       vel_pub.publish(cmd_vel);
