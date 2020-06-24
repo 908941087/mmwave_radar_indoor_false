@@ -3,6 +3,7 @@ from shapely.geometry import LineString, Point, box
 from PointCloudOperator import PCBasics
 from alphashape import alphashape
 from enum import Enum
+from scipy.spatial.qhull import QhullError
 
 
 class ClusterType(Enum):
@@ -47,7 +48,10 @@ class Cluster(object):
     def getArea(self):
         if self.dim == 3:
             raise ValueError("3D point cloud does not have area.")
-        return abs(self.getConcaveHull().area)
+        try:
+            return abs(self.getConcaveHull().area)
+        except QhullError:
+            return 0.0
 
     def getPointsCount(self):
         return len(self.points)
