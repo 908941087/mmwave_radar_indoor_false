@@ -140,19 +140,19 @@ if __name__ == '__main__':
     marker_array_pub = rospy.Publisher("/class_marker", MarkerArray, queue_size=1)
     polygon_array_pub = rospy.Publisher("/polygon_marker", MarkerArray, queue_size=100)
     transparent_obstacle_pub = rospy.Publisher("/transparent_obstacle", Polygon, queue_size=1)
-    clustered_mmwave_pub = rospy.Publisher("/clustered_mmwave", PointCloud2, queue_size=1)
+    # clustered_mmwave_pub = rospy.Publisher("/clustered_mmwave", PointCloud2, queue_size=1)
 
     marker_distributer = Distributer(marker_array_pub, get_marker_array_callback)
     polygon_distributer = Distributer(polygon_array_pub, get_polygon_array_callback)
     transparent_obstacle_distributer = Distributer(transparent_obstacle_pub, get_transparent_obstacle_callback)
-    clustered_mmwave_distributer = Distributer(clustered_mmwave_pub, get_clustered_mmwave_pointcloud2_callback)
+    # clustered_mmwave_distributer = Distributer(clustered_mmwave_pub, get_clustered_mmwave_pointcloud2_callback)
 
     pub_event = threading.Event()
     pub_thread = PubThread("PubMarkerArray", pub_event)
     pub_thread.register_distributer(marker_distributer)
     pub_thread.register_distributer(polygon_distributer)
     pub_thread.register_distributer(transparent_obstacle_distributer)
-    pub_thread.register_distributer(clustered_mmwave_distributer)
+    # pub_thread.register_distributer(clustered_mmwave_distributer)
     marker_pub_block = PubBlock(pub_thread, pub_event, pc2_grid_sub_func)
 
     pc2_sub_thread = SubThread("SubPC2", duration=60.0)
