@@ -105,7 +105,7 @@ class PubThread(threading.Thread):
 
 def pc2_grid_sub_func():
     # Get point data
-    group_tracker = GroupingTraker.GroupingTracker()
+    global group_tracker
     data = rospy.wait_for_message('/filtered_point_cloud_centers', PointCloud2, timeout=None)
     laser_grid = rospy.wait_for_message('/map', OccupancyGrid, timeout=None)
     point_cloud2 = sensor_msgs.point_cloud2.read_points(data)
@@ -155,10 +155,11 @@ if __name__ == '__main__':
     # pub_thread.register_distributer(clustered_mmwave_distributer)
     marker_pub_block = PubBlock(pub_thread, pub_event, pc2_grid_sub_func)
 
-    pc2_sub_thread = SubThread("SubPC2", duration=60.0)
+    pc2_sub_thread = SubThread("SubPC2", duration=10.0)
     pc2_sub_thread.register_thread_CB(marker_pub_block)
     try:
         rospy.init_node('map_classifier', anonymous=True)
+        group_tracker = GroupingTraker.GroupingTracker()
         pc2_sub_thread.start()
         # spin() simply keeps python from exiting until this node is stopped
         rospy.spin()

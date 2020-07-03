@@ -6,6 +6,9 @@ from EnvClassifier import EnvClassifier
 from Cluster import Cluster, ClusterType
 from shapely.geometry import MultiPoint, Point
 from timer import timer
+from datetime import datetime
+
+import rospy
 
 
 class GroupingTracker:
@@ -13,6 +16,10 @@ class GroupingTracker:
         self.env_classifier = EnvClassifier()
         self.env = None
         self.enhanced_env = None
+        self.last_laser_occupancy_count = 0
+        self.laser_clusters = None
+        self.mmwave_clusters = None
+        self.last_update_time = datetime.now()
 
     def pc_group(self, laser_pc, mmwave_pc):
         laser_clusters = []
@@ -48,26 +55,21 @@ class GroupingTracker:
                     if laser_array[i][j] > 0]
         if len(laser_pc) == 0:
             return Environment()
-        laser_clusters, mmwave_clusters = self.pc_group(laser_pc, mmwave_pc)
-        self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters)
-        # import matplotlib
-        # matplotlib.use('TkAgg')
-        # import matplotlib.pyplot as plt
-        # fig = plt.figure(figsize=(10, 10))
-        # ax = fig.add_subplot(1, 1, 1)
-        # ax.grid(True, linewidth=0.5, color='#999999', linestyle='dotted')
-        # cs = ['r', 'g', 'b', 'pink', 'cyan', 'orange']
-        # index = 0
-        # for a_cluster in self.clusters:
-        #     points = a_cluster.getPoints()
-        #     plt.scatter([p.x for p in points], [p.y for p in points], s=20, c=cs[index % len(cs)], edgecolors='none')
-        #     index += 1
-        # plt.scatter([p[0] for p in laser_pc], [p[1] for p in laser_pc], s=1, c='r')
-        # self.env.showClusters(plt)
-        # self.env.showEntityShapes(plt)
-        # self.env.showEntityTags(plt)
-        # plt.show()
-        return self.env, laser_clusters, mmwave_clusters
+        cur_laser_occupancy_count = len(laser_pc)
+        time_delta = datetime.now() - self.last_update_time
+        if (self.last_laser_occupancy_count == 0 or
+                cur_laser_occupancy_count / float(self.last_laser_occupancy_count) > 1.3 or
+                time_delta.seconds > 90):
+            laser_clusters, mmwave_clusters = self.pc_group(laser_pc, mmwave_pc)
+            self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters)
+            self.laser_clusters = laser_clusters
+            self.mmwave_clusters = mmwave_clusters
+            self.last_laser_occupancy_count = cur_laser_occupancy_count
+            self.last_update_time = datetime.now()
+            rospy.logwarn("Update condition satisfied. Updating Env.")
+        else:
+            rospy.logwarn("Update condition not satisfied. Using Old Env.")
+        return self.env, self.laser_clusters, self.mmwave_clusters
 
     def getEnhancedEnv(self, pc2):
         self.enhanced_env = self.getEnv(pc2).enhance()

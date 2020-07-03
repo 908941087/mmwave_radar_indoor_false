@@ -39,7 +39,6 @@ class EnvClassifier(object):
         self.classifySingleMCs(single_mcs, env)
         return env
 
-    @timer
     def match(self, laser_clusters, mmwave_clusters):
         """
         Match laser clusters(2D) with mmwave clusters(3D), some may have a match, some may not.
