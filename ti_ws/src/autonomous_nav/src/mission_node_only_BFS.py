@@ -124,10 +124,11 @@ class MissionHandler:
             if rotate == 1:
                 break
 
+
     def anotherGoalCallback(self, msg):
         rospy.logwarn("got another goal")
-        if self.returned is False:
-            backToStart = rospy.Timer(rospy.Duration(160), self.backToStartCallback)
+        # if self.returned is False:
+        #     backToStart = rospy.Timer(rospy.Duration(160), self.backToStartCallback)
         self.target_goal = msg
 
 
