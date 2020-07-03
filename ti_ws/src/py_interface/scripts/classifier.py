@@ -98,7 +98,7 @@ class PubThread(threading.Thread):
                     # rospy.loginfo("Pub " + self.thread_name)
                     for distributer in self.distributers:
                         distributer.deal_and_pub(self.data)
-                    rospy.sleep(2.0)
+                    rospy.sleep(10.0)
                 else:
                     rospy.loginfo("Nothing to Pub " + self.thread_name)
 
