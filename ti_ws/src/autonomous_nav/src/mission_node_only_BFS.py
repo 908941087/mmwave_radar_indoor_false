@@ -61,6 +61,7 @@ class MissionHandler:
         self.start_x = 0.0
         self.start_y = 0.0
         self.started = False
+        self.return_count = 0
         self.returned = False
         self.startTime = rospy.get_time()
         self.target_goal = PoseStamped()
@@ -82,7 +83,7 @@ class MissionHandler:
         self.latencyPose = Pose2D()
         self.latency = rospy.Timer(rospy.Duration(10), self.latencyCallback)
 
-        self.refind = rospy.Timer(rospy.Duration(15), self.refindCallback)
+        self.refind = rospy.Timer(rospy.Duration(300), self.refindCallback)
 
         # self.backToStart = rospy.Timer(rospy.Duration(30), self.backToStartCallback)
 
@@ -342,6 +343,7 @@ class MissionHandler:
                 self.auto_goal_pub_.publish(self.target_goal)
                 self.current_wp.x = self.target_goal.pose.position.x
                 self.current_wp.y = self.target_goal.pose.position.y
+                self.return_count = 0
             else:
                 # if (rospy.get_time() - self.startTime) < 240.0:
                 #     self.hist_count = 1
@@ -354,6 +356,7 @@ class MissionHandler:
                 #     self.auto_goal_pub_.publish(self.target_goal)
                 #     return
                 rospy.logwarn("got return flag")
+                self.return_count += 1
                 if self.returned is False:
                     self.target_goal.pose.position.x = self.start_x
                     self.target_goal.pose.position.y = self.start_y
@@ -361,9 +364,10 @@ class MissionHandler:
                     rospy.logwarn("back to start: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
                     self.auto_goal_pub_.publish(self.target_goal)
                     self.showTextRobot("returning")
-                    
-                    self.returned = True
-                    rospy.logwarn("return phase")
+
+                    if self.return_count >= 2:
+                        self.returned = True
+                        rospy.logwarn("return phase")
                 
 
     def odometryCallback(self, msg):
