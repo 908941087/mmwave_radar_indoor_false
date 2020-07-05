@@ -154,7 +154,9 @@ class MissionHandler:
                     rospy.logwarn("Request error: %s", str(e))
 
                 if resGoal.goal is not None:
-                    if abs(self.target_goal.pose.position.x - resGoal.goal.pose.position.x) < 1e-6 and abs(self.target_goal.pose.position.y - resGoal.goal.pose.position.y) < 1e-6:
+                    if (resGoal.goal.pose.position.x != 0.0 or resGoal.goal.pose.position.y != 0.0) and \
+                            abs(self.target_goal.pose.position.x - resGoal.goal.pose.position.x) < 1e-6 and \
+                            abs(self.target_goal.pose.position.y - resGoal.goal.pose.position.y) < 1e-6:
                         rospy.logwarn("Goal too close, pass Goal too close, pass Goal too close, pass")
                         return
                     self.target_goal = resGoal.goal
