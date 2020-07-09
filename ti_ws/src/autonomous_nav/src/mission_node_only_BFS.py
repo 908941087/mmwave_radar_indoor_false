@@ -118,22 +118,32 @@ class MissionHandler:
         if MissionStatus.READY.value < self.mission_status.value:
             self.mutex.acquire()
             self.invalid_path_count += 1
-            if self.invalid_path_count >= 2:
+            rospy.logwarn("Invalid path count: {0}.".format(self.invalid_path_count))
+            if self.invalid_path_count < 3:
+                self.mutex.release()
+            elif self.invalid_path_count < 5:
+                self.mutex.release()
                 if self.isGoalInLaserRange(self.target_goal):
                     rospy.logwarn("Could not find a valid path but goal is in laser range. "
                                   "Using current robot position as goal.")
                     self.goWhereRobotIs()
-                self.mutex.release()
-            elif self.invalid_path_count >= 3:
+            elif self.invalid_path_count < 7:
                 rospy.logwarn("Could not find a valid path.")
                 rospy.logwarn("Rotate 180 degrees.")
                 control_input = Twist()
                 control_input.angular.z = 1.57
-                self.control_input_pub_.publish(control_input)
                 self.mutex.release()
+                self.control_input_pub_.publish(control_input)
                 if not self.isGoalTooCloseToStart(self.target_goal):
                     self.getInvalidGoal(self.target_goal)
                 self.goWhereRobotIs()
+            else:
+                rospy.logwarn("Robot is stuck. Trying to go back to start.")
+                self.target_goal.pose.position.x = self.start_x
+                self.target_goal.pose.position.y = self.start_x
+                self.invalid_path_count = 0
+                self.mutex.release()
+                self.goToNewGoal(self.target_goal)
         else:
             rospy.logwarn("Invalid call invalid path callback.")
 
@@ -147,18 +157,20 @@ class MissionHandler:
                 self.mutex.release()
                 rospy.logwarn("Encountered several collisions, trying with new goal.")
                 if self.isGoalInLaserRange(self.target_goal):
+                    rospy.logwarn("Going where robot is.")
                     self.goWhereRobotIs()
                 else:
+                    rospy.logwarn("Going to new goal.")
                     self.goToNewGoal()
             else:
                 rospy.logwarn("Encountered lots of collisions, back safety distance")
                 safety_dis = 0.20
                 self.target_goal.pose.position.x = self.robot_x - (math.cos(self.robot_theta)*safety_dis + np.random.random()*0.1)
                 self.target_goal.pose.position.y = self.robot_y - (math.sin(self.robot_theta)*safety_dis + np.random.random()*0.1)
-                rospy.logwarn("Backing to: %s %s", str(self.target_goal.pose.position.x), str(self.target_goal.pose.position.y))
+                rospy.logwarn("Backing.")
                 self.collision_count = 0
-                self.goToNewGoal(self.target_goal)
                 self.mutex.release()  # use of robot_x robot_y needed lock
+                self.goToNewGoal(self.target_goal)
         else:
             rospy.logwarn("Invalid call of bumper callback.")
 
@@ -173,6 +185,7 @@ class MissionHandler:
             self.mission_status = MissionStatus.RUNNING
             rospy.logwarn("Mission Status Changed to RUNNING.")
         if MissionStatus.READY.value < self.mission_status.value < MissionStatus.STOPPING.value:
+            rospy.logwarn("Previous goal reached. Going to new goal.")
             self.showTextRobot("exploring")
             self.mutex.acquire()
             self.collision_count = 0
@@ -257,9 +270,11 @@ class MissionHandler:
         :return:
         """
         if self.mission_status == MissionStatus.WAITING:  # already calculating for new goal, no need to calculate again.
+            rospy.logwarn("Mission status WAITING. Skipping.")
             return
         if self.mission_status == MissionStatus.RUNNING:
             if new_goal is not None:  # use caller specified goal
+                rospy.logwarn("Using specified goal.")
                 res_goal = new_goal
             else:  # use calculated goal
                 if len(self.goal_keeper) == 0:
@@ -280,8 +295,8 @@ class MissionHandler:
                     self.mission_status = MissionStatus.RUNNING
                     rospy.logwarn("Mission Status Changed to RUNNING.")
                     self.return_count = 0
-                    time.sleep(5.0)
-                    self.preloadGoal()
+                    # time.sleep(5.0)
+                    # self.preloadGoal()
                 else:
                     self.return_count += 1
                     if MissionStatus.READY.value < self.mission_status.value < MissionStatus.STOPPING.value:
