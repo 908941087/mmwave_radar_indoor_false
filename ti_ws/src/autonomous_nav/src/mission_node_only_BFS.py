@@ -53,6 +53,15 @@ def angle_wrap(ang):
     return ang
 
 
+def getAngle(v1, v2):
+    theta = np.arctan2(v2[1], v2[0]) - np.arctan2(v1[1], v1[0])
+    if theta < -np.pi:
+        theta += 2 * np.pi
+    elif theta > np.pi:
+        theta -= 2 * np.pi
+    return theta
+
+
 class MissionHandler:
     """Class to maintain the robot state and instruct robot to:
     1. navigate through the map
@@ -112,6 +121,10 @@ class MissionHandler:
         """Get new goal from other sources."""
         rospy.logwarn("Got a goal from outside.")
         self.target_goal = msg
+        rospy.logwarn("Outside goal orientation: ({0}, {1}, {2}, {3})".format(self.target_goal.pose.orientation.x,
+                                                                              self.target_goal.pose.orientation.y,
+                                                                              self.target_goal.pose.orientation.z,
+                                                                              self.target_goal.pose.orientation.w))
         self.mission_status = MissionStatus.RUNNING
 
     def invalidPathCallback(self, msg):
@@ -197,20 +210,20 @@ class MissionHandler:
             pass
 
     def odometryCallback(self, msg):
-        quaternion = (msg.pose.pose.position.x,
-                      msg.pose.pose.position.y,
-                      msg.pose.pose.position.z,
-                      msg.pose.pose.orientation.w)
-
         self.mutex.acquire()
-        self.robot_x = quaternion[0]
-        self.robot_y = quaternion[1]
-        self.robot_theta = angle_wrap(euler_from_quaternion(quaternion)[2])
-        self.mutex.release()
-
+        quaternion = (
+            msg.pose.pose.orientation.x,
+            msg.pose.pose.orientation.y,
+            msg.pose.pose.orientation.z,
+            msg.pose.pose.orientation.w,
+        )
+        self.robot_x = msg.pose.pose.position.x
+        self.robot_y = msg.pose.pose.position.y
+        self.robot_theta = euler_from_quaternion(quaternion)[2]
         if self.mission_status == MissionStatus.READY:
-            self.start_x = quaternion[0]
-            self.start_y = quaternion[1]
+            self.start_x = self.robot_x
+            self.start_y = self.robot_y
+        self.mutex.release()
 
     def preloadGoal(self):
         """
@@ -262,6 +275,15 @@ class MissionHandler:
                 res_goal = self.goal_producer.produce()
                 if res_goal is None:
                     return None
+        direction = (res_goal.pose.position.x - self.robot_x, res_goal.pose.position.y - self.robot_y)
+        x_direction = (1, 0)
+        theta = getAngle(direction, x_direction)
+        q = quaternion_from_euler(0.0, -0.0, theta)
+        res_goal.pose.orientation.x = q[0]
+        res_goal.pose.orientation.y = q[1]
+        res_goal.pose.orientation.z = q[2]
+        res_goal.pose.orientation.w = q[3]
+        rospy.logwarn("Theta: {0}.".format(theta))
         return res_goal
 
     def goToNewGoal(self, new_goal=None):
@@ -291,6 +313,10 @@ class MissionHandler:
                     self.target_goal = res_goal
                     rospy.logwarn("Going to: %s %s", str(self.target_goal.pose.position.x),
                                   str(self.target_goal.pose.position.y))
+                    rospy.logwarn("Orientation: ({0}, {1}, {2}, {3}).".format(self.target_goal.pose.orientation.x,
+                                                                              self.target_goal.pose.orientation.y,
+                                                                              self.target_goal.pose.orientation.z,
+                                                                              self.target_goal.pose.orientation.w))
                     self.auto_goal_pub_.publish(self.target_goal)
                     self.mission_status = MissionStatus.RUNNING
                     rospy.logwarn("Mission Status Changed to RUNNING.")
@@ -320,8 +346,8 @@ class MissionHandler:
         """
         x = goal.pose.position.x
         y = goal.pose.position.y
-        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 1e-6 and \
-            abs(self.target_goal.pose.position.y - y) < 1e-6
+        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 0.5 and \
+            abs(self.target_goal.pose.position.y - y) < 0.5
         if res:
             rospy.logwarn("New Goal ({0}, {1})is too close to current goal.".format(x, y))
         return res
