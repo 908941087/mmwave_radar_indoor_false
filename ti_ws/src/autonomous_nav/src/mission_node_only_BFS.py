@@ -6,6 +6,7 @@ scp ./lab/radar/mmwave_radar_indoor_false/ti_ws/src/autonomous_nav/src/mission_n
 
 # ROS imports
 import time
+from datetime import datetime
 
 import roslib
 import rospy
@@ -86,7 +87,7 @@ class MissionHandler:
         self.return_count = 0
         self.start_x = 0.0
         self.start_y = 0.0
-        self.start_time = rospy.get_time()
+        self.start_time = datetime.now()
         self.goal_keeper = goal_keeper
         self.goal_producer = goal_producer
         self.mission_status = MissionStatus.READY
@@ -128,6 +129,14 @@ class MissionHandler:
                                                                               self.target_goal.pose.orientation.y,
                                                                               self.target_goal.pose.orientation.z,
                                                                               self.target_goal.pose.orientation.w))
+        if self.mission_status == MissionStatus.READY:
+            self.update_robot_pos = True
+            while self.update_robot_pos:
+                time.sleep(0.5)
+            self.pos_mutex.acquire()
+            self.start_x = self.robot_x
+            self.start_y = self.robot_y
+            self.pos_mutex.release()
         self.mission_status = MissionStatus.RUNNING
 
     def invalidPathCallback(self, msg):
@@ -238,9 +247,6 @@ class MissionHandler:
             self.robot_x = msg.pose.pose.position.x
             self.robot_y = msg.pose.pose.position.y
             self.robot_theta = euler_from_quaternion(quaternion)[2]
-            if self.mission_status == MissionStatus.READY:
-                self.start_x = self.robot_x
-                self.start_y = self.robot_y
             self.pos_mutex.release()
             self.update_robot_pos = False
         else:
@@ -266,12 +272,14 @@ class MissionHandler:
         End autonomous navigation, terminate all timed missions and auto navigation.
         :return:
         """
+        end_time = datetime.now()
+        total_time = end_time - self.start_time
         self.showTextRobot("exploring")
         self.auto_goal_sub.unregister()
         rospy.logwarn("Auto goal subscription unregistered .")
         self.mission_status = MissionStatus.TERMINATED
         rospy.logwarn("Mission Status Changed to TERMINATED.")
-        rospy.logwarn("Auto Navigation Ended.")
+        rospy.logwarn("Auto Navigation Ended in {0} minutes.".format(round(total_time.total_seconds() / 60)))
         rospy.logwarn("Please use two point navigation.")
 
     def getNewGoal(self):
@@ -338,7 +346,7 @@ class MissionHandler:
                     rospy.logwarn("Using Preloaded Goal.")
                 res_goal = self.goal_keeper.popleft()
             if res_goal is not None:
-                if not self.isGoalTooCloseToStart(res_goal):
+                if not self.getReturnMsg(res_goal):
                     self.target_goal = res_goal
                     rospy.logwarn("Going to: %s %s", str(self.target_goal.pose.position.x),
                                   str(self.target_goal.pose.position.y))
@@ -353,22 +361,27 @@ class MissionHandler:
                     # wait for map to update
                     time.sleep(12.0)
                     self.preloadGoal()
-                else:
+                else:  # received return to start signal
                     self.return_count += 1
                     if MissionStatus.READY.value < self.mission_status.value < MissionStatus.STOPPING.value:
-                        rospy.logwarn("Going back to start.")
-                        self.target_goal.pose.position.x = self.start_x
-                        self.target_goal.pose.position.y = self.start_y
-                        self.auto_goal_pub_.publish(self.target_goal)
-                        self.mission_status = MissionStatus.RUNNING
-                        rospy.logwarn("Mission Status Changed to RUNNING.")
-                        self.showTextRobot("returning")
-                        if self.return_count >= 3:
+                        rospy.logwarn("Return to start signal received {0} times.".format(self.return_count))
+                        if self.return_count == 1:
+                            self.mission_status = MissionStatus.RUNNING
+                            rospy.logwarn("Mission Status Changed to RUNNING.")
+                            self.goToNewGoal()  # don't go back immediately, wait until got second return signal
+                        elif self.return_count == 2:
+                            rospy.logwarn("Going back to start.")
+                            self.target_goal.pose.position.x = self.start_x
+                            self.target_goal.pose.position.y = self.start_y
+                            self.auto_goal_pub_.publish(self.target_goal)
+                            self.mission_status = MissionStatus.RUNNING
+                            rospy.logwarn("Mission Status Changed to RUNNING.")
+                            self.showTextRobot("returning")
+                            self.preloadGoal()
+                        else:
                             self.mission_status = MissionStatus.STOPPING
                             rospy.logwarn("Mission Status Changed to STOPPING.")
                             self.endNavigation()
-                        else:
-                            self.preloadGoal()
 
     def isGoalTooCloseToCurGoal(self, goal):
         """
@@ -428,6 +441,9 @@ class MissionHandler:
         self.pos_mutex.release()
         self.goToNewGoal(self.target_goal)
 
+    def getReturnMsg(self, goal):
+        return goal.pose.position.x == 0.0 and goal.pose.position.y == 0.0
+
     @staticmethod
     def goalDist(g1, g2):
         """
@@ -482,6 +498,7 @@ class GoalProducer:
 
     def produce(self):
         if self.status == GoalProductionStatus.READY:
+            start_time = datetime.now()
             req = ForceFindRequest()
             res_goal = ForceFindResponse()
             req.callFlag = 1
@@ -496,6 +513,9 @@ class GoalProducer:
                 if len(self.goal_keeper) != 0:  # already have a goal in pocket
                     self.goal_keeper.popleft()
                 self.goal_keeper.append(res_goal.goal)
+                end_time = datetime.now()
+                run_time = end_time - start_time
+                rospy.logwarn("Goal calculation finished in {0} secs.".format(run_time.total_seconds()))
                 return res_goal.goal  # type of PoseStamped
         else:  # CALCULATING
             rospy.logwarn("Already Calculating Goal.")
