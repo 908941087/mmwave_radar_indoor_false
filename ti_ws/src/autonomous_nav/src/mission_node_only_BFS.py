@@ -298,6 +298,8 @@ class MissionHandler:
                 self.target_goal.pose.position.x = self.start_x
                 self.target_goal.pose.position.y = self.start_y
                 res_goal = self.target_goal
+                self.goal_keeper.popleft()
+                self.goal_keeper.append(res_goal)
                 break
             else:
                 self.goal_keeper.popleft()
