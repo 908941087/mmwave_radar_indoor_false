@@ -113,11 +113,17 @@ void RotateRecovery::runBehavior(){
     local_costmap_->getRobotPose(global_pose);
 
     double norm_angle = angles::normalize_angle_positive(tf::getYaw(global_pose.getRotation()));
-    current_angle = angles::normalize_angle_positive(norm_angle - start_offset);
+    current_angle = angles::normalize_angle_positive(norm_angle - start_offset);  // 0 ~ 2 * M_PI
 
     //compute the distance left to rotate
     // double dist_left = (2 * M_PI) - current_angle;
     double dist_left = (M_PI) - current_angle;
+
+    // rotated more than 180 degrees
+    if (dist_left < 0.0) {
+      ROS_WARN("Rotated more than 180 degrees, Completed rotation...");
+      return;
+    }
 
     double x = global_pose.getOrigin().x(), y = global_pose.getOrigin().y();
 
@@ -165,7 +171,7 @@ void RotateRecovery::runBehavior(){
       cmd_vel.angular.z = 0;
       vel_pub.publish(cmd_vel);
 
-      ROS_WARN("Completed rotation...");
+      ROS_WARN("Rotated 180 degrees, Completed rotation...");
       return;
     }
 
