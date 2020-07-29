@@ -262,9 +262,9 @@ def judge_neighbor(point_index, neighbor_field = 6):
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
     m_allcount = 0
-    # m_allcount = (neighbor_field * 2 + 1) * (neighbor_field * 2 + 1)
+    m_allcount = (neighbor_field * 2 + 1) * (neighbor_field * 2 + 1)
     m_count = 0
-    # m_ratio = 0.0
+    m_ratio = 0.0
 
     all_unknown_flag = True
     delta = neighbor_field
@@ -276,9 +276,10 @@ def judge_neighbor(point_index, neighbor_field = 6):
             t_point[1] = y_d + point_index[1]
             if t_point[1] < 0 or t_point[1] >= m_heigh: continue
             m_count += 1
-            if filtered_map[int(t_point[0])][int(t_point[1])] == 255:
-                m_allcount += 1
-    m_ratio = float(m_allcount) / m_count
+            if filtered_map[int(t_point[0])][int(t_point[1])] != 255:
+                all_unknown_flag = False
+                break
+    m_ratio = float(m_count) / m_allcount
     #rospy.loginfo("ratio, %s, %d, %d", m_ratio, m_count, m_allcount)
     return m_ratio
 
@@ -321,7 +322,7 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
             rospy.loginfo("p_stack size = 1")
             p_stack.append(cur_point.copy())
         cur_point = p_stack.pop(0)        
-        if judge_neighbor(cur_point) > 0.8 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]) and filtered_map[cur_point[0]][cur_point[1]] == 255:
+        if judge_neighbor(cur_point) > 0.8 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
             if judge_oldgoal(cur_point, m_xorg, m_yorg):
                 return cur_point
             else:
@@ -332,10 +333,10 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
                         t_point[1] = y_d + cur_point[1]
                         if t_point[1] < 0 or t_point[1] >= m_heigh: continue
                         local_map[t_point[0]][t_point[1]] = int(1)
-                # num = 36
-                # while len(p_stack) > 0 and num > 0:
-                #     p_stack.pop(0)
-                #     num = num -1
+                num = 36
+                while len(p_stack) > 0 and num > 0:
+                    p_stack.pop(0)
+                    num = num -1
 
         t_point = np.zeros(2, int)
         for x_d in range(-1, 2):
