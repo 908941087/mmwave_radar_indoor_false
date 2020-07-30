@@ -74,7 +74,7 @@ def log_neighbor(point_index, neighbor_field = 4):
         for y_d in range(-neighbor_field, neighbor_field + 1):
             p_point[1] = y_d + res_point[1]
             if p_point[1] < 0 or p_point[1] >= m_heigh: continue
-            rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
+            #rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
 
 def ObstacleInflation(filtered_map, neighbor_field = 4):
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
@@ -113,8 +113,8 @@ def ForceUnknownFindCB(msg):
     resGoal = ForceFindResponse()
 
     filtered_map = np.array(dat).reshape((m_wid, m_heigh))
-    rospy.loginfo("Map: %s, %s, %d, %d, %d, %d, %s", m_xorg, m_yorg, m_wid, m_heigh, filtered_map.shape[0],
-                  filtered_map.shape[1], m_res)
+    #rospy.loginfo("Map: %s, %s, %d, %d, %d, %d, %s", m_xorg, m_yorg, m_wid, m_heigh, filtered_map.shape[0],
+    #              filtered_map.shape[1], m_res)
 
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
     # Format map
@@ -133,7 +133,7 @@ def ForceUnknownFindCB(msg):
     point_index = np.zeros(2, dtype=np.int)
     point_index[1] = int((current_position_[0] - m_xorg) / res)
     point_index[0] = int((current_position_[1] - m_yorg) / res)
-    rospy.loginfo("location:  %d, %d", point_index[0], point_index[1])
+    #rospy.loginfo("location:  %d, %d", point_index[0], point_index[1])
     #clear the start point
     t_point = np.zeros(2, int)
     robot_size = 4
