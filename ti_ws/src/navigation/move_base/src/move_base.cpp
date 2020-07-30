@@ -103,6 +103,7 @@ namespace move_base {
     auto_sub_ = simple_nh.subscribe<geometry_msgs::PoseStamped>("auto_goal", 1, boost::bind(&MoveBase::goalCB, this, _1));
     auto_goal_pub_ = simple_nh.advertise<std_msgs::Int8>("auto_goal_find", 1);
     invalid_path_pub = simple_nh.advertise<std_msgs::Int8>("invalid_path", 1);
+    abort_pub = simple_nh.advertise<std_msgs::Int8>("abort_msg", 1);
 
 
     ros::NodeHandle simple_nh2;
@@ -904,7 +905,7 @@ namespace move_base {
           auto_find_mess.data = 1;
           auto_goal_pub_.publish(auto_find_mess);
 
-          force_unknown_find_pub.publish(auto_find_mess);
+          // force_unknown_find_pub.publish(auto_find_mess);
 
           return true;
         }
@@ -992,9 +993,8 @@ namespace move_base {
         }
         else{
 
-          std_msgs::Int8 recovery_mess;
-          recovery_mess.data = 1;
-          invalid_path_pub.publish(recovery_mess);
+          std_msgs::Int8 abort_mess;
+          abort_mess.data = 1;
 
           ROS_DEBUG_NAMED("move_base_recovery","All recovery behaviors have failed, locking the planner and disabling it.");
           //disable the planner thread
@@ -1017,6 +1017,7 @@ namespace move_base {
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Robot is oscillating. Even after executing recovery behaviors.");
           }
           resetState();
+          abort_pub.publish(abort_mess);
           return true;
         }
         break;
