@@ -257,7 +257,7 @@ def judge_oldgoal(cur_point, m_xorg, m_yorg):
         return checkflag
 
 
-def judge_neighbor(point_index, neighbor_field = 2):
+def judge_neighbor(point_index, neighbor_field = 4):
     global filtered_map
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
@@ -326,17 +326,18 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
             rospy.loginfo("p_stack size = 1")
             p_stack.append(cur_point.copy())
         cur_point = p_stack.pop(0)        
-        if judge_neighbor(cur_point) > 0.6 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
+        if judge_neighbor(cur_point) > 0.6 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]) and filtered_map[cur_point[0]][cur_point[1]] == 255:
             if judge_oldgoal(cur_point, m_xorg, m_yorg):
+                rospy.loginfo("publish goal point: %s", cur_point)
                 return cur_point
-            else:
-                for x_d in range(-1, 2):
-                    t_point[0] = x_d + cur_point[0]
-                    if t_point[0] < 0 or t_point[0] >= m_wid: continue
-                    for y_d in range(-1, 2):
-                        t_point[1] = y_d + cur_point[1]
-                        if t_point[1] < 0 or t_point[1] >= m_heigh: continue
-                        local_map[t_point[0]][t_point[1]] = int(1)
+            # else:
+                # for x_d in range(-1, 2):
+                #     t_point[0] = x_d + cur_point[0]
+                #     if t_point[0] < 0 or t_point[0] >= m_wid: continue
+                #     for y_d in range(-1, 2):
+                #         t_point[1] = y_d + cur_point[1]
+                #         if t_point[1] < 0 or t_point[1] >= m_heigh: continue
+                #         local_map[t_point[0]][t_point[1]] = int(1)
                 # num = 36
                 # while len(p_stack) > 0 and num > 0:
                 #     p_stack.pop(0)
