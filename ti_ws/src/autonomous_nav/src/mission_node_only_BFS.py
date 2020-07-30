@@ -115,6 +115,7 @@ class MissionHandler:
         self.auto_goal_sub = rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
         self.invalid_path_sub = rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         self.goal_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.newGoalCallback, queue_size=1)
+        self.abort_sub = rospy.Subscriber("/move_base_simple/abort_msg", Int8, self.abortCallback, queue_size=1)
         self.bumper_sub = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
 
         # Publishers
@@ -196,6 +197,9 @@ class MissionHandler:
                 self.mutex.release()
         else:
             rospy.logwarn("Invalid call of bumper callback.")
+
+    def abortCallback(self, msg):
+        self.auto_goal_pub_.publish(self.target_goal)
 
     def autoGoalFindCallback(self, msg):
         """
