@@ -148,9 +148,6 @@ class MissionHandler:
                 self.mutex.release()
                 self.preloadGoal()
             elif self.invalid_path_count == 4:
-                self.auto_goal_pub_.publish(self.target_goal)  # try with current goal again
-                self.mutex.release()
-            elif self.invalid_path_count == 8:
                 # rospy.logwarn("Could not find a valid path.")
                 # rospy.logwarn("Rotate 180 degrees.")
                 # control_input = Twist()
@@ -170,7 +167,6 @@ class MissionHandler:
                         self.goToNewGoal()
             else:
                 self.mutex.release()
-                pass
         else:
             rospy.logwarn("Invalid call invalid path callback.")
 
@@ -184,11 +180,11 @@ class MissionHandler:
             if self.collision_count == 1:
                 self.mutex.release()
                 self.preloadGoal()
-            elif self.collision_count == 4:
+            elif self.collision_count == 3:
                 self.auto_goal_pub_.publish(self.target_goal)  # try again with current goal
                 self.mutex.release()
-            elif self.collision_count == 8:
-                rospy.logwarn("Encountered several collisions, giving up current goal.")
+            elif self.collision_count == 6:
+                rospy.logwarn("Encountered lots of collisions, giving up current goal.")
                 self.collision_count = 0
                 self.mutex.release()
                 if len(self.goal_queue) != 0:
@@ -198,7 +194,6 @@ class MissionHandler:
                     self.goToNewGoal()
             else:
                 self.mutex.release()
-                pass
         else:
             rospy.logwarn("Invalid call of bumper callback.")
 
@@ -282,11 +277,16 @@ class MissionHandler:
         invalid_goal_count = 0
         while self.isGoalTooCloseToCurGoal(res_goal) or self.isCloseToInvalidGoals(res_goal):
             invalid_goal_count += 1
-            if invalid_goal_count >= 3:
-                rospy.logwarn("Got invalid goal too many times. Going back to start.")
-                self.target_goal.pose   .position.x = self.start_x
-                self.target_goal.pose.position.y = self.start_y
-                res_goal = self.target_goal
+            if invalid_goal_count >= 2:
+                rospy.logwarn("Got invalid goal too many times. Going back.")
+                if len(self.goal_queue) != 0:
+                    rospy.logwarn("Using old goal.")
+                    res_goal = self.goal_queue.pop()
+                else:
+                    rospy.logwarn("Going back to start.")
+                    self.target_goal.pose.position.x = self.start_x
+                    self.target_goal.pose.position.y = self.start_y
+                    res_goal = self.target_goal
                 self.goal_keeper.popleft()
                 self.goal_keeper.append(res_goal)
                 break
