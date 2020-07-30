@@ -76,7 +76,7 @@ def log_neighbor(point_index, neighbor_field = 4):
             if p_point[1] < 0 or p_point[1] >= m_heigh: continue
             rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
 
-def ObstacleInflation(filtered_map, neighbor_field = 6):
+def ObstacleInflation(filtered_map, neighbor_field = 4):
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
     # Format map
     for i in range(filtered_map.shape[0]):
@@ -257,7 +257,7 @@ def judge_oldgoal(cur_point, m_xorg, m_yorg):
         return checkflag
 
 
-def judge_neighbor(point_index, neighbor_field = 6):
+def judge_neighbor(point_index, neighbor_field = 2):
     global filtered_map
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
@@ -276,15 +276,15 @@ def judge_neighbor(point_index, neighbor_field = 6):
             t_point[1] = y_d + point_index[1]
             if t_point[1] < 0 or t_point[1] >= m_heigh: continue
             m_count += 1
-            if filtered_map[int(t_point[0])][int(t_point[1])] != 255:
-                all_unknown_flag = False
-                break
-    m_ratio = float(m_count) / m_allcount
+            if filtered_map[int(t_point[0])][int(t_point[1])] == 255:
+                m_allcount += 1
+                continue
+    m_ratio = float(m_allcount) / m_count
     #rospy.loginfo("ratio, %s, %d, %d", m_ratio, m_count, m_allcount)
     return m_ratio
 
 #ensure the goal is legal
-def judge_obstacle_neighbor(point_index, neighbor_field = 6):
+def judge_obstacle_neighbor(point_index, neighbor_field = 4):
     global filtered_map
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
@@ -294,7 +294,11 @@ def judge_obstacle_neighbor(point_index, neighbor_field = 6):
     t_point = np.zeros(2, int)
     for x_d in range(-delta, delta + 1):
         t_point[0] = x_d + point_index[0]
-        if t_point[0] < 0 or t_point[0] >= m_wid: continue
+        if t_point[0] < 0 or t_point[0] >= m_wid:
+            continue
+        if not all_unknown_flag:
+            all_unknown_flag = False
+            break
         for y_d in range(-delta, delta + 1):
             t_point[1] = y_d + point_index[1]
             if t_point[1] < 0 or t_point[1] >= m_heigh: continue
@@ -322,14 +326,14 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
             rospy.loginfo("p_stack size = 1")
             p_stack.append(cur_point.copy())
         cur_point = p_stack.pop(0)        
-        if judge_neighbor(cur_point) > 0.8 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
+        if judge_neighbor(cur_point) > 0.6 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
             if judge_oldgoal(cur_point, m_xorg, m_yorg):
                 return cur_point
             else:
-                for x_d in range(-2, 3):
+                for x_d in range(-1, 2):
                     t_point[0] = x_d + cur_point[0]
                     if t_point[0] < 0 or t_point[0] >= m_wid: continue
-                    for y_d in range(-2, 3):
+                    for y_d in range(-1, 2):
                         t_point[1] = y_d + cur_point[1]
                         if t_point[1] < 0 or t_point[1] >= m_heigh: continue
                         local_map[t_point[0]][t_point[1]] = int(1)
