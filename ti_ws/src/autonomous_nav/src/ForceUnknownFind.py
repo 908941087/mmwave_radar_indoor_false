@@ -326,17 +326,17 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
             if judge_oldgoal(cur_point, m_xorg, m_yorg):
                 return cur_point
             else:
-                for x_d in range(-8, 9):
+                for x_d in range(-2, 3):
                     t_point[0] = x_d + cur_point[0]
                     if t_point[0] < 0 or t_point[0] >= m_wid: continue
-                    for y_d in range(-8, 9):
+                    for y_d in range(-2, 3):
                         t_point[1] = y_d + cur_point[1]
                         if t_point[1] < 0 or t_point[1] >= m_heigh: continue
                         local_map[t_point[0]][t_point[1]] = int(1)
-                num = 36
-                while len(p_stack) > 0 and num > 0:
-                    p_stack.pop(0)
-                    num = num -1
+                # num = 36
+                # while len(p_stack) > 0 and num > 0:
+                #     p_stack.pop(0)
+                #     num = num -1
 
         t_point = np.zeros(2, int)
         for x_d in range(-1, 2):
