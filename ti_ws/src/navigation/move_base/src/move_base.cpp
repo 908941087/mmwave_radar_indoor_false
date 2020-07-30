@@ -993,6 +993,10 @@ namespace move_base {
         }
         else{
 
+          std_msgs::Int8 recovery_mess;
+          recovery_mess.data = 1;
+          invalid_path_pub.publish(recovery_mess);
+
           std_msgs::Int8 abort_mess;
           abort_mess.data = 1;
 
