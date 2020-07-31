@@ -291,7 +291,8 @@ class MissionHandler:
                     rospy.logwarn("Going back to start.")
                     self.target_goal.pose.position.x = self.start_x
                     self.target_goal.pose.position.y = self.start_y
-                    res_goal = self.target_goal
+                    self.auto_goal_pub_.publish(self.target_goal)
+                    res_goal = None
                 self.goal_keeper.popleft()
                 self.goal_keeper.append(res_goal)
                 break
@@ -300,20 +301,21 @@ class MissionHandler:
                 res_goal = self.goal_producer.produce()
                 if res_goal is None:
                     return None
-        self.update_robot_pos = True
-        while self.update_robot_pos:
-            time.sleep(0.5)
-        self.pos_mutex.acquire()
-        direction = (res_goal.pose.position.x - self.robot_x, res_goal.pose.position.y - self.robot_y)
-        self.pos_mutex.release()
-        x_direction = (1, 0)
-        theta = getAngle(direction, x_direction)
-        q = quaternion_from_euler(0.0, -0.0, theta)
-        res_goal.pose.orientation.x = q[0]
-        res_goal.pose.orientation.y = q[1]
-        res_goal.pose.orientation.z = q[2]
-        res_goal.pose.orientation.w = q[3]
-        rospy.logwarn("Theta: {0}.".format(theta))
+        if res_goal is not None:
+            self.update_robot_pos = True
+            while self.update_robot_pos:
+                time.sleep(0.5)
+            self.pos_mutex.acquire()
+            direction = (res_goal.pose.position.x - self.robot_x, res_goal.pose.position.y - self.robot_y)
+            self.pos_mutex.release()
+            x_direction = (1, 0)
+            theta = getAngle(direction, x_direction)
+            q = quaternion_from_euler(0.0, -0.0, theta)
+            res_goal.pose.orientation.x = q[0]
+            res_goal.pose.orientation.y = q[1]
+            res_goal.pose.orientation.z = q[2]
+            res_goal.pose.orientation.w = q[3]
+            rospy.logwarn("Theta: {0}.".format(theta))
         return res_goal
 
     def goToNewGoal(self, new_goal=None):
