@@ -199,6 +199,7 @@ class MissionHandler:
             rospy.logwarn("Invalid call of bumper callback.")
 
     def abortCallback(self, msg):
+        rospy.logwarn("Received abortion message. Publishing goal again.")
         self.auto_goal_pub_.publish(self.target_goal)
 
     def autoGoalFindCallback(self, msg):
@@ -386,8 +387,8 @@ class MissionHandler:
         """
         x = goal.pose.position.x
         y = goal.pose.position.y
-        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 0.3 and \
-            abs(self.target_goal.pose.position.y - y) < 0.3
+        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 0.2 and \
+            abs(self.target_goal.pose.position.y - y) < 0.2
         if res:
             rospy.logwarn("New Goal ({0}, {1})is too close to current goal.".format(x, y))
         return res
