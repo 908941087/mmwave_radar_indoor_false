@@ -997,9 +997,6 @@ namespace move_base {
           recovery_mess.data = 1;
           invalid_path_pub.publish(recovery_mess);
 
-          std_msgs::Int8 abort_mess;
-          abort_mess.data = 1;
-
           ROS_DEBUG_NAMED("move_base_recovery","All recovery behaviors have failed, locking the planner and disabling it.");
           //disable the planner thread
           boost::unique_lock<boost::recursive_mutex> lock(planner_mutex_);
@@ -1013,15 +1010,23 @@ namespace move_base {
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Failed to find a valid control. Even after executing recovery behaviors.");
           }
           else if(recovery_trigger_ == PLANNING_R){
-            ROS_ERROR("Aborting because a valid plan could not be found. Even after executing all recovery behaviors");
+            ROS_ERROR("Aborting because a valid plan could not be found. Even after executing all recovery behaviors. Added this tail.");
+            ROS_ERROR("This is a message.");
+            std_msgs::Int8 abort_mess;
+            abort_mess.data = 1;
+            abort_pub.publish(abort_mess);
+            ROS_ERROR("Abortion message sent.");
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Failed to find a valid plan. Even after executing recovery behaviors.");
           }
           else if(recovery_trigger_ == OSCILLATION_R){
             ROS_ERROR("Aborting because the robot appears to be oscillating over and over. Even after executing all recovery behaviors");
+            std_msgs::Int8 abort_mess;
+            abort_mess.data = 1;
+            abort_pub.publish(abort_mess);
+            ROS_ERROR("Abortion message sent.");
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Robot is oscillating. Even after executing recovery behaviors.");
           }
           resetState();
-          abort_pub.publish(abort_mess);
           return true;
         }
         break;
