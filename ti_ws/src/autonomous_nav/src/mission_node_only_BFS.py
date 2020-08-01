@@ -283,16 +283,19 @@ class MissionHandler:
         while self.isGoalTooCloseToCurGoal(res_goal) or self.isCloseToInvalidGoals(res_goal):
             invalid_goal_count += 1
             if invalid_goal_count >= 2:
-                rospy.logwarn("Got invalid goal too many times. Going back.")
-                if len(self.goal_queue) != 0:
-                    rospy.logwarn("Using old goal.")
-                    res_goal = self.goal_queue.pop()
+                rospy.logwarn("Got invalid goal too many times.")
+                if not self.isCloseToInvalidGoals(res_goal):
+                    rospy.logwarn("Use this goal anyway.")
                 else:
-                    rospy.logwarn("Going back to start.")
-                    self.target_goal.pose.position.x = self.start_x
-                    self.target_goal.pose.position.y = self.start_y
-                    self.auto_goal_pub_.publish(self.target_goal)
-                    res_goal = None
+                    if len(self.goal_queue) != 0:
+                        rospy.logwarn("Using old goal.")
+                        res_goal = self.goal_queue.pop()
+                    else:
+                        rospy.logwarn("Going back to start.")
+                        self.target_goal.pose.position.x = self.start_x
+                        self.target_goal.pose.position.y = self.start_y
+                        self.auto_goal_pub_.publish(self.target_goal)
+                        res_goal = None
                 self.goal_keeper.popleft()
                 self.goal_keeper.append(res_goal)
                 break
