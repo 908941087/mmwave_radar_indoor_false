@@ -180,8 +180,10 @@ class MissionHandler:
                 self.getInvalidGoal(self.target_goal)
             if self.collision_count == 1:
                 self.mutex.release()
+                rospy.logwarn("Preloading goal now.")
                 self.preloadGoal()
             elif self.collision_count == 3:
+                rospy.logwarn("Trying with current goal again.")
                 self.auto_goal_pub_.publish(self.target_goal)  # try again with current goal
                 self.mutex.release()
             elif self.collision_count == 6:
