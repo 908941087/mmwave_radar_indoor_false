@@ -77,7 +77,7 @@ def log_neighbor(point_index, neighbor_field=4):
             # rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
 
 
-def ObstacleInflation(filtered_map, neighbor_field=6):
+def ObstacleInflation(filtered_map, neighbor_field=4):
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
     # Format map
     for i in range(filtered_map.shape[0]):
@@ -99,7 +99,7 @@ def ObstacleInflation(filtered_map, neighbor_field=6):
 
 
 def ForceUnknownFindCB(msg):
-    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, search_ratio, return_count
+    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, search_ratio, return_count, neighbor_size
     rospy.loginfo("Calculate goal in nearest unknown part.")
     # If no map input, return
     if dat is None:
@@ -185,8 +185,10 @@ def ForceUnknownFindCB(msg):
         return_count += 1
         if return_count == 1:
             search_ratio = 0.5
+            neighbor_size = 6
         elif return_count == 2:
             search_ratio = 0.3
+            neighbor_size = 3
         else:
             search_ratio = 0.1
 
@@ -263,17 +265,17 @@ def judge_oldgoal(cur_point, m_xorg, m_yorg):
         return checkflag
 
 
-def judge_neighbor(point_index, neighbor_field=6):
+def judge_neighbor(point_index):
     global filtered_map
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
     m_allcount = 0
-    m_allcount = (neighbor_field * 2 + 1) * (neighbor_field * 2 + 1)
+    m_allcount = (neighbor_size * 2 + 1) * (neighbor_size * 2 + 1)
     m_count = 0
     m_ratio = 0.0
 
     all_unknown_flag = True
-    delta = neighbor_field
+    delta = neighbor_size
     t_point = np.zeros(2, int)
     for x_d in range(-delta, delta + 1):
         t_point[0] = x_d + point_index[0]
@@ -420,9 +422,10 @@ def test():
 
 
 if __name__ == '__main__':
-    global oldgoalmap, return_count, search_ratio
+    global oldgoalmap, return_count, search_ratio, neighbor_size
     return_count = 0
     search_ratio = 0.8
+    neighbor_size = 10
     oldgoalmap = None
 
     rospy.init_node('force_unknown_find_handler', log_level=rospy.INFO)
