@@ -191,6 +191,7 @@ def ForceUnknownFindCB(msg):
             neighbor_size = 3
         else:
             search_ratio = 0.1
+        print "return_count:", return_count
         print "search_ratio:", search_ratio
         print "neighbor_size:", neighbor_size
         # goal_pub.publish(target_pose)
