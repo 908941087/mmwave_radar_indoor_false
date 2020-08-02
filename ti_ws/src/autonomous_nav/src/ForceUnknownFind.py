@@ -187,11 +187,12 @@ def ForceUnknownFindCB(msg):
             search_ratio = 0.5
             neighbor_size = 6
         elif return_count == 2:
-            search_ratio = 0.3
+            search_ratio = 0.2
             neighbor_size = 3
         else:
             search_ratio = 0.1
-
+        print "search_ratio:", search_ratio
+        print "neighbor_size:", neighbor_size
         # goal_pub.publish(target_pose)
 
         rospy.loginfo("Returning!")
@@ -266,7 +267,7 @@ def judge_oldgoal(cur_point, m_xorg, m_yorg):
 
 
 def judge_neighbor(point_index):
-    global filtered_map
+    global filtered_map, neighbor_size
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
     m_allcount = 0
@@ -424,7 +425,7 @@ def test():
 if __name__ == '__main__':
     global oldgoalmap, return_count, search_ratio, neighbor_size
     return_count = 0
-    search_ratio = 0.8
+    search_ratio = 1.0
     neighbor_size = 10
     oldgoalmap = None
 
