@@ -99,7 +99,7 @@ def ObstacleInflation(filtered_map, neighbor_field=6):
 
 
 def ForceUnknownFindCB(msg):
-    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg
+    global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, search_ratio, return_count
     rospy.loginfo("Calculate goal in nearest unknown part.")
     # If no map input, return
     if dat is None:
@@ -182,6 +182,13 @@ def ForceUnknownFindCB(msg):
     else:
         target_pose.pose.position.x = 0.0
         target_pose.pose.position.y = 0.0
+        return_count += 1
+        if return_count == 1:
+            search_ratio = 0.5
+        elif return_count == 2:
+            search_ratio = 0.3
+        else:
+            search_ratio = 0.1
 
         # goal_pub.publish(target_pose)
 
@@ -307,7 +314,7 @@ def judge_obstacle_neighbor(point_index, neighbor_field=6):
 
 # BFS version
 def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
-    global filtered_map
+    global filtered_map, search_ratio
     m_wid = filtered_map.shape[0]
     m_heigh = filtered_map.shape[1]
 
@@ -322,7 +329,7 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
             rospy.loginfo("p_stack size = 1")
             p_stack.append(cur_point.copy())
         cur_point = p_stack.pop(0)
-        if judge_neighbor(cur_point) > 0.8 and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
+        if judge_neighbor(cur_point) > search_ratio and (cur_point[0] != point_index[0] and cur_point[1] != point_index[1]):
             if judge_oldgoal(cur_point, m_xorg, m_yorg):
                 return cur_point
             else:
@@ -413,7 +420,9 @@ def test():
 
 
 if __name__ == '__main__':
-    global oldgoalmap
+    global oldgoalmap, return_count, search_ratio
+    return_count = 0
+    search_ratio = 0.8
     oldgoalmap = None
 
     rospy.init_node('force_unknown_find_handler', log_level=rospy.INFO)
