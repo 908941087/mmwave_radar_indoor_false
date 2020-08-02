@@ -156,6 +156,9 @@ def ForceUnknownFindCB(msg):
 
     res_point = FindUnkownAreaBFS(point_index, RevMap.copy(), m_xorg, m_yorg)
     if res_point is not None:
+        print "return_count:", return_count
+        print "search_ratio:", search_ratio
+        print "neighbor_size:", neighbor_size
         if res_point[0] != point_index[0] or res_point[1] != point_index[1]:
             target_pose.pose.position.x = m_xorg + res_point[1] * res
             target_pose.pose.position.y = m_yorg + res_point[0] * res
