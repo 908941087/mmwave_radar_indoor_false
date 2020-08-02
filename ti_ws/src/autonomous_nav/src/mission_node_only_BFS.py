@@ -84,6 +84,7 @@ class MissionHandler:
         # mission_status
         self.invalid_path_count = 0
         self.collision_count = 0
+        self.abortion_count = 0
         self.return_count = 0
         self.start_x = 0.0
         self.start_y = 0.0
@@ -115,7 +116,7 @@ class MissionHandler:
         self.auto_goal_sub = rospy.Subscriber("/move_base_simple/auto_goal_find", Int8, self.autoGoalFindCallback, queue_size=1)
         self.invalid_path_sub = rospy.Subscriber("/move_base_simple/invalid_path", Int8, self.invalidPathCallback, queue_size=1)
         self.goal_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.newGoalCallback, queue_size=1)
-        self.abort_sub = rospy.Subscriber("/move_base_simple/abort_msg", Int8, self.abortCallback, queue_size=1)
+        self.abort_sub = rospy.Subscriber("/move_base_simple/abort_msg", Int8, self.abortionCallback, queue_size=1)
         self.bumper_sub = rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.bumperCallback, queue_size=1)
 
         # Publishers
@@ -190,19 +191,44 @@ class MissionHandler:
                 rospy.logwarn("Encountered lots of collisions, giving up current goal.")
                 self.collision_count = 0
                 self.mutex.release()
-                if len(self.goal_queue) != 0:
-                    rospy.logwarn("Using old goal.")
-                    self.goToNewGoal(self.goal_queue.pop())
-                else:
+                if len(self.goal_keeper) != 0:
                     self.goToNewGoal()
+                else:
+                    if len(self.goal_queue) != 0:
+                        rospy.logwarn("Using old goal.")
+                        self.goToNewGoal(self.goal_queue.pop())
+                    else:
+                        self.goToNewGoal()
             else:
                 self.mutex.release()
         else:
             rospy.logwarn("Invalid call of bumper callback.")
 
-    def abortCallback(self, msg):
-        rospy.logwarn("Received abortion message. Publishing goal again.")
-        self.auto_goal_pub_.publish(self.target_goal)
+    def abortionCallback(self, msg):
+        if MissionStatus.READY.value < self.mission_status.value:
+            self.mutex.acquire()
+            rospy.logwarn("Received abortion message.")
+            self.abortion_count += 1
+            rospy.logwarn("Abortion count: {0}.".format(self.abortion_count))
+            if self.abortion_count == 1:
+                self.mutex.release()
+                self.auto_goal_pub_.publish(self.target_goal)
+                self.preloadGoal()
+            elif self.abortion_count == 2:
+                self.mutex.release()
+                if len(self.goal_keeper) != 0:
+                    self.goToNewGoal()
+                else:
+                    if len(self.goal_queue) != 0:
+                        rospy.logwarn("Using old goal.")
+                        self.goToNewGoal(self.goal_queue.pop())
+                    else:
+                        self.goToNewGoal()
+            else:
+                self.mutex.release()
+                self.goToNewGoal()
+        else:
+            rospy.logwarn("Invalid call of abortion callback.")
 
     def autoGoalFindCallback(self, msg):
         """
@@ -282,7 +308,7 @@ class MissionHandler:
         if res_goal is None:
             return None
         invalid_goal_count = 0
-        while self.isGoalTooCloseToCurGoal(res_goal) or self.isCloseToInvalidGoals(res_goal):
+        while self.isCloseToInvalidGoals(res_goal):  # self.isGoalTooCloseToCurGoal(res_goal) or
             invalid_goal_count += 1
             if invalid_goal_count >= 2:
                 rospy.logwarn("Got invalid goal too many times.")
@@ -298,7 +324,8 @@ class MissionHandler:
                         self.target_goal.pose.position.y = self.start_y
                         self.auto_goal_pub_.publish(self.target_goal)
                         res_goal = None
-                self.goal_keeper.popleft()
+                if len(self.goal_keeper) != 0:
+                    self.goal_keeper.popleft()
                 self.goal_keeper.append(res_goal)
                 break
             else:
@@ -311,8 +338,13 @@ class MissionHandler:
             while self.update_robot_pos:
                 time.sleep(0.5)
             self.pos_mutex.acquire()
+            robot_pos = (self.robot_x, self.robot_y)
             direction = (res_goal.pose.position.x - self.robot_x, res_goal.pose.position.y - self.robot_y)
             self.pos_mutex.release()
+            if self.return_count == 0 and not self.getReturnMsg(res_goal) and self.isGoalTooCloseToCurGoal(res_goal):
+                goal_pos = (res_goal.pose.position.x, res_goal.pose.position.y)
+                res_goal.pose.position.x, res_goal.pose.position.y = self.getFurtherGoal(robot_pos, goal_pos)
+                rospy.logwarn("Goal updated to be further from robot.")
             x_direction = (1, 0)
             theta = getAngle(direction, x_direction)
             q = quaternion_from_euler(0.0, -0.0, theta)
@@ -322,6 +354,23 @@ class MissionHandler:
             res_goal.pose.orientation.w = q[3]
             rospy.logwarn("Theta: {0}.".format(theta))
         return res_goal
+
+    @staticmethod
+    def getFurtherGoal(loc, goal):
+        """
+        Since goal produced by producer are pretty close to robot, we can calculate a new goal based on the position of
+        robot and the calculated close goal by extrapolation.
+        :param loc: (x, y), position of robot
+        :param goal: (x, y) position of newly calculated goal
+        :return: (x, y) goal calculated by extrapolation
+        """
+        goal_dist = 5.0  # meters
+        cur_dist = math.sqrt((loc[0] - goal[0]) ** 2 + (loc[1] - goal[1]) ** 2)
+        if cur_dist == 0:
+            return loc
+        x = goal_dist * (goal[0] - loc[0]) / cur_dist + loc[0]
+        y = goal_dist * (goal[1] - loc[1]) / cur_dist + loc[1]
+        return x, y
 
     def goToNewGoal(self, new_goal=None):
         """
@@ -361,6 +410,7 @@ class MissionHandler:
                     self.mission_status = MissionStatus.RUNNING
                     rospy.logwarn("Mission Status Changed to RUNNING.")
                     self.return_count = 0
+                    self.abortion_count = 0
                     # wait for map to update
                     time.sleep(12.0)
                     self.preloadGoal()
@@ -394,8 +444,8 @@ class MissionHandler:
         """
         x = goal.pose.position.x
         y = goal.pose.position.y
-        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 0.2 and \
-            abs(self.target_goal.pose.position.y - y) < 0.2
+        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 3.0 and \
+            abs(self.target_goal.pose.position.y - y) < 3.0
         if res:
             rospy.logwarn("New Goal ({0}, {1})is too close to current goal.".format(x, y))
         return res
