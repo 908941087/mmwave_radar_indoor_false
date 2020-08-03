@@ -60,7 +60,8 @@ class GroupingTracker:
         if (self.last_laser_occupancy_count == 0 or
                 cur_laser_occupancy_count / float(self.last_laser_occupancy_count) > 1.3 or
                 (time_delta.seconds > 90
-                 and cur_laser_occupancy_count / float(self.last_laser_occupancy_count) > 1.1)):
+                 and cur_laser_occupancy_count / float(self.last_laser_occupancy_count) > 1.1) or
+                time_delta.seconds > 120):
             laser_clusters, mmwave_clusters = self.pc_group(laser_pc, mmwave_pc)
             self.env = self.env_classifier.classify(laser_clusters, mmwave_clusters)
             self.laser_clusters = laser_clusters
