@@ -187,10 +187,10 @@ def ForceUnknownFindCB(msg):
         target_pose.pose.position.y = 0.0
         return_count += 1
         if return_count == 1:
-            search_ratio = 0.7
+            search_ratio = 0.6
             neighbor_size = 7
         elif return_count == 2:
-            search_ratio = 0.6
+            search_ratio = 0.4
             neighbor_size = 6
         else:
             search_ratio = 0.6
