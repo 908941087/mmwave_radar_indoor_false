@@ -86,6 +86,7 @@ class MissionHandler:
         self.collision_count = 0
         self.abortion_count = 0
         self.return_count = 0
+        self.goal_reached_flag = False
         self.start_x = 0.0
         self.start_y = 0.0
         self.start_time = datetime.now()
@@ -243,6 +244,7 @@ class MissionHandler:
             self.mutex.acquire()
             self.collision_count = 0
             self.invalid_path_count = 0
+            self.goal_reached_flag = True
             self.mutex.release()
             self.goToNewGoal()
         else:
@@ -403,8 +405,9 @@ class MissionHandler:
                 rospy.logwarn("Using specified goal.")
                 res_goal = new_goal
             else:  # use calculated goal
-                if not self.isGoalTooCloseToStart(self.target_goal):  # avoid going to start twice using this mechanism
+                if self.goal_reached_flag and not self.isGoalTooCloseToStart(self.target_goal):  # avoid going to start twice using this mechanism
                     self.goal_queue.append(self.target_goal)  # if the new goal is caller specified, then this function is not triggered by goal reached.
+                    self.goal_reached_flag = False
                 if len(self.goal_keeper) == 0:
                     self.mission_status = MissionStatus.WAITING
                     rospy.logwarn("Mission Status Changed to WAITING.")
