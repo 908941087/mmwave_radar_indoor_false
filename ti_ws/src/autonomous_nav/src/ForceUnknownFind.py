@@ -157,6 +157,8 @@ def ForceUnknownFindCB(msg):
     res_point = FindUnkownAreaBFS(point_index, RevMap.copy(), m_xorg, m_yorg)
     if res_point is not None:
         return_count = 0
+        search_ratio = 0.8
+        neighbor_size = 8
         print "search_ratio:", search_ratio
         print "neighbor_size:", neighbor_size
         if res_point[0] != point_index[0] or res_point[1] != point_index[1]:
@@ -187,11 +189,11 @@ def ForceUnknownFindCB(msg):
         target_pose.pose.position.y = 0.0
         return_count += 1
         if return_count == 1:
-            search_ratio = 0.6
+            search_ratio = 0.3
             neighbor_size = 7
         elif return_count == 2:
-            search_ratio = 0.4
-            neighbor_size = 6
+            search_ratio = 0.2
+            neighbor_size = 7
         else:
             search_ratio = 0.6
             neighbor_size = 6
@@ -431,7 +433,7 @@ if __name__ == '__main__':
     global oldgoalmap, return_count, search_ratio, neighbor_size
     return_count = 0
     search_ratio = 0.8
-    neighbor_size = 7
+    neighbor_size = 8
     oldgoalmap = None
 
     rospy.init_node('force_unknown_find_handler', log_level=rospy.INFO)
