@@ -42,16 +42,19 @@ class Cluster(object):
         if self.dim == 3:
             raise ValueError("3D point cloud concave hull calculation not provided.")
         if self.concave_hull is None:
-            self.concave_hull = alphashape(self.getPoints(), 2)
+            try:
+                self.concave_hull = alphashape(self.getPoints(), 2)
+            except QhullError:
+                self.concave_hull = None
         return self.concave_hull
 
     def getArea(self):
         if self.dim == 3:
             raise ValueError("3D point cloud does not have area.")
-        try:
-            return abs(self.getConcaveHull().area)
-        except QhullError:
+        hull = self.getConcaveHull()
+        if hull is None:
             return 0.0
+        return abs(hull.area)
 
     def getPointsCount(self):
         return len(self.points)
