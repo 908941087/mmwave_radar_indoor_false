@@ -339,19 +339,26 @@ class MissionHandler:
                     self.target_goal.pose.position.x = self.start_x
                     self.target_goal.pose.position.y = self.start_y
                     self.auto_goal_pub_.publish(self.target_goal)
-                    self.mission_status = MissionStatus.RUNNING
-                    rospy.logwarn("Mission Status Changed to RUNNING.")
-                    res_goal = self.goal_producer.produce()
-                if self.return_count == 3:
+                    # self.mission_status = MissionStatus.RUNNING
+                    # rospy.logwarn("Mission Status Changed to RUNNING.")
                     self.mission_status = MissionStatus.STOPPING
                     rospy.logwarn("Mission Status Changed to STOPPING.")
                     self.endNavigation()
-                    self.target_goal.pose.position.x = self.start_x
-                    self.target_goal.pose.position.y = self.start_y
                     if len(self.goal_keeper) != 0:
                         self.goal_keeper.popleft()
                     self.goal_keeper.append(self.target_goal)
                     return self.target_goal
+                    # res_goal = self.goal_producer.produce()
+                # if self.return_count == 3:
+                #     self.mission_status = MissionStatus.STOPPING
+                #     rospy.logwarn("Mission Status Changed to STOPPING.")
+                #     self.endNavigation()
+                #     self.target_goal.pose.position.x = self.start_x
+                #     self.target_goal.pose.position.y = self.start_y
+                #     if len(self.goal_keeper) != 0:
+                #         self.goal_keeper.popleft()
+                #     self.goal_keeper.append(self.target_goal)
+                #     return self.target_goal
             self.return_count = 0
             # waiting for robot odometry to update
             self.update_robot_pos = True
@@ -384,7 +391,7 @@ class MissionHandler:
         :param goal: (x, y) position of newly calculated goal
         :return: (x, y) goal calculated by extrapolation
         """
-        goal_dist = 5.0  # meters
+        goal_dist = 4.0  # meters
         cur_dist = math.sqrt((loc[0] - goal[0]) ** 2 + (loc[1] - goal[1]) ** 2)
         if cur_dist == 0:
             return loc
@@ -411,7 +418,7 @@ class MissionHandler:
                 if len(self.goal_keeper) == 0:
                     self.mission_status = MissionStatus.WAITING
                     rospy.logwarn("Mission Status Changed to WAITING.")
-                    time.sleep(5.0)  # wait for map to update
+                    time.sleep(10.0)  # wait for map to update
                     self.getNewGoal()
                     # getNewGoal might just return none
                     # since there might already be a goal calculating in the background using preloadGoal
@@ -444,8 +451,8 @@ class MissionHandler:
         """
         x = goal.pose.position.x
         y = goal.pose.position.y
-        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 3.0 and \
-            abs(self.target_goal.pose.position.y - y) < 3.0
+        res = (not self.isGoalTooCloseToStart(goal)) and abs(self.target_goal.pose.position.x - x) < 1.5 and \
+            abs(self.target_goal.pose.position.y - y) < 1.5
         if res:
             rospy.logwarn("New Goal ({0}, {1})is too close to current goal.".format(x, y))
         return res
