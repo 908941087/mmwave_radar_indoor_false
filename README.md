@@ -92,3 +92,32 @@ rosrun py_interface ForceUnknownFind.py
 5. 启动rviz 
 
 > rviz rosrun rviz rviz -d ~/workspace/src/turtlebot_mmwave_launchers/launch/navigation_visualization.rviz
+
+### 环境识别模块独立回放
+
+1. 启动minimal.launch
+
+   ```bash
+   roslaunch turtlebot_bringup minimal.launch
+   ```
+
+2. 切换到bag文件所在路径，开启回放
+
+   ```bash
+   rosbag play --clock xxxx.bag // bag名称需要自行替换
+   ```
+
+3. 开启环境识别模块
+
+   ```bash
+   rosrun py_interface classifier.py
+   ```
+
+4. 开启可视化模块
+
+   ```bash
+   roslaunch turtlebot_rviz_launchers view_navigation.launch
+   ```
+
+   
+
