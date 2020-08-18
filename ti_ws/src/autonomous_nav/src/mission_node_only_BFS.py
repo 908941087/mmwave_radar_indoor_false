@@ -334,7 +334,7 @@ class MissionHandler:
                 rospy.logwarn("Return to start signal received {0} times.".format(self.return_count))
                 if self.return_count == 1:
                     res_goal = self.goal_producer.produce()
-                if self.return_count == 2:
+                if self.return_count >= 2:
                     rospy.logwarn("Going back to start.")
                     self.target_goal.pose.position.x = self.start_x
                     self.target_goal.pose.position.y = self.start_y
