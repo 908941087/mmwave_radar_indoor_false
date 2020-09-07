@@ -201,6 +201,7 @@ Costmap2DROS::~Costmap2DROS()
   delete dsrv_;
 }
 
+// 重置旧的参数
 void Costmap2DROS::resetOldParameters(ros::NodeHandle& nh)
 {
   ROS_INFO("Loading from pre-hydro parameter style");
@@ -274,6 +275,7 @@ void Costmap2DROS::resetOldParameters(ros::NodeHandle& nh)
   nh.setParam("plugins", super_array);
 }
 
+// 动态修改参数
 void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t level)
 {
   transform_tolerance_ = config.transform_tolerance;
@@ -318,6 +320,7 @@ void Costmap2DROS::reconfigureCB(costmap_2d::Costmap2DConfig &config, uint32_t l
   map_update_thread_ = new boost::thread(boost::bind(&Costmap2DROS::mapUpdateLoop, this, map_update_frequency));
 }
 
+// 从参数读取机器人规格参数
 void Costmap2DROS::readFootprintFromConfig(const costmap_2d::Costmap2DConfig &new_config,
                                            const costmap_2d::Costmap2DConfig &old_config)
 {
@@ -385,6 +388,7 @@ void Costmap2DROS::movementCB(const ros::TimerEvent &event)
   }
 }
 
+// 循环更新地图信息
 void Costmap2DROS::mapUpdateLoop(double frequency)
 {
   // the user might not want to run the loop every cycle
@@ -427,6 +431,7 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
   }
 }
 
+// 更新地图信息
 void Costmap2DROS::updateMap()
 {
   if (!stop_updates_)
@@ -504,7 +509,7 @@ void Costmap2DROS::resume()
     r.sleep();
 }
 
-
+// 重置各个图层
 void Costmap2DROS::resetLayers()
 {
   Costmap2D* top = layered_costmap_->getCostmap();
@@ -517,6 +522,7 @@ void Costmap2DROS::resetLayers()
   }
 }
 
+// 获取机器人位置
 bool Costmap2DROS::getRobotPose(tf::Stamped<tf::Pose>& global_pose) const
 {
   global_pose.setIdentity();
