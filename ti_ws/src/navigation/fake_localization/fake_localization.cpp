@@ -208,7 +208,8 @@ class FakeOdomNode
       m_particleCloud.poses[0] = m_currentPos.pose.pose;
       m_particlecloudPub.publish(m_particleCloud);
     }
-
+    
+    // 获取起始位置信息
     void initPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg){
       tf::Pose pose;
       tf::poseMsgToTF(msg->pose.pose, pose);
