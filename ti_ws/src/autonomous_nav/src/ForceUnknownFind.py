@@ -76,8 +76,8 @@ def log_neighbor(point_index, neighbor_field=4):
             if p_point[1] < 0 or p_point[1] >= m_heigh: continue
             # rospy.loginfo("%d, %d, %d", p_point[0], p_point[1], filtered_map[p_point[0], p_point[1]])
 
-
-def ObstacleInflation(filtered_map, neighbor_field=4):
+# 障碍物层膨胀，补齐细小缺口
+def ObstacleInflation(filtered_map, neighbor_field=4): 
     RevMap = np.zeros(filtered_map.shape, dtype=np.int)
     # Format map
     for i in range(filtered_map.shape[0]):
@@ -97,7 +97,7 @@ def ObstacleInflation(filtered_map, neighbor_field=4):
                         filtered_map[t_point[0]][t_point[1]] = int(100)
     return filtered_map
 
-
+# 查找目标点
 def ForceUnknownFindCB(msg):
     global dat, wid, heigh, res, filtered_map, current_position_, xorg, yorg, search_ratio, return_count, neighbor_size
     rospy.loginfo("Calculate goal in nearest unknown part.")
@@ -208,7 +208,7 @@ def ForceUnknownFindCB(msg):
         return resGoal
 
 
-# DFS version
+# 深度优先找点
 def FindUnkownArea(point_index, local_map):
     # visual_pub(point_index[0], point_index[1])
 
@@ -239,7 +239,7 @@ def FindUnkownArea(point_index, local_map):
                 return tmp_res
     return None
 
-
+# 判断目标点是否为旧目标点
 def judge_oldgoal(cur_point, m_xorg, m_yorg):
     global filtered_map, oldgoalmap, res, old_xorg, old_yorg
     checkflag = True
@@ -272,7 +272,7 @@ def judge_oldgoal(cur_point, m_xorg, m_yorg):
         oldgoalmap[int(cur_point[0])][int(cur_point[1])] = 1
         return checkflag
 
-
+# 判断目标点周围未知区域是否满足一定比例
 def judge_neighbor(point_index):
     global filtered_map, neighbor_size
     m_wid = filtered_map.shape[0]
@@ -300,7 +300,7 @@ def judge_neighbor(point_index):
     return m_ratio
 
 
-# ensure the goal is legal
+# 判断目标点周围是否有障碍物
 def judge_obstacle_neighbor(point_index, neighbor_field=6):
     global filtered_map
     m_wid = filtered_map.shape[0]
@@ -322,7 +322,7 @@ def judge_obstacle_neighbor(point_index, neighbor_field=6):
     return all_unknown_flag
 
 
-# BFS version
+# 广度优先找目标点
 def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
     global filtered_map, search_ratio
     m_wid = filtered_map.shape[0]
@@ -374,7 +374,7 @@ def FindUnkownAreaBFS(point_index, local_map, m_xorg, m_yorg):
 Return the angle normalized between [-pi, pi].
 """
 
-
+# 获取里程计数据
 def odomCallback(odometry_msg):
     global current_position_
     global current_orientation_
@@ -386,7 +386,7 @@ def odomCallback(odometry_msg):
     current_orientation_ = wrapAngle(y)
     return
 
-
+# 获取栅格地图数据
 def OccupancyGridCallback(msg):
     global dat, wid, heigh, res, xorg, yorg
     dat = msg.data

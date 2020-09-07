@@ -188,7 +188,8 @@ namespace move_base {
     dynamic_reconfigure::Server<move_base::MoveBaseConfig>::CallbackType cb = boost::bind(&MoveBase::reconfigureCB, this, _1, _2);
     dsrv_->setCallback(cb);
   }
-
+  
+  // 动态更新参数
   void MoveBase::reconfigureCB(move_base::MoveBaseConfig &config, uint32_t level){
     boost::recursive_mutex::scoped_lock l(configuration_mutex_);
 
@@ -279,6 +280,7 @@ namespace move_base {
     last_config_ = config;
   }
 
+  // 更改目标点格式
   void MoveBase::goalCB(const geometry_msgs::PoseStamped::ConstPtr& goal){
     ROS_DEBUG_NAMED("move_base","In ROS goal callback, wrapping the PoseStamped in the action message and re-sending to the server.");
     move_base_msgs::MoveBaseActionGoal action_goal;
@@ -288,6 +290,7 @@ namespace move_base {
     action_goal_pub_.publish(action_goal);
   }
 
+  // 清空动态窗口
   void MoveBase::clearCostmapWindows(double size_x, double size_y){
     tf::Stamped<tf::Pose> global_pose;
 
@@ -343,6 +346,7 @@ namespace move_base {
     controller_costmap_ros_->getCostmap()->setConvexPolygonCost(clear_poly, costmap_2d::FREE_SPACE);
   }
 
+  // 清空costmap
   bool MoveBase::clearCostmapsService(std_srvs::Empty::Request &req, std_srvs::Empty::Response &resp){
     //clear the costmaps
     planner_costmap_ros_->resetLayers();
@@ -350,7 +354,7 @@ namespace move_base {
     return true;
   }
 
-
+  // 获取规划路径服务
   bool MoveBase::planService(nav_msgs::GetPlan::Request &req, nav_msgs::GetPlan::Response &resp){
     if(as_->isActive()){
       ROS_ERROR("move_base must be in an inactive state to make a plan for an external user");
@@ -509,7 +513,8 @@ namespace move_base {
     cmd_vel.angular.z = 0.0;
     vel_pub_.publish(cmd_vel);
   }
-
+  
+  // 判断是否为四元数
   bool MoveBase::isQuaternionValid(const geometry_msgs::Quaternion& q){
     //first we need to check if the quaternion has nan's or infs
     if(!std::isfinite(q.x) || !std::isfinite(q.y) || !std::isfinite(q.z) || !std::isfinite(q.w)){
@@ -540,6 +545,7 @@ namespace move_base {
     return true;
   }
 
+  // 目标点转化为世界坐标系
   geometry_msgs::PoseStamped MoveBase::goalToGlobalFrame(const geometry_msgs::PoseStamped& goal_pose_msg){
     std::string global_frame = planner_costmap_ros_->getGlobalFrameID();
     tf::Stamped<tf::Pose> goal_pose, global_pose;
@@ -569,6 +575,7 @@ namespace move_base {
     planner_cond_.notify_one();
   }
 
+  // 规划路径线程函数
   void MoveBase::planThread(){
     ROS_DEBUG_NAMED("move_base_plan_thread","Starting planner thread...");
     ros::NodeHandle n;
@@ -651,6 +658,7 @@ namespace move_base {
     }
   }
 
+  // 执行局部路径规划
   void MoveBase::executeCb(const move_base_msgs::MoveBaseGoalConstPtr& move_base_goal)
   {
     if(!isQuaternionValid(move_base_goal->target_pose.pose.orientation)){
@@ -800,11 +808,13 @@ namespace move_base {
     return;
   }
 
+  // 计算起点和终点距离
   double MoveBase::distance(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2)
   {
     return hypot(p1.pose.position.x - p2.pose.position.x, p1.pose.position.y - p2.pose.position.y);
   }
 
+  // 控制机器人从起点运动按全局路径规划到终点
   bool MoveBase::executeCycle(geometry_msgs::PoseStamped& goal, std::vector<geometry_msgs::PoseStamped>& global_plan){
     boost::recursive_mutex::scoped_lock ecl(configuration_mutex_);
     //we need to be able to publish velocity commands
@@ -1040,6 +1050,7 @@ namespace move_base {
     return false;
   }
 
+  // 存入故障恢复行为
   bool MoveBase::loadRecoveryBehaviors(ros::NodeHandle node){
     XmlRpc::XmlRpcValue behavior_list;
     if(node.getParam("recovery_behaviors", behavior_list)){
@@ -1161,6 +1172,7 @@ namespace move_base {
     return;
   }
 
+  // 重置机器人状态
   void MoveBase::resetState(){
     // Disable the planner thread
     boost::unique_lock<boost::recursive_mutex> lock(planner_mutex_);
